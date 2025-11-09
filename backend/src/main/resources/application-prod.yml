@@ -1,0 +1,34 @@
+# Production Profile Configuration
+spring:
+  h2:
+    console:
+      enabled: false
+
+  jpa:
+    show-sql: false
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        format_sql: false
+        use_sql_comments: false
+
+  jackson:
+    serialization:
+      indent-output: false
+
+springdoc:
+  swagger-ui:
+    enabled: false
+
+server:
+  error:
+    include-stacktrace: never
+    include-exception: false
+
+logging:
+  level:
+    root: WARN
+    com.kanban: INFO
+    org.springframework.web: WARN
+    org.hibernate.SQL: WARN

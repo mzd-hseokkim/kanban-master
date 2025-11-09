@@ -1,0 +1,21 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:kanban-test;DB_CLOSE_DELAY=-1
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+  jpa:
+    database-platform: org.hibernate.dialect.H2Dialect
+    hibernate:
+      ddl-auto: create-drop
+    properties:
+      hibernate:
+        format_sql: true
+        use_sql_comments: false
+
+security:
+  jwt:
+    secret-key: dGhpc2lzYS1sb25nLWFuZC1zZWN1cmUtc3VwZXItc2VjcmV0LXN0cmluZw==
+    access-token-validity-seconds: 900
+    refresh-token-validity-seconds: 1209600
+    refresh-token-cookie-name: KANBAN_REFRESH_TOKEN_TEST

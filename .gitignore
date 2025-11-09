@@ -1,0 +1,59 @@
+# OS / Editor artifacts
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.iml
+*.ipr
+*.iws
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Environment files
+.env
+.env.*
+!.env.example
+!.env.sample
+
+# Node / Frontend
+node_modules/
+**/node_modules/
+dist/
+**/dist/
+.vite/
+**/.vite/
+.eslintcache
+frontend/.turbo/
+coverage/
+**/coverage/
+cypress/videos/
+cypress/screenshots/
+
+# Backend / Gradle
+.gradle/
+**/.gradle/
+build/
+**/build/
+bin/
+**/bin/
+out/
+**/out/
+
+# Spring Boot
+*.jar
+*.war
+*.ear
+spring.log
+
+# Misc caches
+.sass-cache/
+.nyc_output/
+.parcel-cache/
+.cache/
+tmp/
+temp/

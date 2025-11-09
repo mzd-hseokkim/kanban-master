@@ -1,0 +1,27 @@
+{
+  "name": "kanban-master",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "frontend"
+  ],
+  "scripts": {
+    "dev:frontend": "cd frontend && npm run dev",
+    "dev:backend": "cd backend && ./gradlew bootRun",
+    "dev:backend:watch": "cd backend && ./gradlew classes --continuous",
+    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:backend:watch\" \"npm run dev:frontend\"",
+    "build:frontend": "cd frontend && npm run build",
+    "build:backend": "cd backend && ./gradlew build",
+    "build": "npm run build:backend && npm run build:frontend",
+    "install:frontend": "cd frontend && npm install",
+    "install:backend": "cd backend && ./gradlew build --refresh-dependencies",
+    "clean": "rm -rf frontend/node_modules frontend/dist backend/build backend/.gradle"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  }
+}

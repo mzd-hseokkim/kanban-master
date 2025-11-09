@@ -1,0 +1,130 @@
+import { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Board } from '@/types/board';
+import { useBoard } from '@/context/BoardContext';
+import { BoardActionsMenu } from './BoardActionsMenu';
+
+interface BoardCardProps {
+  board: Board;
+  workspaceId: number;
+}
+
+export const BoardCard = ({ board, workspaceId }: BoardCardProps) => {
+  const navigate = useNavigate();
+  const { deleteBoard } = useBoard();
+  const [showMenu, setShowMenu] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  const handleDelete = async () => {
+    try {
+      await deleteBoard(workspaceId, board.id);
+      setShowDeleteConfirm(false);
+    } catch (err) {
+      console.error('Failed to delete board:', err);
+    }
+  };
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setShowMenu(false);
+      }
+    };
+
+    if (showMenu) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => {
+        document.removeEventListener('mousedown', handleClickOutside);
+      };
+    }
+  }, [showMenu]);
+
+  const formattedDate = new Date(board.updatedAt).toLocaleDateString('ko-KR');
+
+  const handleCardClick = (e: React.MouseEvent) => {
+    // 메뉴나 삭제 버튼 클릭 시 네비게이션 무시
+    if ((e.target as HTMLElement).closest('.menu-button')) {
+      return;
+    }
+    navigate(`/boards/${workspaceId}/${board.id}`);
+  };
+
+  return (
+    <div
+      onClick={handleCardClick}
+      className="glass rounded-xl p-6 shadow-glass hover:shadow-glass-lg hover:scale-105 transition border border-pastel-blue-200 cursor-pointer relative"
+    >
+      <div className="flex items-start justify-between mb-4">
+        <div className="flex-1">
+          <div className="flex items-center gap-2 mb-1">
+            <h3 className="text-xl font-bold text-pastel-blue-900">
+              {board.name}
+            </h3>
+          </div>
+          {board.description && (
+            <p className="text-sm text-pastel-blue-600 line-clamp-2">
+              {board.description}
+            </p>
+          )}
+        </div>
+        <div className="relative menu-button" ref={menuRef}>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              setShowMenu(!showMenu);
+            }}
+            className="p-2 hover:bg-pastel-blue-200 rounded-full transition"
+          >
+            ...
+          </button>
+          {showMenu && (
+            <BoardActionsMenu
+              board={board}
+              workspaceId={workspaceId}
+              onClose={() => setShowMenu(false)}
+              onDeleteClick={() => { setShowMenu(false); setShowDeleteConfirm(true); }}
+            />
+          )}
+        </div>
+      </div>
+
+      <div className="flex items-center justify-between text-xs text-pastel-blue-500">
+        <span>{board.ownerName}</span>
+        <span>{formattedDate}</span>
+      </div>
+
+      {showDeleteConfirm && (
+        <div
+          onClick={(e) => {
+            e.stopPropagation();
+            setShowDeleteConfirm(false);
+          }}
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="glass-light rounded-2xl p-8 shadow-glass-lg max-w-sm w-full mx-4 border border-white/30"
+          >
+            <h2 className="text-xl font-bold text-pastel-blue-900 mb-2">보드를 삭제하시겠어요?</h2>
+            <p className="text-pastel-blue-600 mb-6 text-sm">30일 이내에 복구할 수 있습니다.</p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowDeleteConfirm(false)}
+                className="flex-1 px-4 py-2 rounded-xl bg-white/30 text-pastel-blue-700 font-semibold hover:bg-white/40 border border-white/40 backdrop-blur-sm transition"
+              >
+                취소
+              </button>
+              <button
+                onClick={handleDelete}
+                className="flex-1 px-4 py-2 rounded-xl bg-pastel-pink-500 text-white font-semibold hover:bg-pastel-pink-600 transition"
+              >
+                삭제
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
