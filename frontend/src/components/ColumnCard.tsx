@@ -145,7 +145,7 @@ export const ColumnCard: React.FC<ColumnCardProps> = ({ column, workspaceId, boa
 
   return (
     <>
-      <div className={`${bgColorClass} rounded-xl shadow-md border border-white/30 min-w-80 flex flex-col h-full`}>
+      <div className={`${bgColorClass} rounded-xl shadow-md border border-white/30 w-80 flex-shrink-0 flex flex-col h-full`}>
         {/* 헤더 */}
         <div className="flex items-center justify-between p-4 border-b border-white/20">
           <div className="flex-1">
@@ -180,7 +180,7 @@ export const ColumnCard: React.FC<ColumnCardProps> = ({ column, workspaceId, boa
 
         {/* 카드 영역 */}
         <div
-          className={`flex-1 p-4 overflow-y-auto min-h-96 ${dragOverEmpty ? 'bg-white/30' : ''} transition flex flex-col gap-3`}
+          className={`flex-1 p-4 overflow-y-auto min-h-96 ${dragOverEmpty ? 'bg-white/30' : ''} transition flex flex-col gap-3 w-full`}
           onDragOver={handleCardAreaDragOver}
           onDragLeave={handleCardAreaDragLeave}
           onDrop={handleCardAreaDrop}
@@ -192,7 +192,7 @@ export const ColumnCard: React.FC<ColumnCardProps> = ({ column, workspaceId, boa
           ) : (
             <>
               {cards[column.id] && cards[column.id].length > 0 && (
-                <div className="space-y-2">
+                <div className="space-y-2 w-full">
                   {cards[column.id]
                     .sort((a, b) => a.position - b.position)
                     .map((card) => (
