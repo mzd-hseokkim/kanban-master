@@ -1,7 +1,6 @@
 package com.kanban.search;
 
 import com.kanban.card.Card;
-import com.kanban.card.CardRepository;
 import com.kanban.label.CardLabelRepository;
 import com.kanban.label.dto.LabelResponse;
 import com.kanban.search.dto.CardSearchRequest;
@@ -33,7 +32,6 @@ import java.util.stream.Collectors;
 public class SearchService {
 
     private final EntityManager entityManager;
-    private final CardRepository cardRepository;
     private final CardLabelRepository cardLabelRepository;
 
     /**
