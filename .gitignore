@@ -57,3 +57,6 @@ spring.log
 .cache/
 tmp/
 temp/
+
+# Ignore H2 database files
+backend/data/*.db

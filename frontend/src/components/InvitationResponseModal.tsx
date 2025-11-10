@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { memberService } from '@/services/memberService';
 import type { BoardMember } from '@/types/member';
+import { useModalAnimation } from '@/hooks/useModalAnimation';
 
 interface InvitationResponseModalProps {
   invitation: BoardMember | null;
@@ -17,6 +18,7 @@ export const InvitationResponseModal: React.FC<InvitationResponseModalProps> = (
   onSuccess,
 }) => {
   const [loading, setLoading] = useState(false);
+  const { stage, close } = useModalAnimation(onClose);
 
   if (!isOpen || !invitation) {
     return null;
@@ -27,7 +29,7 @@ export const InvitationResponseModal: React.FC<InvitationResponseModalProps> = (
     try {
       setLoading(true);
       await memberService.acceptInvitation(invitation.invitationToken);
-      onClose();
+      close();
       onSuccess?.();
       // 보드 목록을 갱신하기 위해 페이지 새로고침
       setTimeout(() => {
@@ -46,7 +48,7 @@ export const InvitationResponseModal: React.FC<InvitationResponseModalProps> = (
     try {
       setLoading(true);
       await memberService.declineInvitation(invitation.invitationToken);
-      onClose();
+      close();
       onSuccess?.();
       // 초대 목록 갱신을 위해 페이지 새로고침
       setTimeout(() => {
@@ -62,21 +64,21 @@ export const InvitationResponseModal: React.FC<InvitationResponseModalProps> = (
 
   const handleBackdropClick = (e: React.MouseEvent<HTMLDivElement>) => {
     if (e.target === e.currentTarget) {
-      onClose();
+      close();
     }
   };
 
   const modalContent = (
     <div
-      className="fixed inset-0 bg-black/50 flex items-center justify-center z-[9999]"
+      className={`modal-overlay modal-overlay-${stage} bg-black/50 z-[9999]`}
       onClick={handleBackdropClick}
     >
-      <div className="bg-white rounded-lg p-8 max-w-md w-full mx-4 shadow-xl">
+      <div className={`modal-panel modal-panel-${stage} bg-white rounded-lg p-8 max-w-md w-full mx-4 shadow-xl`}>
         {/* Header with close button */}
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-2xl font-bold text-gray-900">보드 초대</h2>
           <button
-            onClick={onClose}
+            onClick={close}
             disabled={loading}
             className="text-2xl text-gray-500 hover:text-gray-700 transition disabled:opacity-50"
             aria-label="닫기"

@@ -37,11 +37,8 @@ public class MemberController {
     public ResponseEntity<List<BoardMemberResponse>> getBoardMembers(
         @PathVariable Long boardId
     ) {
-        List<BoardMember> members = memberService.getBoardMembers(boardId);
-        List<BoardMemberResponse> responses = members.stream()
-            .map(BoardMemberResponse::from)
-            .toList();
-        return ResponseEntity.ok(responses);
+        List<BoardMemberResponse> members = memberService.getBoardMembers(boardId);
+        return ResponseEntity.ok(members);
     }
 
     /**
@@ -69,8 +66,8 @@ public class MemberController {
         @Valid @RequestBody InviteMemberRequest request
     ) {
         Long currentUserId = SecurityUtil.getCurrentUserId();
-        BoardMember member = memberService.inviteMember(boardId, request.getUserId(), currentUserId, request.getRole());
-        return ResponseEntity.status(HttpStatus.CREATED).body(BoardMemberResponse.from(member));
+        BoardMemberResponse member = memberService.inviteMember(boardId, request.getUserId(), currentUserId, request.getRole());
+        return ResponseEntity.status(HttpStatus.CREATED).body(member);
     }
 
     /**
@@ -84,8 +81,8 @@ public class MemberController {
         @RequestParam BoardMemberRole role
     ) {
         Long currentUserId = SecurityUtil.getCurrentUserId();
-        BoardMember member = memberService.changeMemberRole(boardId, memberId, role, currentUserId);
-        return ResponseEntity.ok(BoardMemberResponse.from(member));
+        BoardMemberResponse member = memberService.changeMemberRole(boardId, memberId, role, currentUserId);
+        return ResponseEntity.ok(member);
     }
 
     /**
@@ -111,7 +108,7 @@ public class MemberController {
         @PathVariable Long boardId,
         @PathVariable Long memberId
     ) {
-        BoardMember member = memberService.getMember(boardId, memberId);
-        return ResponseEntity.ok(BoardMemberResponse.from(member));
+        BoardMemberResponse member = memberService.getMember(boardId, memberId);
+        return ResponseEntity.ok(member);
     }
 }

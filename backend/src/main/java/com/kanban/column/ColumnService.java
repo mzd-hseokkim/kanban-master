@@ -5,12 +5,16 @@ import com.kanban.activity.ActivityService;
 import com.kanban.activity.ActivityScopeType;
 import com.kanban.board.Board;
 import com.kanban.board.BoardRepository;
+import com.kanban.board.member.BoardMemberRole;
+import com.kanban.board.member.BoardMemberRoleValidator;
+import com.kanban.column.dto.ColumnResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.stream.Collectors;
 
 /**
  * 칼럼(BoardColumn) 비즈니스 로직 서비스
@@ -23,28 +27,42 @@ public class ColumnService {
     private final ColumnRepository columnRepository;
     private final BoardRepository boardRepository;
     private final ActivityService activityService;
+    private final BoardMemberRoleValidator roleValidator;
 
     /**
      * 특정 보드의 모든 칼럼 조회
      */
     @Transactional(readOnly = true)
-    public List<BoardColumn> getColumnsByBoard(Long boardId) {
-        return columnRepository.findByBoardIdOrderByPosition(boardId);
+    public List<ColumnResponse> getColumnsByBoard(Long boardId) {
+        return columnRepository.findByBoardIdOrderByPosition(boardId).stream()
+                .map(ColumnResponse::from)
+                .collect(Collectors.toList());
     }
 
     /**
      * 칼럼 ID로 칼럼 조회
      */
     @Transactional(readOnly = true)
-    public BoardColumn getColumn(Long columnId) {
-        return columnRepository.findById(columnId)
+    public ColumnResponse getColumn(Long columnId) {
+        BoardColumn column = columnRepository.findById(columnId)
             .orElseThrow(() -> new NoSuchElementException("칼럼을 찾을 수 없습니다: " + columnId));
+        return ColumnResponse.from(column);
     }
 
     /**
-     * 칼럼 생성
+     * 칼럼 생성 (권한 검증 포함)
      */
-    public BoardColumn createColumn(Long boardId, String name, String description, Long userId) {
+    public ColumnResponse createColumnWithValidation(Long boardId, String name, String description, Long userId) {
+        // EDITOR 이상 권한 필요
+        roleValidator.validateRole(boardId, BoardMemberRole.EDITOR);
+
+        return createColumn(boardId, name, description, userId);
+    }
+
+    /**
+     * 칼럼 생성 (권한 검증 없음 - 내부 사용)
+     */
+    public ColumnResponse createColumn(Long boardId, String name, String description, Long userId) {
         Board board = boardRepository.findById(boardId)
             .orElseThrow(() -> new NoSuchElementException("보드를 찾을 수 없습니다: " + boardId));
 
@@ -69,14 +87,25 @@ public class ColumnService {
             "\"" + name + "\" 칼럼이 생성되었습니다"
         );
 
-        return savedColumn;
+        return ColumnResponse.from(savedColumn);
     }
 
     /**
-     * 칼럼 업데이트
+     * 칼럼 업데이트 (권한 검증 포함)
      */
-    public BoardColumn updateColumn(Long columnId, String name, String description, String bgColor) {
-        BoardColumn column = getColumn(columnId);
+    public ColumnResponse updateColumnWithValidation(Long boardId, Long columnId, String name, String description, String bgColor) {
+        // EDITOR 이상 권한 필요
+        roleValidator.validateRole(boardId, BoardMemberRole.EDITOR);
+
+        return updateColumn(columnId, name, description, bgColor);
+    }
+
+    /**
+     * 칼럼 업데이트 (권한 검증 없음 - 내부 사용)
+     */
+    public ColumnResponse updateColumn(Long columnId, String name, String description, String bgColor) {
+        BoardColumn column = columnRepository.findById(columnId)
+            .orElseThrow(() -> new NoSuchElementException("칼럼을 찾을 수 없습니다: " + columnId));
 
         if (name != null && !name.isBlank()) {
             column.setName(name);
@@ -88,13 +117,24 @@ public class ColumnService {
             column.setBgColor(bgColor);
         }
 
-        return columnRepository.save(column);
+        BoardColumn savedColumn = columnRepository.save(column);
+        return ColumnResponse.from(savedColumn);
     }
 
     /**
-     * 칼럼 위치 업데이트 (드래그 앤 드롭)
+     * 칼럼 위치 업데이트 (권한 검증 포함)
      */
-    public BoardColumn updateColumnPosition(Long boardId, Long columnId, Integer newPosition, Long userId) {
+    public ColumnResponse updateColumnPositionWithValidation(Long boardId, Long columnId, Integer newPosition, Long userId) {
+        // EDITOR 이상 권한 필요
+        roleValidator.validateRole(boardId, BoardMemberRole.EDITOR);
+
+        return updateColumnPosition(boardId, columnId, newPosition, userId);
+    }
+
+    /**
+     * 칼럼 위치 업데이트 (드래그 앤 드롭, 권한 검증 없음 - 내부 사용)
+     */
+    public ColumnResponse updateColumnPosition(Long boardId, Long columnId, Integer newPosition, Long userId) {
         BoardColumn column = columnRepository.findByIdAndBoardId(columnId, boardId)
             .orElseThrow(() -> new NoSuchElementException("칼럼을 찾을 수 없습니다: " + columnId));
 
@@ -122,11 +162,21 @@ public class ColumnService {
             );
         }
 
-        return updatedColumn;
+        return ColumnResponse.from(updatedColumn);
     }
 
     /**
-     * 칼럼 삭제
+     * 칼럼 삭제 (권한 검증 포함)
+     */
+    public void deleteColumnWithValidation(Long boardId, Long columnId, Long userId) {
+        // EDITOR 이상 권한 필요
+        roleValidator.validateRole(boardId, BoardMemberRole.EDITOR);
+
+        deleteColumn(boardId, columnId, userId);
+    }
+
+    /**
+     * 칼럼 삭제 (권한 검증 없음 - 내부 사용)
      */
     public void deleteColumn(Long boardId, Long columnId, Long userId) {
         BoardColumn column = columnRepository.findByIdAndBoardId(columnId, boardId)

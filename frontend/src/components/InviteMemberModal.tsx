@@ -1,8 +1,9 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { memberService } from '@/services/memberService';
 import { userService } from '@/services/userService';
 import type { BoardMemberRole } from '@/types/member';
 import type { UserSearchResult } from '@/types/user';
+import { useModalAnimation } from '@/hooks/useModalAnimation';
 
 interface InviteMemberModalProps {
   boardId: number;
@@ -80,6 +81,21 @@ export const InviteMemberModal = ({
     setSearchInput('');
   };
 
+  const resetForm = useCallback(() => {
+    setSearchInput('');
+    setSearchResults([]);
+    setSelectedUser(null);
+    setRole('EDITOR');
+    setMessage('');
+    setError(null);
+    setShowDropdown(false);
+  }, []);
+
+  const { stage, close } = useModalAnimation(() => {
+    resetForm();
+    onClose();
+  });
+
   // 폼 제출
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -100,7 +116,7 @@ export const InviteMemberModal = ({
       });
 
       onSuccess();
-      handleClose();
+      close();
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to invite member';
       setError(errorMessage);
@@ -108,18 +124,6 @@ export const InviteMemberModal = ({
     } finally {
       setLoading(false);
     }
-  };
-
-  // 모달 닫기
-  const handleClose = () => {
-    setSearchInput('');
-    setSearchResults([]);
-    setSelectedUser(null);
-    setRole('EDITOR');
-    setMessage('');
-    setError(null);
-    setShowDropdown(false);
-    onClose();
   };
 
   // 외부 클릭 감지
@@ -149,13 +153,13 @@ export const InviteMemberModal = ({
   }
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg shadow-xl max-w-md w-full">
+    <div className={`modal-overlay modal-overlay-${stage} bg-black bg-opacity-50 p-4`}>
+      <div className={`modal-panel modal-panel-${stage} bg-white rounded-lg shadow-xl max-w-md w-full`}>
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
           <h2 className="text-lg font-semibold text-gray-900">멤버 초대</h2>
           <button
-            onClick={handleClose}
+            onClick={close}
             disabled={loading}
             className="text-gray-400 hover:text-gray-600 disabled:opacity-50"
           >
@@ -282,7 +286,7 @@ export const InviteMemberModal = ({
           <div className="flex gap-3 pt-4">
             <button
               type="button"
-              onClick={handleClose}
+              onClick={close}
               disabled={loading}
               className="flex-1 px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg disabled:opacity-50 transition-colors"
             >

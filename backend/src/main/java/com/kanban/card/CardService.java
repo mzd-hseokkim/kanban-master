@@ -3,6 +3,8 @@ package com.kanban.card;
 import com.kanban.activity.ActivityEventType;
 import com.kanban.activity.ActivityService;
 import com.kanban.activity.ActivityScopeType;
+import com.kanban.board.member.BoardMemberRole;
+import com.kanban.board.member.BoardMemberRoleValidator;
 import com.kanban.card.dto.CardResponse;
 import com.kanban.card.dto.CreateCardRequest;
 import com.kanban.card.dto.UpdateCardRequest;
@@ -26,6 +28,7 @@ public class CardService {
     private final CardRepository cardRepository;
     private final ColumnRepository columnRepository;
     private final ActivityService activityService;
+    private final BoardMemberRoleValidator roleValidator;
 
     /**
      * 특정 칼럼의 모든 카드 조회
@@ -47,7 +50,17 @@ public class CardService {
     }
 
     /**
-     * 카드 생성
+     * 카드 생성 (권한 검증 포함)
+     */
+    public CardResponse createCardWithValidation(Long boardId, Long columnId, CreateCardRequest request, Long userId) {
+        // EDITOR 이상 권한 필요
+        roleValidator.validateRole(boardId, BoardMemberRole.EDITOR);
+
+        return createCard(columnId, request, userId);
+    }
+
+    /**
+     * 카드 생성 (권한 검증 없음 - 내부 사용)
      */
     public CardResponse createCard(Long columnId, CreateCardRequest request, Long userId) {
         BoardColumn column = columnRepository.findById(columnId)
@@ -82,7 +95,17 @@ public class CardService {
     }
 
     /**
-     * 카드 수정 (활동 기록 포함)
+     * 카드 수정 (권한 검증 포함)
+     */
+    public CardResponse updateCardWithValidation(Long boardId, Long columnId, Long cardId, UpdateCardRequest request, Long userId) {
+        // EDITOR 이상 권한 필요
+        roleValidator.validateRole(boardId, BoardMemberRole.EDITOR);
+
+        return updateCard(columnId, cardId, request, userId);
+    }
+
+    /**
+     * 카드 수정 (활동 기록 포함, 권한 검증 없음 - 내부 사용)
      */
     public CardResponse updateCard(Long columnId, Long cardId, UpdateCardRequest request, Long userId) {
         Card card = cardRepository.findByIdAndColumnId(cardId, columnId)
@@ -167,7 +190,17 @@ public class CardService {
     }
 
     /**
-     * 카드 삭제
+     * 카드 삭제 (권한 검증 포함)
+     */
+    public void deleteCardWithValidation(Long boardId, Long columnId, Long cardId, Long userId) {
+        // EDITOR 이상 권한 필요
+        roleValidator.validateRole(boardId, BoardMemberRole.EDITOR);
+
+        deleteCard(columnId, cardId, userId);
+    }
+
+    /**
+     * 카드 삭제 (권한 검증 없음 - 내부 사용)
      */
     public void deleteCard(Long columnId, Long cardId, Long userId) {
         Card card = cardRepository.findByIdAndColumnId(cardId, columnId)

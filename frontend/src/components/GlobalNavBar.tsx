@@ -4,6 +4,7 @@ import { useAuth } from '@/context/AuthContext';
 import { memberService } from '@/services/memberService';
 import { InvitationResponseModal } from './InvitationResponseModal';
 import type { BoardMember } from '@/types/member';
+import { usePresenceTransition } from '@/hooks/usePresenceTransition';
 
 export const GlobalNavBar: React.FC = () => {
   const navigate = useNavigate();
@@ -16,6 +17,8 @@ export const GlobalNavBar: React.FC = () => {
   const [showInvitationModal, setShowInvitationModal] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const invitationsRef = useRef<HTMLDivElement>(null);
+  const menuTransition = usePresenceTransition(showMenu, 220);
+  const invitationsTransition = usePresenceTransition(showInvitations, 220);
 
   const handleLogout = async () => {
     try {
@@ -127,8 +130,8 @@ export const GlobalNavBar: React.FC = () => {
                 </button>
 
                 {/* Invitations Dropdown */}
-                {showInvitations && (
-                  <div className="absolute right-0 mt-2 w-96 bg-white rounded-lg shadow-lg border border-pastel-blue-200">
+                {invitationsTransition.shouldRender && (
+                  <div className={`dropdown-panel dropdown-panel-${invitationsTransition.stage} absolute right-0 mt-2 w-96 bg-white rounded-lg shadow-lg border border-pastel-blue-200`}>
                     <div className="px-4 py-3 border-b border-pastel-blue-100">
                       <p className="text-sm font-semibold text-pastel-blue-900">초대 목록</p>
                     </div>
@@ -181,8 +184,8 @@ export const GlobalNavBar: React.FC = () => {
                 </button>
 
               {/* Dropdown Menu */}
-              {showMenu && (
-                <div className="absolute right-0 mt-2 w-64 bg-white rounded-lg shadow-lg border border-pastel-blue-200 py-1">
+              {menuTransition.shouldRender && (
+                <div className={`dropdown-panel dropdown-panel-${menuTransition.stage} absolute right-0 mt-2 w-64 bg-white rounded-lg shadow-lg border border-pastel-blue-200 py-1`}>
                   <div className="px-4 py-2 border-b border-pastel-blue-100">
                     <p className="text-xs text-pastel-blue-600">로그인 정보</p>
                     <p className="text-sm font-semibold text-pastel-blue-900 truncate">{user.email}</p>

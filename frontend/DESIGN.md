@@ -331,6 +331,83 @@ hover:-translate-y-1  /* Lift effect */
 hover:shadow-glass-lg  /* Enhanced shadow */
 ```
 
+### Motion System
+
+모든 전환은 `src/index.css` 에 정의된 CSS 변수와 유틸 클래스를 사용해 일관성을 유지합니다.
+
+| Token | 역할 | 기본값 |
+| --- | --- | --- |
+| `--page-transition-duration` | 라우트 전환 길이 | `420ms` |
+| `--page-transition-distance` | 라우트 전환 이동 거리 | `12px` |
+| `--modal-transition-duration` | 모달 등장/퇴장 길이 | `320ms` |
+| `--panel-transition-duration` | 사이드 패널 슬라이드 길이 | `360ms` |
+| `--dropdown-transition-duration` | 드롭다운 표시 길이 | `220ms` |
+
+반드시 `prefers-reduced-motion` 미디어쿼리를 준수해서 모션을 비활성화합니다. 이미 각 유틸 클래스에 감지가 포함되어 있으므로 클래스를 재사용하기만 하면 됩니다.
+
+#### Page Transitions (Route-level)
+- `<App />` 에서 `page-transition-container`, `page-transition-layer`, `page-transition-enter/-exit` 클래스를 사용합니다.
+- 겹치는 두 화면을 절대 위치로 렌더링해 페이드+슬라이드 애니메이션을 만듭니다.
+- 커스텀 페이지 전환을 추가하려면 `--page-transition-*` 변수를 조정하세요.
+
+```tsx
+<div className={`page-transition-container`}>
+  <div className={`page-transition-layer page-transition-enter`}>
+    {/* Routes */}
+  </div>
+</div>
+```
+
+#### Modal Layer Animations
+- 오버레이에는 `modal-overlay modal-overlay-enter/-exit` 클래스를, 패널에는 `modal-panel modal-panel-enter/-exit` 클래스를 적용합니다.
+- React 측에서는 `useModalAnimation` 훅을 사용해 닫기 전에 `exit` 상태를 재생하고, 모션 축소 환경에서는 즉시 닫도록 처리합니다.
+
+```tsx
+const { stage, close } = useModalAnimation(onClose);
+
+return (
+  <div className={`modal-overlay modal-overlay-${stage}`}>
+    <div className={`modal-panel modal-panel-${stage}`}>
+      {/* content */}
+    </div>
+  </div>
+);
+```
+
+#### Sliding Panels (Activity/Members 등)
+- 사이드 패널에는 `panel-slide panel-slide-enter/-exit` 클래스를 부여하고, 표시 여부는 `usePresenceTransition` 훅으로 제어합니다.
+- 패널을 절대 위치 컨테이너 안에 넣고 `pointer-events` 를 관리해 메인 보드 상호작용을 유지합니다.
+
+```tsx
+const panel = usePresenceTransition(isOpen);
+
+return panel.shouldRender && (
+  <aside className={`panel-slide panel-slide-${panel.stage}`}>
+    {/* panel content */}
+  </aside>
+);
+```
+
+#### Dropdowns & Popovers
+- GNB 초대 목록, 사용자 메뉴 등은 `dropdown-panel dropdown-panel-enter/-exit` 클래스를 사용합니다.
+- 트리거 상태를 `usePresenceTransition` 으로 제어하면 스케일+페이드 애니메이션이 자동 적용됩니다.
+
+```tsx
+const dropdown = usePresenceTransition(isOpen, 220);
+
+return dropdown.shouldRender && (
+  <div className={`dropdown-panel dropdown-panel-${dropdown.stage}`}>
+    {/* dropdown content */}
+  </div>
+);
+```
+
+#### Motion Guidelines
+1. 꼭 필요한 경우에만 모션을 추가하고, UI 피드백을 향상시키는 데 집중합니다.
+2. 새 컴포넌트를 만들 때는 기존 유틸 클래스를 재사용하고, 동일한 지속 시간/이징을 유지합니다.
+3. 새 로딩 상태나 토스트에 모션이 필요하면 `DESIGN.md` 와 `index.css` 에 토큰을 먼저 정의한 뒤 컴포넌트에서 참조하세요.
+4. `prefers-reduced-motion` 사용자를 위한 애니메이션 비활성화를 항상 고려하세요 (기존 유틸을 쓰면 자동 지원).
+
 ## Accessibility
 
 ### Focus States

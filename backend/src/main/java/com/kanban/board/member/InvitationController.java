@@ -31,12 +31,9 @@ public class InvitationController {
     public ResponseEntity<List<BoardMemberResponse>> getPendingInvitations() {
         Long currentUserId = SecurityUtil.getCurrentUserId();
         log.info("Getting pending invitations for user ID: {}", currentUserId);
-        List<BoardMember> invitations = memberService.getPendingInvitations(currentUserId);
+        List<BoardMemberResponse> invitations = memberService.getPendingInvitations(currentUserId);
         log.info("Found {} pending invitations", invitations.size());
-        List<BoardMemberResponse> responses = invitations.stream()
-            .map(invitation -> BoardMemberResponse.fromWithInviter(invitation, invitation.getBoard().getOwner().getName()))
-            .toList();
-        return ResponseEntity.ok(responses);
+        return ResponseEntity.ok(invitations);
     }
 
     /**
@@ -47,8 +44,8 @@ public class InvitationController {
     public ResponseEntity<BoardMemberResponse> acceptInvitation(
         @RequestParam String token
     ) {
-        BoardMember member = memberService.acceptInvitation(token);
-        return ResponseEntity.ok(BoardMemberResponse.from(member));
+        BoardMemberResponse member = memberService.acceptInvitation(token);
+        return ResponseEntity.ok(member);
     }
 
     /**
@@ -72,16 +69,9 @@ public class InvitationController {
         Long currentUserId = SecurityUtil.getCurrentUserId();
         log.info("Debugging: Fetching all invitations for user: {}", currentUserId);
 
-        List<BoardMember> allInvitations = memberService.getAllInvitations(currentUserId);
+        List<BoardMemberResponse> allInvitations = memberService.getAllInvitations(currentUserId);
         log.info("Found {} invitations", allInvitations.size());
-        allInvitations.forEach(inv ->
-            log.info("Invitation - UserId: {}, BoardId: {}, Status: {}",
-                inv.getUser().getId(), inv.getBoard().getId(), inv.getInvitationStatus())
-        );
 
-        List<BoardMemberResponse> responses = allInvitations.stream()
-            .map(invitation -> BoardMemberResponse.fromWithInviter(invitation, invitation.getBoard().getOwner().getName()))
-            .toList();
-        return ResponseEntity.ok(responses);
+        return ResponseEntity.ok(allInvitations);
     }
 }

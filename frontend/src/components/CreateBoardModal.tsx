@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useBoard } from '@/context/BoardContext';
 import type { CreateBoardRequest } from '@/types/board';
+import { useModalAnimation } from '@/hooks/useModalAnimation';
 
 interface CreateBoardModalProps {
   workspaceId: number;
@@ -12,6 +13,7 @@ export const CreateBoardModal = ({
   onClose,
 }: CreateBoardModalProps) => {
   const { createBoard, loading, error, clearError } = useBoard();
+  const { stage, close } = useModalAnimation(onClose);
   const [formData, setFormData] = useState<CreateBoardRequest>({
     name: '',
     description: '',
@@ -43,7 +45,7 @@ export const CreateBoardModal = ({
     try {
       await createBoard(workspaceId, formData);
       // 성공하면 모달 닫기 - onClose에서 보드 페이지로 이동
-      setTimeout(() => onClose(), 300);
+      close();
     } catch (err) {
       console.error('Failed to create board:', err);
     }
@@ -59,14 +61,14 @@ export const CreateBoardModal = ({
 
   return (
     <div
-      className="fixed inset-0 bg-gradient-pastel/80 backdrop-blur-sm flex items-center justify-center z-50"
+      className={`modal-overlay modal-overlay-${stage} bg-gradient-pastel/80 backdrop-blur-sm`}
       onClick={(e) => {
         if (e.target === e.currentTarget) {
-          onClose();
+          close();
         }
       }}
     >
-      <div className="glass-light rounded-3xl shadow-glass-lg w-full max-w-md mx-4 p-8 border border-white/30">
+      <div className={`modal-panel modal-panel-${stage} glass-light rounded-3xl shadow-glass-lg w-full max-w-md mx-4 p-8 border border-white/30`}>
         <h2 className="text-2xl font-bold text-pastel-blue-900 mb-6">새 보드 만들기</h2>
 
         {error && (
@@ -135,7 +137,7 @@ export const CreateBoardModal = ({
           <div className="flex gap-3 pt-4">
             <button
               type="button"
-              onClick={onClose}
+              onClick={close}
               disabled={loading}
               className="flex-1 px-4 py-3 rounded-xl bg-white/30 hover:bg-white/40 backdrop-blur-sm text-pastel-blue-700 font-semibold border border-white/40 transition disabled:opacity-50"
             >

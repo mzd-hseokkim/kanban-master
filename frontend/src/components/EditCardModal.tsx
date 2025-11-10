@@ -1,7 +1,10 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Card } from '@/types/card';
 import { useCard } from '@/context/CardContext';
 import { ErrorNotification } from '@/components/ErrorNotification';
+import { userService } from '@/services/userService';
+import type { UserSearchResult } from '@/types/user';
+import { useModalAnimation } from '@/hooks/useModalAnimation';
 
 interface EditCardModalProps {
   card: Card;
@@ -29,15 +32,123 @@ export const EditCardModal: React.FC<EditCardModalProps> = ({
   onClose,
 }) => {
   const { updateCard } = useCard();
+  const { stage, close } = useModalAnimation(onClose);
   const [title, setTitle] = useState(card.title);
   const [description, setDescription] = useState(card.description || '');
   const [selectedColor, setSelectedColor] = useState(card.bgColor || cardColors[0].hex);
   const [priority, setPriority] = useState(card.priority || '');
-  const [assignee, setAssignee] = useState(card.assignee || '');
   const [dueDate, setDueDate] = useState(card.dueDate || '');
   const [isCompleted, setIsCompleted] = useState(card.isCompleted);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [assigneeSearchInput, setAssigneeSearchInput] = useState('');
+  const [assigneeResults, setAssigneeResults] = useState<UserSearchResult[]>([]);
+  const [selectedAssignee, setSelectedAssignee] = useState<UserSearchResult | null>(
+    card.assignee
+      ? {
+          id: -1,
+          name: card.assignee,
+          email: '',
+        }
+      : null,
+  );
+  const [assigneeSearching, setAssigneeSearching] = useState(false);
+  const [assigneeDropdownOpen, setAssigneeDropdownOpen] = useState(false);
+  const assigneeInputRef = useRef<HTMLInputElement>(null);
+  const assigneeInputContainerRef = useRef<HTMLDivElement>(null);
+  const assigneeDropdownRef = useRef<HTMLDivElement>(null);
+  const assigneeDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const performAssigneeSearch = async (keyword: string) => {
+    const trimmedKeyword = keyword.trim();
+    if (!trimmedKeyword) {
+      setAssigneeResults([]);
+      setAssigneeDropdownOpen(false);
+      return;
+    }
+
+    try {
+      setAssigneeSearching(true);
+      const results = await userService.searchUsers(trimmedKeyword);
+      setAssigneeResults(results);
+      setAssigneeDropdownOpen(results.length > 0);
+    } catch (err) {
+      console.error('Failed to search users:', err);
+      setAssigneeResults([]);
+      setAssigneeDropdownOpen(false);
+    } finally {
+      setAssigneeSearching(false);
+    }
+  };
+
+  const handleAssigneeInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setAssigneeSearchInput(value);
+
+    if (assigneeDebounceRef.current) {
+      clearTimeout(assigneeDebounceRef.current);
+    }
+
+    assigneeDebounceRef.current = setTimeout(() => {
+      performAssigneeSearch(value);
+    }, 300);
+  };
+
+  const handleSelectAssignee = (user: UserSearchResult) => {
+    setSelectedAssignee(user);
+    setAssigneeSearchInput('');
+    setAssigneeResults([]);
+    setAssigneeDropdownOpen(false);
+  };
+
+  const handleRemoveAssignee = () => {
+    setSelectedAssignee(null);
+    setAssigneeSearchInput('');
+    setAssigneeResults([]);
+    setAssigneeDropdownOpen(false);
+  };
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Node;
+      const clickedInsideDropdown =
+        assigneeDropdownRef.current && assigneeDropdownRef.current.contains(target);
+      const clickedInsideInput =
+        assigneeInputContainerRef.current && assigneeInputContainerRef.current.contains(target);
+
+      if (!clickedInsideDropdown && !clickedInsideInput) {
+        setAssigneeDropdownOpen(false);
+      }
+    };
+
+    if (assigneeDropdownOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [assigneeDropdownOpen]);
+
+  useEffect(() => {
+    return () => {
+      if (assigneeDebounceRef.current) {
+        clearTimeout(assigneeDebounceRef.current);
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    if (card.assignee) {
+      setSelectedAssignee({
+        id: -1,
+        name: card.assignee,
+        email: '',
+      });
+    } else {
+      setSelectedAssignee(null);
+    }
+  }, [card.assignee]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -56,15 +167,12 @@ export const EditCardModal: React.FC<EditCardModalProps> = ({
         description: description.trim() || undefined,
         bgColor: selectedColor || undefined,
         priority: priority || undefined,
-        assignee: assignee.trim() || undefined,
+        assignee: selectedAssignee?.name,
         dueDate: dueDate || undefined,
         isCompleted,
       });
 
-      // 모달 닫기 전에 약간의 딜레이
-      setTimeout(() => {
-        onClose();
-      }, 300);
+      close();
     } catch (err) {
       const message = err instanceof Error ? err.message : '카드 수정에 실패했습니다';
       setError(message);
@@ -77,14 +185,14 @@ export const EditCardModal: React.FC<EditCardModalProps> = ({
   return (
     <>
       <div
-        className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+        className={`modal-overlay modal-overlay-${stage} bg-black/40 backdrop-blur-sm p-4`}
         onClick={(e) => {
           if (e.target === e.currentTarget) {
-            onClose();
+            close();
           }
         }}
       >
-        <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 border border-pastel-blue-200">
+        <div className={`modal-panel modal-panel-${stage} bg-white rounded-2xl shadow-xl w-full max-w-md p-6 border border-pastel-blue-200`}>
           {/* 헤더 */}
           <h2 className="text-2xl font-bold text-pastel-blue-900 mb-1">카드 수정</h2>
           <p className="text-sm text-pastel-blue-600 mb-6">카드 정보를 수정하세요</p>
@@ -145,14 +253,64 @@ export const EditCardModal: React.FC<EditCardModalProps> = ({
               <label className="block text-sm font-semibold text-pastel-blue-900 mb-2">
                 할당자
               </label>
-              <input
-                type="text"
-                value={assignee}
-                onChange={(e) => setAssignee(e.target.value)}
-                placeholder="담당자 이름 (선택사항)"
-                className="w-full px-4 py-2 rounded-lg bg-pastel-blue-50 border border-pastel-blue-200 text-pastel-blue-900 placeholder-pastel-blue-400 focus:outline-none focus:ring-2 focus:ring-pastel-blue-400"
-                disabled={loading}
-              />
+              <div className="relative">
+                <div
+                  ref={assigneeInputContainerRef}
+                  className="flex items-center gap-2 px-3 py-2 rounded-lg bg-white border border-pastel-blue-200 focus-within:ring-2 focus-within:ring-pastel-blue-400"
+                >
+                  {selectedAssignee && (
+                    <div className="flex items-center gap-1 px-2 py-1 rounded bg-pastel-blue-100 text-pastel-blue-700 text-sm font-medium">
+                      <span>{selectedAssignee.name}</span>
+                      <button
+                        type="button"
+                        onClick={handleRemoveAssignee}
+                        disabled={loading}
+                        className="text-pastel-blue-500 hover:text-pastel-blue-700 disabled:opacity-50"
+                        aria-label="할당자 제거"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  )}
+
+                  <input
+                    ref={assigneeInputRef}
+                    type="text"
+                    value={assigneeSearchInput}
+                    onChange={handleAssigneeInputChange}
+                    onFocus={() => assigneeResults.length > 0 && setAssigneeDropdownOpen(true)}
+                    placeholder={selectedAssignee ? '' : '이름 또는 이메일로 검색 (선택사항)'}
+                    className="flex-1 min-w-0 bg-transparent text-pastel-blue-900 placeholder-pastel-blue-400 focus:outline-none"
+                    disabled={loading}
+                  />
+
+                  {assigneeSearching && (
+                    <div className="h-4 w-4 border-2 border-pastel-blue-400 border-t-transparent rounded-full animate-spin" />
+                  )}
+                </div>
+
+                {assigneeDropdownOpen && assigneeResults.length > 0 && (
+                  <div
+                    ref={assigneeDropdownRef}
+                    className="absolute top-full left-0 right-0 mt-1 rounded-lg border border-pastel-blue-200 bg-white shadow-lg max-h-48 overflow-y-auto z-10"
+                  >
+                    {assigneeResults.map((user) => (
+                      <button
+                        key={user.id}
+                        type="button"
+                        onClick={() => handleSelectAssignee(user)}
+                        className="w-full px-3 py-2 text-left hover:bg-pastel-blue-50 border-b border-pastel-blue-100 last:border-b-0 transition-colors"
+                      >
+                        <div className="font-medium text-pastel-blue-900">{user.name}</div>
+                        <div className="text-xs text-pastel-blue-500">{user.email}</div>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+              {assigneeSearchInput && assigneeResults.length === 0 && !assigneeSearching && (
+                <p className="text-xs text-pastel-blue-500 mt-1">검색 결과가 없습니다</p>
+              )}
             </div>
 
             {/* 마감 날짜 입력 */}
@@ -220,7 +378,7 @@ export const EditCardModal: React.FC<EditCardModalProps> = ({
             <div className="flex gap-3">
               <button
                 type="button"
-                onClick={onClose}
+                onClick={close}
                 disabled={loading}
                 className="flex-1 px-4 py-2 rounded-lg bg-pastel-blue-100 text-pastel-blue-700 font-semibold hover:bg-pastel-blue-200 transition disabled:opacity-50"
               >

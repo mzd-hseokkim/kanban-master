@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useColumn } from '@/context/ColumnContext';
 import { ErrorNotification } from '@/components/ErrorNotification';
+import { useModalAnimation } from '@/hooks/useModalAnimation';
 
 interface CreateColumnModalProps {
   workspaceId: number;
@@ -22,6 +23,7 @@ export const CreateColumnModal: React.FC<CreateColumnModalProps> = ({
   onClose,
 }) => {
   const { createColumn } = useColumn();
+  const { stage, close } = useModalAnimation(onClose);
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [selectedColor, setSelectedColor] = useState(columnColors[0].hex);
@@ -46,10 +48,7 @@ export const CreateColumnModal: React.FC<CreateColumnModalProps> = ({
         bgColor: selectedColor,
       });
 
-      // 모달 닫기 전에 약간의 딜레이
-      setTimeout(() => {
-        onClose();
-      }, 300);
+      close();
     } catch (err) {
       const message = err instanceof Error ? err.message : '칼럼 생성에 실패했습니다';
       setError(message);
@@ -62,14 +61,14 @@ export const CreateColumnModal: React.FC<CreateColumnModalProps> = ({
   return (
     <>
       <div
-        className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+        className={`modal-overlay modal-overlay-${stage} bg-black/40 backdrop-blur-sm p-4`}
         onClick={(e) => {
           if (e.target === e.currentTarget) {
-            onClose();
+            close();
           }
         }}
       >
-        <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 border border-pastel-blue-200">
+        <div className={`modal-panel modal-panel-${stage} bg-white rounded-2xl shadow-xl w-full max-w-md p-6 border border-pastel-blue-200`}>
           {/* 헤더 */}
           <h2 className="text-2xl font-bold text-pastel-blue-900 mb-1">칼럼 생성</h2>
           <p className="text-sm text-pastel-blue-600 mb-6">새로운 칼럼을 생성하세요</p>
@@ -140,7 +139,7 @@ export const CreateColumnModal: React.FC<CreateColumnModalProps> = ({
             <div className="flex gap-3">
               <button
                 type="button"
-                onClick={onClose}
+                onClick={close}
                 disabled={loading}
                 className="flex-1 px-4 py-2 rounded-lg bg-pastel-blue-100 text-pastel-blue-700 font-semibold hover:bg-pastel-blue-200 transition disabled:opacity-50"
               >

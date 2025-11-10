@@ -11,6 +11,7 @@ import { InviteMemberModal } from '@/components/InviteMemberModal';
 import { GlobalNavBar } from '@/components/GlobalNavBar';
 import { Footer } from '@/components/Footer';
 import type { Board } from '@/types/board';
+import { usePresenceTransition } from '@/hooks/usePresenceTransition';
 
 const BoardDetailPage = () => {
   const navigate = useNavigate();
@@ -24,6 +25,8 @@ const BoardDetailPage = () => {
   const [showActivityPanel, setShowActivityPanel] = useState(false);
   const { columns, loading: columnsLoading, loadColumns } = useColumn();
   const { cards } = useCard();
+  const membersPanelTransition = usePresenceTransition(showMembersPanel);
+  const activityPanelTransition = usePresenceTransition(showActivityPanel);
 
   // 지연된 카드 개수 계산 (Due Date가 오늘보다 이전인 미완료 카드)
   const overdueCardCount = useMemo(() => {
@@ -166,14 +169,6 @@ const BoardDetailPage = () => {
             >
               👥 멤버
             </button>
-            {showMembersPanel && (
-              <button
-                onClick={() => setShowInviteModal(true)}
-                className="px-3 py-2 rounded-lg bg-pastel-blue-500 text-white hover:bg-pastel-blue-600 transition font-medium text-sm"
-              >
-                + 초대
-              </button>
-            )}
           </div>
         </div>
       </header>
@@ -228,42 +223,58 @@ const BoardDetailPage = () => {
             </div>
 
             {/* Overlay Panels */}
-            {showMembersPanel && (
-              <aside className="absolute top-0 right-0 h-full w-80 glass shadow-glass-lg rounded-2xl border border-white/30 z-20 overflow-hidden">
-                <div className="h-full flex flex-col">
-                  <div className="px-4 py-3 border-b border-white/20 flex items-center justify-between">
-                    <span className="font-semibold text-pastel-blue-800">멤버</span>
-                    <button
-                      onClick={() => setShowMembersPanel(false)}
-                      className="text-pastel-blue-500 hover:text-pastel-blue-700 text-sm font-medium"
-                    >
-                      닫기
-                    </button>
+            {membersPanelTransition.shouldRender && (
+              <div className="absolute top-0 right-0 h-full z-20 pointer-events-none">
+                <aside
+                  className={`panel-slide panel-slide-${membersPanelTransition.stage} h-full w-80 glass shadow-glass-lg rounded-2xl border border-white/30 overflow-hidden pointer-events-auto`}
+                >
+                  <div className="h-full flex flex-col">
+                    <div className="px-4 py-3 border-b border-white/20 flex items-center justify-between">
+                      <span className="font-semibold text-pastel-blue-800">멤버</span>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => setShowInviteModal(true)}
+                          className="px-3 py-1.5 rounded-lg bg-pastel-blue-500 text-white hover:bg-pastel-blue-600 transition font-medium text-sm"
+                        >
+                          + 초대
+                        </button>
+                        <button
+                          onClick={() => setShowMembersPanel(false)}
+                          className="text-pastel-blue-500 hover:text-pastel-blue-700 text-sm font-medium"
+                        >
+                          닫기
+                        </button>
+                      </div>
+                    </div>
+                    <div className="flex-1 overflow-auto">
+                      <BoardMemberTable boardId={Number(boardId)} />
+                    </div>
                   </div>
-                  <div className="flex-1 overflow-auto">
-                    <BoardMemberTable boardId={Number(boardId)} />
-                  </div>
-                </div>
-              </aside>
+                </aside>
+              </div>
             )}
 
-            {showActivityPanel && (
-              <aside className="absolute top-0 right-0 h-full w-96 glass shadow-glass-lg rounded-2xl border border-white/30 z-10 overflow-hidden translate-x-2 lg:translate-x-4">
-                <div className="h-full flex flex-col">
-                  <div className="px-4 py-3 border-b border-white/20 flex items-center justify-between">
-                    <span className="font-semibold text-pastel-blue-800">활동 로그</span>
-                    <button
-                      onClick={() => setShowActivityPanel(false)}
-                      className="text-pastel-blue-500 hover:text-pastel-blue-700 text-sm font-medium"
-                    >
-                      닫기
-                    </button>
+            {activityPanelTransition.shouldRender && (
+              <div className="absolute top-0 right-0 h-full z-10 pointer-events-none translate-x-2 lg:translate-x-4">
+                <aside
+                  className={`panel-slide panel-slide-${activityPanelTransition.stage} h-full w-96 glass shadow-glass-lg rounded-2xl border border-white/30 overflow-hidden pointer-events-auto`}
+                >
+                  <div className="h-full flex flex-col">
+                    <div className="px-4 py-3 border-b border-white/20 flex items-center justify-between">
+                      <span className="font-semibold text-pastel-blue-800">활동 로그</span>
+                      <button
+                        onClick={() => setShowActivityPanel(false)}
+                        className="text-pastel-blue-500 hover:text-pastel-blue-700 text-sm font-medium"
+                      >
+                        닫기
+                      </button>
+                    </div>
+                    <div className="flex-1 overflow-auto">
+                      <ActivityTimeline boardId={Number(boardId)} />
+                    </div>
                   </div>
-                  <div className="flex-1 overflow-auto">
-                    <ActivityTimeline boardId={Number(boardId)} />
-                  </div>
-                </div>
-              </aside>
+                </aside>
+              </div>
             )}
           </div>
         </div>

@@ -3,11 +3,69 @@ import { useNavigate } from 'react-router-dom';
 import { Board } from '@/types/board';
 import { useBoard } from '@/context/BoardContext';
 import { BoardActionsMenu } from './BoardActionsMenu';
+import { useModalAnimation } from '@/hooks/useModalAnimation';
 
 interface BoardCardProps {
   board: Board;
   workspaceId: number;
 }
+
+interface DeleteBoardConfirmModalProps {
+  onCancel: () => void;
+  onConfirm: () => Promise<void>;
+}
+
+const DeleteBoardConfirmModal = ({ onCancel, onConfirm }: DeleteBoardConfirmModalProps) => {
+  const { stage, close } = useModalAnimation(onCancel);
+  const [loading, setLoading] = useState(false);
+
+  const handleConfirmClick = async () => {
+    try {
+      setLoading(true);
+      await onConfirm();
+      close();
+    } catch (err) {
+      console.error('Failed to delete board:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div
+      className={`modal-overlay modal-overlay-${stage} bg-black bg-opacity-50`}
+      onClick={(e) => {
+        if (e.target === e.currentTarget) {
+          close();
+        }
+      }}
+    >
+      <div
+        className={`modal-panel modal-panel-${stage} glass-light rounded-2xl p-8 shadow-glass-lg max-w-sm w-full mx-4 border border-white/30`}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <h2 className="text-xl font-bold text-pastel-blue-900 mb-2">보드를 삭제하시겠어요?</h2>
+        <p className="text-pastel-blue-600 mb-6 text-sm">30일 이내에 복구할 수 있습니다.</p>
+        <div className="flex gap-3">
+          <button
+            onClick={close}
+            disabled={loading}
+            className="flex-1 px-4 py-2 rounded-xl bg-white/30 text-pastel-blue-700 font-semibold hover:bg-white/40 border border-white/40 backdrop-blur-sm transition disabled:opacity-50"
+          >
+            취소
+          </button>
+          <button
+            onClick={handleConfirmClick}
+            disabled={loading}
+            className="flex-1 px-4 py-2 rounded-xl bg-pastel-pink-500 text-white font-semibold hover:bg-pastel-pink-600 transition disabled:opacity-50"
+          >
+            {loading ? '삭제 중...' : '삭제'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 export const BoardCard = ({ board, workspaceId }: BoardCardProps) => {
   const navigate = useNavigate();
@@ -19,9 +77,9 @@ export const BoardCard = ({ board, workspaceId }: BoardCardProps) => {
   const handleDelete = async () => {
     try {
       await deleteBoard(workspaceId, board.id);
-      setShowDeleteConfirm(false);
     } catch (err) {
       console.error('Failed to delete board:', err);
+      throw err;
     }
   };
 
@@ -95,35 +153,10 @@ export const BoardCard = ({ board, workspaceId }: BoardCardProps) => {
       </div>
 
       {showDeleteConfirm && (
-        <div
-          onClick={(e) => {
-            e.stopPropagation();
-            setShowDeleteConfirm(false);
-          }}
-          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
-        >
-          <div
-            onClick={(e) => e.stopPropagation()}
-            className="glass-light rounded-2xl p-8 shadow-glass-lg max-w-sm w-full mx-4 border border-white/30"
-          >
-            <h2 className="text-xl font-bold text-pastel-blue-900 mb-2">보드를 삭제하시겠어요?</h2>
-            <p className="text-pastel-blue-600 mb-6 text-sm">30일 이내에 복구할 수 있습니다.</p>
-            <div className="flex gap-3">
-              <button
-                onClick={() => setShowDeleteConfirm(false)}
-                className="flex-1 px-4 py-2 rounded-xl bg-white/30 text-pastel-blue-700 font-semibold hover:bg-white/40 border border-white/40 backdrop-blur-sm transition"
-              >
-                취소
-              </button>
-              <button
-                onClick={handleDelete}
-                className="flex-1 px-4 py-2 rounded-xl bg-pastel-pink-500 text-white font-semibold hover:bg-pastel-pink-600 transition"
-              >
-                삭제
-              </button>
-            </div>
-          </div>
-        </div>
+        <DeleteBoardConfirmModal
+          onCancel={() => setShowDeleteConfirm(false)}
+          onConfirm={handleDelete}
+        />
       )}
     </div>
   );

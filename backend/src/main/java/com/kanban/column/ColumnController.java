@@ -1,7 +1,5 @@
 package com.kanban.column;
 
-import com.kanban.board.member.BoardMemberRole;
-import com.kanban.board.member.BoardMemberRoleValidator;
 import com.kanban.column.dto.ColumnResponse;
 import com.kanban.column.dto.CreateColumnRequest;
 import com.kanban.column.dto.UpdateColumnRequest;
@@ -24,7 +22,6 @@ import java.util.List;
 public class ColumnController {
 
     private final ColumnService columnService;
-    private final BoardMemberRoleValidator roleValidator;
 
     /**
      * 특정 보드의 모든 칼럼 조회
@@ -35,11 +32,8 @@ public class ColumnController {
         @PathVariable Long workspaceId,
         @PathVariable Long boardId
     ) {
-        List<BoardColumn> columns = columnService.getColumnsByBoard(boardId);
-        List<ColumnResponse> responses = columns.stream()
-            .map(ColumnResponse::from)
-            .toList();
-        return ResponseEntity.ok(responses);
+        List<ColumnResponse> columns = columnService.getColumnsByBoard(boardId);
+        return ResponseEntity.ok(columns);
     }
 
     /**
@@ -52,8 +46,8 @@ public class ColumnController {
         @PathVariable Long boardId,
         @PathVariable Long columnId
     ) {
-        BoardColumn column = columnService.getColumn(columnId);
-        return ResponseEntity.ok(ColumnResponse.from(column));
+        ColumnResponse column = columnService.getColumn(columnId);
+        return ResponseEntity.ok(column);
     }
 
     /**
@@ -66,18 +60,15 @@ public class ColumnController {
         @PathVariable Long boardId,
         @Valid @RequestBody CreateColumnRequest request
     ) {
-        // EDITOR 이상 권한 필요
-        roleValidator.validateRole(boardId, BoardMemberRole.EDITOR);
-
         Long userId = SecurityUtil.getCurrentUserId();
-        BoardColumn column = columnService.createColumn(
+        ColumnResponse column = columnService.createColumnWithValidation(
             boardId,
             request.getName(),
             request.getDescription(),
             userId
         );
         return ResponseEntity.status(HttpStatus.CREATED)
-            .body(ColumnResponse.from(column));
+            .body(column);
     }
 
     /**
@@ -91,17 +82,15 @@ public class ColumnController {
         @PathVariable Long columnId,
         @Valid @RequestBody UpdateColumnRequest request
     ) {
-        // EDITOR 이상 권한 필요
-        roleValidator.validateRole(boardId, BoardMemberRole.EDITOR);
-
         Long userId = SecurityUtil.getCurrentUserId();
-        BoardColumn column;
+        ColumnResponse column;
 
         // position이 포함된 경우 위치 업데이트
         if (request.getPosition() != null) {
-            column = columnService.updateColumnPosition(boardId, columnId, request.getPosition(), userId);
+            column = columnService.updateColumnPositionWithValidation(boardId, columnId, request.getPosition(), userId);
         } else {
-            column = columnService.updateColumn(
+            column = columnService.updateColumnWithValidation(
+                boardId,
                 columnId,
                 request.getName(),
                 request.getDescription(),
@@ -109,7 +98,7 @@ public class ColumnController {
             );
         }
 
-        return ResponseEntity.ok(ColumnResponse.from(column));
+        return ResponseEntity.ok(column);
     }
 
     /**
@@ -122,11 +111,8 @@ public class ColumnController {
         @PathVariable Long boardId,
         @PathVariable Long columnId
     ) {
-        // EDITOR 이상 권한 필요
-        roleValidator.validateRole(boardId, BoardMemberRole.EDITOR);
-
         Long userId = SecurityUtil.getCurrentUserId();
-        columnService.deleteColumn(boardId, columnId, userId);
+        columnService.deleteColumnWithValidation(boardId, columnId, userId);
         return ResponseEntity.noContent().build();
     }
 }

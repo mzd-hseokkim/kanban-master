@@ -47,10 +47,10 @@ public class MemberService {
      * @param userId  초대받을 사용자 ID
      * @param invitedByUserId 초대하는 사용자 ID
      * @param role    초대할 권한
-     * @return 생성된 BoardMember
+     * @return 생성된 BoardMemberResponse
      */
     @Transactional
-    public BoardMember inviteMember(Long boardId, Long userId, Long invitedByUserId, BoardMemberRole role) {
+    public BoardMemberResponse inviteMember(Long boardId, Long userId, Long invitedByUserId, BoardMemberRole role) {
         Board board = boardRepository.findById(boardId)
             .orElseThrow(() -> new IllegalArgumentException("보드를 찾을 수 없습니다: " + boardId));
 
@@ -91,7 +91,7 @@ public class MemberService {
         );
 
         log.info("Member invited - Board: {}, User: {}, Role: {}", boardId, userId, role);
-        return savedMember;
+        return BoardMemberResponse.from(savedMember);
     }
 
     /**
@@ -100,7 +100,7 @@ public class MemberService {
      * @param token 초대 토큰
      */
     @Transactional
-    public BoardMember acceptInvitation(String token) {
+    public BoardMemberResponse acceptInvitation(String token) {
         BoardMember member = boardMemberRepository.findByInvitationToken(token)
             .orElseThrow(() -> new IllegalArgumentException("초대 토큰이 유효하지 않습니다"));
 
@@ -108,7 +108,7 @@ public class MemberService {
         if (member.getInvitationStatus() == InvitationStatus.ACCEPTED) {
             log.debug("Invitation already accepted (idempotent request) - Board: {}, User: {}",
                 member.getBoard().getId(), member.getUser().getId());
-            return member;
+            return BoardMemberResponse.from(member);
         }
 
         // DECLINED나 EXPIRED 상태인 경우는 에러
@@ -129,7 +129,7 @@ public class MemberService {
         );
 
         log.info("Invitation accepted - Board: {}, User: {}", member.getBoard().getId(), member.getUser().getId());
-        return savedMember;
+        return BoardMemberResponse.from(savedMember);
     }
 
     /**
@@ -169,7 +169,7 @@ public class MemberService {
      * @param changedByUserId 권한을 변경하는 사용자 ID
      */
     @Transactional
-    public BoardMember changeMemberRole(Long boardId, Long memberId, BoardMemberRole newRole, Long changedByUserId) {
+    public BoardMemberResponse changeMemberRole(Long boardId, Long memberId, BoardMemberRole newRole, Long changedByUserId) {
         BoardMember member = boardMemberRepository.findByBoardIdAndUserId(boardId, memberId)
             .orElseThrow(() -> new IllegalArgumentException("멤버를 찾을 수 없습니다"));
 
@@ -190,7 +190,7 @@ public class MemberService {
         );
 
         log.info("Member role changed - Board: {}, User: {}, NewRole: {}", boardId, memberId, newRole);
-        return savedMember;
+        return BoardMemberResponse.from(savedMember);
     }
 
     /**
@@ -226,22 +226,27 @@ public class MemberService {
     /**
      * 보드의 모든 멤버 조회
      */
-    public List<BoardMember> getBoardMembers(Long boardId) {
-        return boardMemberRepository.findByBoardIdOrderByCreatedAtAsc(boardId);
+    public List<BoardMemberResponse> getBoardMembers(Long boardId) {
+        return boardMemberRepository.findByBoardIdOrderByCreatedAtAsc(boardId).stream()
+                .map(BoardMemberResponse::from)
+                .collect(java.util.stream.Collectors.toList());
     }
 
     /**
      * 보드의 모든 수락된 멤버 조회
      */
-    public List<BoardMember> getBoardAcceptedMembers(Long boardId) {
-        return boardMemberRepository.findByBoardIdAndInvitationStatusOrderByCreatedAtAsc(boardId, InvitationStatus.ACCEPTED);
+    public List<BoardMemberResponse> getBoardAcceptedMembers(Long boardId) {
+        return boardMemberRepository.findByBoardIdAndInvitationStatusOrderByCreatedAtAsc(boardId, InvitationStatus.ACCEPTED).stream()
+                .map(BoardMemberResponse::from)
+                .collect(java.util.stream.Collectors.toList());
     }
 
     /**
      * 보드의 멤버 페이지네이션 조회
      */
-    public Page<BoardMember> getBoardMembersPage(Long boardId, Pageable pageable) {
-        return boardMemberRepository.findByBoardIdOrderByCreatedAtAsc(boardId, pageable);
+    public Page<BoardMemberResponse> getBoardMembersPage(Long boardId, Pageable pageable) {
+        return boardMemberRepository.findByBoardIdOrderByCreatedAtAsc(boardId, pageable)
+                .map(BoardMemberResponse::from);
     }
 
     /**
@@ -255,16 +260,19 @@ public class MemberService {
     /**
      * 멤버 정보 조회
      */
-    public BoardMember getMember(Long boardId, Long userId) {
-        return boardMemberRepository.findByBoardIdAndUserId(boardId, userId)
+    public BoardMemberResponse getMember(Long boardId, Long userId) {
+        BoardMember member = boardMemberRepository.findByBoardIdAndUserId(boardId, userId)
             .orElseThrow(() -> new IllegalArgumentException("멤버를 찾을 수 없습니다"));
+        return BoardMemberResponse.from(member);
     }
 
     /**
      * 사용자의 모든 보드 멤버십 조회
      */
-    public List<BoardMember> getUserBoardMemberships(Long userId) {
-        return boardMemberRepository.findByUserIdAndInvitationStatus(userId, InvitationStatus.ACCEPTED);
+    public List<BoardMemberResponse> getUserBoardMemberships(Long userId) {
+        return boardMemberRepository.findByUserIdAndInvitationStatus(userId, InvitationStatus.ACCEPTED).stream()
+                .map(BoardMemberResponse::from)
+                .collect(java.util.stream.Collectors.toList());
     }
 
     /**
@@ -292,14 +300,18 @@ public class MemberService {
     /**
      * 사용자의 대기 중인 초대 조회
      */
-    public List<BoardMember> getPendingInvitations(Long userId) {
-        return boardMemberRepository.findPendingInvitationsByUserId(userId, InvitationStatus.PENDING);
+    public List<BoardMemberResponse> getPendingInvitations(Long userId) {
+        return boardMemberRepository.findPendingInvitationsByUserId(userId, InvitationStatus.PENDING).stream()
+                .map(BoardMemberResponse::from)
+                .collect(java.util.stream.Collectors.toList());
     }
 
     /**
      * 사용자의 모든 초대 조회 (디버깅용)
      */
-    public List<BoardMember> getAllInvitations(Long userId) {
-        return boardMemberRepository.findAllInvitationsByUserId(userId);
+    public List<BoardMemberResponse> getAllInvitations(Long userId) {
+        return boardMemberRepository.findAllInvitationsByUserId(userId).stream()
+                .map(BoardMemberResponse::from)
+                .collect(java.util.stream.Collectors.toList());
     }
 }

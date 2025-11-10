@@ -1,13 +1,20 @@
 package com.kanban.activity;
 
+import com.kanban.activity.dto.ActivityResponse;
+import com.kanban.board.Board;
+import com.kanban.board.BoardRepository;
+import com.kanban.board.member.BoardMemberRepository;
+import com.kanban.board.member.InvitationStatus;
 import com.kanban.user.User;
 import com.kanban.user.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 /**
  * 활동 로그 서비스
@@ -21,6 +28,8 @@ public class ActivityService {
 
     private final ActivityRepository activityRepository;
     private final UserRepository userRepository;
+    private final BoardRepository boardRepository;
+    private final BoardMemberRepository boardMemberRepository;
 
     /**
      * 활동 로그 기록
@@ -31,10 +40,10 @@ public class ActivityService {
      * @param actorId    수행 사용자 ID
      * @param message    활동 메시지
      * @param payload    추가 데이터 (JSON)
-     * @return 저장된 Activity
+     * @return 저장된 ActivityResponse
      */
     @Transactional
-    public Activity recordActivity(
+    public ActivityResponse recordActivity(
         ActivityScopeType scopeType,
         Long scopeId,
         ActivityEventType eventType,
@@ -56,14 +65,14 @@ public class ActivityService {
 
         Activity savedActivity = activityRepository.save(activity);
         log.info("Activity recorded - Type: {}, Scope: {}, Actor: {}", eventType, scopeType, actorId);
-        return savedActivity;
+        return ActivityResponse.from(savedActivity);
     }
 
     /**
      * 활동 로그 기록 (payload 없음)
      */
     @Transactional
-    public Activity recordActivity(
+    public ActivityResponse recordActivity(
         ActivityScopeType scopeType,
         Long scopeId,
         ActivityEventType eventType,
@@ -81,8 +90,9 @@ public class ActivityService {
      * @param pageable  페이지네이션 정보
      * @return 활동 로그 페이지
      */
-    public Page<Activity> getActivities(ActivityScopeType scopeType, Long scopeId, Pageable pageable) {
-        return activityRepository.findByScopeTypeAndScopeIdOrderByCreatedAtDesc(scopeType, scopeId, pageable);
+    public Page<ActivityResponse> getActivities(ActivityScopeType scopeType, Long scopeId, Pageable pageable) {
+        return activityRepository.findByScopeTypeAndScopeIdOrderByCreatedAtDesc(scopeType, scopeId, pageable)
+                .map(ActivityResponse::from);
     }
 
     /**
@@ -94,13 +104,14 @@ public class ActivityService {
      * @param pageable  페이지네이션 정보
      * @return 활동 로그 페이지
      */
-    public Page<Activity> getActivitiesByActor(
+    public Page<ActivityResponse> getActivitiesByActor(
         ActivityScopeType scopeType,
         Long scopeId,
         Long actorId,
         Pageable pageable
     ) {
-        return activityRepository.findByActorActivity(scopeType, scopeId, actorId, pageable);
+        return activityRepository.findByActorActivity(scopeType, scopeId, actorId, pageable)
+                .map(ActivityResponse::from);
     }
 
     /**
@@ -110,8 +121,9 @@ public class ActivityService {
      * @param pageable 페이지네이션 정보
      * @return 활동 로그 페이지
      */
-    public Page<Activity> getUserActivities(Long actorId, Pageable pageable) {
-        return activityRepository.findByActorIdOrderByCreatedAtDesc(actorId, pageable);
+    public Page<ActivityResponse> getUserActivities(Long actorId, Pageable pageable) {
+        return activityRepository.findByActorIdOrderByCreatedAtDesc(actorId, pageable)
+                .map(ActivityResponse::from);
     }
 
     /**
@@ -121,18 +133,50 @@ public class ActivityService {
      * @param pageable 페이지네이션 정보
      * @return 활동 로그 페이지
      */
-    public Page<Activity> getBoardActivities(Long boardId, Pageable pageable) {
-        return activityRepository.findAllBoardActivities(boardId, pageable);
+    public Page<ActivityResponse> getBoardActivities(Long boardId, Pageable pageable) {
+        return activityRepository.findAllBoardActivities(boardId, pageable)
+                .map(ActivityResponse::from);
     }
 
     /**
      * 특정 활동 로그 조회
      *
      * @param id 활동 ID
-     * @return Activity
+     * @return ActivityResponse
      */
-    public Activity getActivity(Long id) {
-        return activityRepository.findById(id)
+    public ActivityResponse getActivity(Long id) {
+        Activity activity = activityRepository.findById(id)
             .orElseThrow(() -> new IllegalArgumentException("Activity not found: " + id));
+        return ActivityResponse.from(activity);
+    }
+
+    /**
+     * 보드 활동 조회 (권한 검증 포함)
+     * 보드의 Owner이거나 ACCEPTED 멤버만 접근 가능
+     *
+     * @param boardId     보드 ID
+     * @param currentUserId 현재 사용자 ID
+     * @param pageable    페이지네이션 정보
+     * @return 활동 로그 페이지
+     */
+    public Page<ActivityResponse> getBoardActivitiesWithValidation(Long boardId, Long currentUserId, Pageable pageable) {
+        if (currentUserId == null) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "인증 정보가 없습니다");
+        }
+
+        // 보드 존재 확인 및 owner 확인
+        Board board = boardRepository.findById(boardId)
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "보드를 찾을 수 없습니다"));
+
+        // Owner이면 무조건 접근 가능
+        if (!board.getOwner().getId().equals(currentUserId)) {
+            // Owner가 아니면 ACCEPTED 멤버인지 확인
+            var memberOptional = boardMemberRepository.findByBoardIdAndUserId(boardId, currentUserId);
+            if (memberOptional.isEmpty() || memberOptional.get().getInvitationStatus() != InvitationStatus.ACCEPTED) {
+                throw new ResponseStatusException(HttpStatus.FORBIDDEN, "이 보드에 접근할 권한이 없습니다");
+            }
+        }
+
+        return getBoardActivities(boardId, pageable);
     }
 }

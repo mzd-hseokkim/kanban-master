@@ -359,7 +359,37 @@ public class BoardService {
 - Use `@Transactional(readOnly = true)` at class level
 - Override with `@Transactional` for write operations
 - Business logic belongs here, not in controllers
-- Convert entities to DTOs before returning
+- **MUST return DTOs, never JPA entities** (applies to all return types: single objects, Lists, and Page<T>)
+- Convert entities to DTOs within @Transactional methods using `.map()` or `.stream().map()`
+
+**DTO Return Pattern Examples**:
+```java
+// ✅ Correct: Service returns DTO
+public BoardMemberResponse inviteMember(Long boardId, Long userId, Long invitedByUserId, BoardMemberRole role) {
+    // ... entity creation logic ...
+    BoardMember savedMember = boardMemberRepository.save(member);
+    return BoardMemberResponse.from(savedMember);  // Convert to DTO
+}
+
+// ❌ Incorrect: Service returns Entity
+public BoardMember inviteMember(Long boardId, Long userId, Long invitedByUserId, BoardMemberRole role) {
+    BoardMember savedMember = boardMemberRepository.save(member);
+    return savedMember;  // WRONG: Returning entity directly
+}
+
+// ✅ Correct: List<DTO>
+public List<BoardMemberResponse> getBoardMembers(Long boardId) {
+    return boardMemberRepository.findByBoardIdOrderByCreatedAtAsc(boardId).stream()
+            .map(BoardMemberResponse::from)
+            .collect(Collectors.toList());
+}
+
+// ✅ Correct: Page<DTO>
+public Page<ActivityResponse> getActivities(ActivityScopeType scopeType, Long scopeId, Pageable pageable) {
+    return activityRepository.findByScopeTypeAndScopeIdOrderByCreatedAtDesc(scopeType, scopeId, pageable)
+            .map(ActivityResponse::from);  // Map inside @Transactional method
+}
+```
 
 #### Repository Layer
 ```java

@@ -9,6 +9,12 @@
 - **State Management**: React hooks + Context API
 - **HTTP Client**: Fetch API / Axios
 
+## Design Reference
+
+- **Visual + Motion System**: 모든 UI/애니메이션 작업 전에 `frontend/DESIGN.md` 를 확인하세요. 색상, 글래스 스타일, 라우트/모달/패널/드롭다운 전환 토큰(`--page-transition-duration`, `--modal-transition-duration`, 등)과 전용 유틸 클래스(`page-transition-*`, `modal-overlay-*`, `panel-slide-*`, `dropdown-panel-*`)가 정의되어 있습니다.
+- 새로운 컴포넌트나 인터랙션을 추가할 때는 해당 문서에 있는 토큰/패턴을 재사용하고, 필요한 경우 먼저 `DESIGN.md` 와 `src/index.css` 에 토큰을 추가한 뒤 컴포넌트에서 참조합니다.
+- `prefers-reduced-motion` 을 지원하기 위해 기존 `useModalAnimation`, `usePresenceTransition`, `usePrefersReducedMotion` 훅을 활용하고, 모션 규칙을 따릅니다.
+
 ## Project Structure
 
 ```
