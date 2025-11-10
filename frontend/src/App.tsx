@@ -1,5 +1,5 @@
 import { Fragment, useEffect, useState } from 'react';
-import { Navigate, Route, Routes, useLocation, type Location } from 'react-router-dom';
+import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
 import { BoardProvider } from '@/context/BoardContext';
 import { ColumnProvider } from '@/context/ColumnContext';
@@ -9,41 +9,32 @@ import LoginPage from '@/pages/LoginPage';
 import { SignupPage } from '@/pages/SignupPage';
 import BoardsPage from '@/pages/BoardsPage';
 import BoardDetailPage from '@/pages/BoardDetailPage';
-import { usePrefersReducedMotion } from '@/hooks/usePrefersReducedMotion';
+import { GlobalNavBar } from '@/components/GlobalNavBar';
+import { Footer } from '@/components/Footer';
+import { useAuth } from '@/context/AuthContext';
 
-const TRANSITION_DURATION = 750;
+const AUTH_CHROME_EXCLUDED_PATHS = ['/login', '/signup'];
 
 const App = () => {
   const location = useLocation();
   const [displayLocation, setDisplayLocation] = useState(location);
-  const [prevLocation, setPrevLocation] = useState<Location | null>(null);
-  const [isTransitioning, setIsTransitioning] = useState(false);
-  const prefersReducedMotion = usePrefersReducedMotion();
+  const [prevLocation, setPrevLocation] = useState(location);
+  const [isAnimating, setIsAnimating] = useState(false);
+  const { isAuthenticated } = useAuth();
+  const shouldShowAppChrome = isAuthenticated && !AUTH_CHROME_EXCLUDED_PATHS.includes(location.pathname);
 
   useEffect(() => {
-    const isSamePath = location.pathname === displayLocation.pathname;
-    const isSameSearch = location.search === displayLocation.search;
-
-    if (!isSamePath || !isSameSearch) {
+    if (location !== displayLocation) {
       setPrevLocation(displayLocation);
       setDisplayLocation(location);
-      setIsTransitioning(true);
+      setIsAnimating(true);
     }
   }, [location, displayLocation]);
 
-  useEffect(() => {
-    if (!isTransitioning) {
-      return undefined;
-    }
-
-    const duration = prefersReducedMotion ? 0 : TRANSITION_DURATION;
-    const timeout = window.setTimeout(() => {
-      setPrevLocation(null);
-      setIsTransitioning(false);
-    }, duration);
-
-    return () => window.clearTimeout(timeout);
-  }, [isTransitioning, prefersReducedMotion]);
+  const handleAnimationEnd = () => {
+    setIsAnimating(false);
+    setPrevLocation(location);
+  };
 
   const routes = (
     <Fragment>
@@ -89,26 +80,23 @@ const App = () => {
     <BoardProvider>
       <ColumnProvider>
         <CardProvider>
-          <div className={`page-transition-container${isTransitioning ? ' page-transition-container-active' : ''}`}>
-            {prevLocation && (
-              <div className="page-transition-layer page-transition-exit">
-                <Routes location={prevLocation}>
+          <div className="min-h-screen bg-gradient-pastel flex flex-col">
+            {shouldShowAppChrome && <GlobalNavBar />}
+            <div className="flex-1 relative min-h-0 overflow-hidden">
+              {isAnimating && prevLocation && (
+                <div className="page-transition-wrapper fadeOut" onAnimationEnd={handleAnimationEnd}>
+                  <Routes location={prevLocation}>
+                    {routes}
+                  </Routes>
+                </div>
+              )}
+              <div className={`page-transition-wrapper ${isAnimating ? 'fadeIn' : ''}`}>
+                <Routes location={displayLocation}>
                   {routes}
                 </Routes>
               </div>
-            )}
-            <div
-              className={`page-transition-layer${
-                isTransitioning ? ' page-transition-enter' : ' page-transition-layer-static'
-              }`}
-            >
-              <Routes
-                location={displayLocation}
-                key={`${displayLocation.pathname}${displayLocation.search}`}
-              >
-                {routes}
-              </Routes>
             </div>
+            {shouldShowAppChrome && <Footer />}
           </div>
         </CardProvider>
       </ColumnProvider>

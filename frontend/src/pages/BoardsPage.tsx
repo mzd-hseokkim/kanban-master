@@ -3,13 +3,17 @@ import { useAuth } from '@/context/AuthContext';
 import { useBoard } from '@/context/BoardContext';
 import { CreateBoardModal } from '@/components/CreateBoardModal';
 import { BoardCard } from '@/components/BoardCard';
-import { GlobalNavBar } from '@/components/GlobalNavBar';
-import { Footer } from '@/components/Footer';
+import { TemplateGallery } from '@/components/TemplateGallery';
+import { SaveAsTemplateModal } from '@/components/SaveAsTemplateModal';
+import { Board } from '@/types/board';
 
 export const BoardsPage = () => {
   const { user } = useAuth();
   const { boards, loading, error, loadBoards, clearError } = useBoard();
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showTemplateGallery, setShowTemplateGallery] = useState(false);
+  const [showSaveAsTemplate, setShowSaveAsTemplate] = useState(false);
+  const [selectedBoard, setSelectedBoard] = useState<Board | null>(null);
   const [selectedWorkspaceId, setSelectedWorkspaceId] = useState<number | null>(null);
   const [selectedWorkspaceName, setSelectedWorkspaceName] = useState<string>('');
 
@@ -31,16 +35,14 @@ export const BoardsPage = () => {
 
   if (!selectedWorkspaceId) {
     return (
-      <div className="flex items-center justify-center h-full">
+      <div className="h-full bg-gradient-pastel flex items-center justify-center">
         <p className="text-pastel-blue-400">워크스페이스를 찾을 수 없습니다</p>
       </div>
     );
   }
 
   return (
-    <div className="h-screen flex flex-col bg-gradient-pastel">
-      <GlobalNavBar />
-
+    <div className="h-full flex flex-col bg-gradient-pastel">
       {/* Header */}
       <header className="glass-light shadow-glass flex-shrink-0">
         <div className="w-full max-w-[95vw] mx-auto py-6 px-4 sm:px-6 lg:px-8 flex justify-between items-center">
@@ -50,12 +52,20 @@ export const BoardsPage = () => {
               보드 관리
             </h1>
           </div>
-          <button
-            onClick={() => setShowCreateModal(true)}
-            className="px-4 py-2 rounded-lg bg-pastel-blue-500 text-white font-semibold hover:bg-pastel-blue-600 transition"
-          >
-            + 새 보드
-          </button>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setShowTemplateGallery(true)}
+              className="px-4 py-2 rounded-lg bg-white text-pastel-blue-600 font-semibold hover:bg-pastel-blue-50 transition border border-pastel-blue-200"
+            >
+              📋 템플릿
+            </button>
+            <button
+              onClick={() => setShowCreateModal(true)}
+              className="px-4 py-2 rounded-lg bg-pastel-blue-500 text-white font-semibold hover:bg-pastel-blue-600 transition"
+            >
+              + 새 보드
+            </button>
+          </div>
         </div>
       </header>
 
@@ -86,7 +96,15 @@ export const BoardsPage = () => {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {boards.map(board => (
-                <BoardCard key={board.id} board={board} workspaceId={selectedWorkspaceId} />
+                <BoardCard
+                  key={board.id}
+                  board={board}
+                  workspaceId={selectedWorkspaceId}
+                  onSaveAsTemplate={(board) => {
+                    setSelectedBoard(board);
+                    setShowSaveAsTemplate(true);
+                  }}
+                />
               ))}
             </div>
           )}
@@ -105,7 +123,35 @@ export const BoardsPage = () => {
         />
       )}
 
-      <Footer />
+      {/* Template Gallery */}
+      {showTemplateGallery && selectedWorkspaceId && (
+        <TemplateGallery
+          workspaceId={selectedWorkspaceId}
+          onClose={() => setShowTemplateGallery(false)}
+          onApply={() => {
+            setShowTemplateGallery(false);
+            // 보드 목록 새로고침
+            loadBoards(selectedWorkspaceId);
+          }}
+        />
+      )}
+
+      {/* Save As Template Modal */}
+      {showSaveAsTemplate && selectedBoard && selectedWorkspaceId && (
+        <SaveAsTemplateModal
+          workspaceId={selectedWorkspaceId}
+          boardId={selectedBoard.id}
+          boardName={selectedBoard.name}
+          onClose={() => {
+            setShowSaveAsTemplate(false);
+            setSelectedBoard(null);
+          }}
+          onSuccess={() => {
+            setShowSaveAsTemplate(false);
+            setSelectedBoard(null);
+          }}
+        />
+      )}
     </div>
   );
 };

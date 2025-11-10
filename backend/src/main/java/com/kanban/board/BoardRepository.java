@@ -1,5 +1,6 @@
 package com.kanban.board;
 
+import com.kanban.board.dto.BoardResponse;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -80,4 +81,15 @@ public interface BoardRepository extends JpaRepository<Board, Long> {
         @Param("workspaceId") Long workspaceId,
         @Param("name") String name
     );
+
+    /**
+     * DTO 형태로 보드 조회 (워크스페이스/소유자 정보 포함)
+     */
+    @Query("SELECT new com.kanban.board.dto.BoardResponse(" +
+           "b.id, b.workspace.id, b.owner.id, b.owner.name, b.name, b.description, " +
+           "b.themeColor, b.icon, b.status, b.deletedAt, b.createdAt, b.updatedAt, " +
+           "NULL, NULL) " +
+           "FROM Board b " +
+           "WHERE b.id = :boardId")
+    Optional<BoardResponse> findBoardResponseById(@Param("boardId") Long boardId);
 }

@@ -7,6 +7,7 @@ interface BoardActionsMenuProps {
   workspaceId: number;
   onClose: () => void;
   onDeleteClick: () => void;
+  onSaveAsTemplateClick: () => void;
 }
 
 export const BoardActionsMenu = ({
@@ -14,6 +15,7 @@ export const BoardActionsMenu = ({
   workspaceId,
   onClose,
   onDeleteClick,
+  onSaveAsTemplateClick,
 }: BoardActionsMenuProps) => {
   const { archiveBoard } = useBoard();
   const [loading, setLoading] = useState(false);
@@ -47,6 +49,16 @@ export const BoardActionsMenu = ({
         className="w-full text-left px-4 py-2 text-sm text-pastel-blue-700 hover:bg-white/30 transition disabled:opacity-50"
       >
         📦 {board.status === 'ARCHIVED' ? 'Unarchive' : 'Archive'}
+      </button>
+      <button
+        onClick={() => {
+          onClose();
+          onSaveAsTemplateClick();
+        }}
+        disabled={loading}
+        className="w-full text-left px-4 py-2 text-sm text-pastel-blue-700 hover:bg-white/30 transition disabled:opacity-50"
+      >
+        📋 템플릿으로 저장
       </button>
       <button
         onClick={() => {

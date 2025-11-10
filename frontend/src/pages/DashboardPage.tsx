@@ -4,8 +4,6 @@ import { useBoard } from '@/context/BoardContext';
 import { useAuth } from '@/context/AuthContext';
 import { CreateBoardModal } from '@/components/CreateBoardModal';
 import { BoardCard } from '@/components/BoardCard';
-import { GlobalNavBar } from '@/components/GlobalNavBar';
-import { Footer } from '@/components/Footer';
 import { CardHighlightSection } from './DashboardPage/components/CardHighlightSection';
 import { DashboardEmptyState } from './DashboardPage/components/DashboardEmptyState';
 import { DashboardLoadingBanner } from './DashboardPage/components/DashboardLoadingBanner';
@@ -42,9 +40,7 @@ const DashboardPage = () => {
   const shouldShowEmptyState = !boardsLoading && boards.length === 0 && !hasHighlightCards;
 
   return (
-    <div className="h-screen bg-gradient-pastel flex flex-col overflow-hidden">
-      <GlobalNavBar />
-
+    <div className="h-full bg-gradient-pastel flex flex-col overflow-hidden">
       <main className="flex-1 overflow-hidden flex flex-col relative">
         <DashboardLoadingBanner isVisible={cardsLoading} />
         <div className="w-full max-w-[95vw] mx-auto px-4 sm:px-6 lg:px-8 flex-1 overflow-hidden flex flex-col py-4">
@@ -104,8 +100,6 @@ const DashboardPage = () => {
           }}
         />
       )}
-
-      <Footer />
     </div>
   );
 };

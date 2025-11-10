@@ -134,9 +134,9 @@ export const CardItem: React.FC<CardItemProps> = ({
   };
 
   const priorityColors: { [key: string]: string } = {
-    HIGH: 'bg-pastel-pink-100 text-pastel-pink-700',
-    MEDIUM: 'bg-pastel-yellow-100 text-pastel-yellow-700',
-    LOW: 'bg-pastel-green-100 text-pastel-green-700',
+    HIGH: 'bg-pastel-pink-200 text-pastel-pink-800 border border-pastel-pink-300',
+    MEDIUM: 'bg-pastel-yellow-200 text-pastel-yellow-800 border border-pastel-yellow-300',
+    LOW: 'bg-pastel-green-200 text-pastel-green-800 border border-pastel-green-300',
   };
 
   const getPriorityClass = (priority?: string) => {
@@ -195,7 +195,7 @@ export const CardItem: React.FC<CardItemProps> = ({
       >
         {/* Title and Menu */}
         <div className="flex items-start justify-between gap-2 mb-2">
-          <div className="flex items-center gap-2 flex-1">
+          <div className="flex items-center gap-2 flex-1 min-w-0">
             {card.bgColor && (
               <div
                 className="w-3 h-3 rounded-full flex-shrink-0"
@@ -215,11 +215,16 @@ export const CardItem: React.FC<CardItemProps> = ({
             >
               {card.isCompleted && <svg className="w-4 h-4 text-pastel-green-500" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg>}
             </div>
-            <h4 className={`font-semibold text-sm flex-1 break-words transition ${
+            <h4 className={`font-semibold text-sm flex-1 min-w-0 truncate transition ${
               card.isCompleted
                 ? 'text-pastel-blue-400 line-through'
                 : 'text-pastel-blue-900'
             }`}>{card.title}</h4>
+            {card.priority && (
+              <span className={`text-xs px-2 py-0.5 rounded font-medium flex-shrink-0 ${getPriorityClass(card.priority)}`}>
+                {card.priority}
+              </span>
+            )}
           </div>
           <div className="relative flex-shrink-0" ref={menuRef}>
             <button
@@ -294,18 +299,13 @@ export const CardItem: React.FC<CardItemProps> = ({
         )}
 
         {/* Badges */}
-        <div className="flex items-center gap-2 flex-wrap mb-2">
-          {card.priority && (
-            <span className={`text-xs px-2 py-1 rounded font-medium ${getPriorityClass(card.priority)}`}>
-              {card.priority}
-            </span>
-          )}
-          {card.assignee && (
+        {card.assignee && (
+          <div className="flex items-center gap-2 flex-wrap mb-2">
             <span className="text-xs bg-pastel-blue-100 text-pastel-blue-700 px-2 py-1 rounded">
               👤 {card.assignee}
             </span>
-          )}
-        </div>
+          </div>
+        )}
 
         {/* Due Date - 완료된 카드는 평범한 스타일로만 표시 */}
         {dueDateInfo && (

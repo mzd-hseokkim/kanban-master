@@ -206,7 +206,7 @@ export const ColumnCard: React.FC<ColumnCardProps> = ({ column, workspaceId, boa
 
               <button
                 onClick={() => setShowCreateCardModal(true)}
-                className="w-full rounded-2xl border-4 border-dashed border-white/70 bg-white/10 text-pastel-blue-800 font-semibold text-base min-h-28 flex items-center justify-center hover:bg-white/20 hover:border-white transition"
+                className="w-full rounded-2xl border-4 border-dashed border-white/70 bg-white/10 text-pastel-blue-800 font-semibold text-base min-h-28 flex items-center justify-center hover:bg-white/20 hover:border-black transition"
               >
                 + 카드 추가
               </button>

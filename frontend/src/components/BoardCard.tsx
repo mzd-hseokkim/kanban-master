@@ -8,12 +8,12 @@ import {
   modalOverlayClass,
   modalPanelClass,
   modalSecondaryButtonClass,
-  modalPrimaryButtonClass,
 } from '@/styles/modalStyles';
 
 interface BoardCardProps {
   board: Board;
   workspaceId: number;
+  onSaveAsTemplate?: (board: Board) => void;
 }
 
 interface DeleteBoardConfirmModalProps {
@@ -73,7 +73,7 @@ const DeleteBoardConfirmModal = ({ onCancel, onConfirm }: DeleteBoardConfirmModa
   );
 };
 
-export const BoardCard = ({ board, workspaceId }: BoardCardProps) => {
+export const BoardCard = ({ board, workspaceId, onSaveAsTemplate }: BoardCardProps) => {
   const navigate = useNavigate();
   const { deleteBoard } = useBoard();
   const [showMenu, setShowMenu] = useState(false);
@@ -148,6 +148,10 @@ export const BoardCard = ({ board, workspaceId }: BoardCardProps) => {
               workspaceId={workspaceId}
               onClose={() => setShowMenu(false)}
               onDeleteClick={() => { setShowMenu(false); setShowDeleteConfirm(true); }}
+              onSaveAsTemplateClick={() => {
+                setShowMenu(false);
+                onSaveAsTemplate?.(board);
+              }}
             />
           )}
         </div>

@@ -2,8 +2,6 @@ import { useState, useCallback } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useColumn } from '@/context/ColumnContext';
 import { useCard } from '@/context/CardContext';
-import { GlobalNavBar } from '@/components/GlobalNavBar';
-import { Footer } from '@/components/Footer';
 import { usePresenceTransition } from '@/hooks/usePresenceTransition';
 import type { CardSearchResult } from '@/types/search';
 import { BoardHeader } from './BoardDetailPage/components/BoardHeader';
@@ -69,9 +67,7 @@ const BoardDetailPage = () => {
   }
 
   return (
-    <div className="bg-gradient-pastel flex flex-col h-screen">
-      <GlobalNavBar />
-
+    <div className="bg-gradient-pastel flex flex-col h-full">
       <BoardHeader
         boardName={board.name}
         overdueCardCount={overdueCardCount}
@@ -128,8 +124,6 @@ const BoardDetailPage = () => {
         onCloseSearchPanel={() => setShowSearchPanel(false)}
         onCardSelect={handleCardSelect}
       />
-
-      <Footer />
     </div>
   );
 };

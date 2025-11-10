@@ -5,364 +5,331 @@
 html,
 body,
 #root {
-  height: 100%;
-  width: 100%;
-  margin: 0;
-  padding: 0;
+    height: 100%;
+    width: 100%;
+    margin: 0;
+    padding: 0;
 }
 
 :root {
-  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
-  line-height: 1.5;
-  font-weight: 400;
+    font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+    line-height: 1.5;
+    font-weight: 400;
 
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  --page-transition-duration: 750ms;
-  --page-transition-distance: 12px;
-  --page-transition-easing: cubic-bezier(0.22, 1, 0.36, 1);
-  --page-transition-background: #f5f6ff;
-  --modal-transition-duration: 320ms;
-  --modal-transition-easing: cubic-bezier(0.16, 1, 0.3, 1);
-  --panel-transition-duration: 360ms;
-  --panel-transition-easing: cubic-bezier(0.22, 1, 0.36, 1);
-  --dropdown-transition-duration: 220ms;
-  --dropdown-transition-easing: cubic-bezier(0.22, 1, 0.36, 1);
+    font-synthesis: none;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    --page-transition-duration: 250ms;
+    --page-transition-distance: 100vw;
+    --page-transition-easing: cubic-bezier(0.22, 1, 0.36, 1);
+    --page-transition-background: #f5f6ff;
+    --modal-transition-duration: 320ms;
+    --modal-transition-easing: cubic-bezier(0.16, 1, 0.3, 1);
+    --panel-transition-duration: 360ms;
+    --panel-transition-easing: cubic-bezier(0.22, 1, 0.36, 1);
+    --dropdown-transition-duration: 220ms;
+    --dropdown-transition-easing: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 input:not([type='checkbox']):not([type='radio']):not(.borderless-input):not(:focus),
 textarea:not(.borderless-input):not(:focus),
 select:not(.borderless-input):not(:focus) {
-  border-width: 1px;
-  border-style: solid;
-  border-color: rgba(0, 0, 0, 0.2);
-  border-radius: 0.75rem;
+    border-width: 1px;
+    border-style: solid;
+    border-color: rgba(0, 0, 0, 0.2);
+    border-radius: 0.75rem;
 }
 
 @layer utilities {
-  /* Glassmorphism - Light */
-  .glass {
-    background: rgba(255, 255, 255, 0.25);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.18);
-  }
+    /* Glassmorphism - Light */
+    .glass {
+        background: rgba(255, 255, 255, 0.25);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.18);
+    }
 
-  .glass-light {
-    background: rgba(255, 255, 255, 0.35);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border: 1px solid rgba(255, 255, 255, 0.25);
-  }
+    .glass-light {
+        background: rgba(255, 255, 255, 0.35);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.25);
+    }
 
-  .glass-heavy {
-    background: rgba(255, 255, 255, 0.45);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-    border: 1px solid rgba(255, 255, 255, 0.3);
-  }
+    .glass-heavy {
+        background: rgba(255, 255, 255, 0.45);
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+    }
 
-  /* Glassmorphism - Dark */
-  .glass-dark {
-    background: rgba(0, 0, 0, 0.15);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-  }
+    /* Glassmorphism - Dark */
+    .glass-dark {
+        background: rgba(0, 0, 0, 0.15);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+    }
 
-  /* Hover Effects */
-  .glass-hover {
-    transition: all 0.3s ease;
-  }
+    /* Hover Effects */
+    .glass-hover {
+        transition: all 0.3s ease;
+    }
 
-  .glass-hover:hover {
-    background: rgba(255, 255, 255, 0.35);
-    border: 1px solid rgba(255, 255, 255, 0.25);
-    transform: translateY(-2px);
-  }
+    .glass-hover:hover {
+        background: rgba(255, 255, 255, 0.35);
+        border: 1px solid rgba(255, 255, 255, 0.25);
+        transform: translateY(-2px);
+    }
 }
 
-.page-transition-container {
-  position: relative;
-  height: 100%;
-  width: 100%;
-  overflow: hidden;
-  background: var(--page-transition-background);
+.page-transition-wrapper {
+    position: absolute;
+    inset: 0;
+    height: 100%;
+    width: 100%;
 }
 
-.page-transition-container-active {
-  isolation: isolate;
+.page-transition-wrapper.fadeIn {
+    animation: pageSlideIn var(--page-transition-duration) var(--page-transition-easing) forwards;
+    z-index: 2;
 }
 
-.page-transition-layer {
-  position: absolute;
-  inset: 0;
-  height: 100%;
-  width: 100%;
-}
-
-.page-transition-layer-static {
-  position: relative;
-  inset: auto;
-}
-
-.page-transition-enter {
-  animation: pageFadeIn var(--page-transition-duration) var(--page-transition-easing) forwards;
-  z-index: 2;
-}
-
-.page-transition-exit {
-  animation: pageFadeOut var(--page-transition-duration) var(--page-transition-easing) forwards;
-  z-index: 1;
-  pointer-events: none;
+.page-transition-wrapper.fadeOut {
+    animation: pageSlideOut var(--page-transition-duration) var(--page-transition-easing) forwards;
+    z-index: 1;
+    pointer-events: none;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .page-transition-enter,
-  .page-transition-exit {
-    animation: none !important;
-  }
+    .page-transition-wrapper.fadeIn,
+    .page-transition-wrapper.fadeOut {
+        animation: none !important;
+    }
 }
 
-@keyframes pageFadeIn {
-  0% {
-    opacity: 0;
-    transform: translateX(calc(var(--page-transition-distance) * -1.25));
-    filter: blur(6px);
-  }
+@keyframes pageSlideIn {
+    from {
+        opacity: 0;
+        transform: translateX(calc(var(--page-transition-distance) * -1));
+        filter: blur(6px);
+    }
 
-  20% {
-    opacity: 0.05;
-  }
-
-  40% {
-    opacity: 0.25;
-  }
-
-  100% {
-    opacity: 1;
-    transform: translateX(0);
-    filter: blur(0);
-  }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+        filter: blur(0);
+    }
 }
 
-@keyframes pageFadeOut {
-  0% {
-    opacity: 1;
-    transform: translateX(0);
-    filter: blur(0);
-  }
+@keyframes pageSlideOut {
+    from {
+        opacity: 1;
+        transform: translateX(0);
+        filter: blur(0);
+    }
 
-  50% {
-    opacity: 0.9;
-  }
-
-  70% {
-    opacity: 0.35;
-  }
-
-  100% {
-    opacity: 0;
-    transform: translateX(calc(var(--page-transition-distance) * 1));
-    filter: blur(6px);
-  }
+    to {
+        opacity: 0;
+        transform: translateX(calc(var(--page-transition-distance) * 1));
+        filter: blur(6px);
+    }
 }
 
 .modal-overlay {
-  position: fixed;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 1.5rem;
-  z-index: 60;
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1.5rem;
+    z-index: 60;
 }
 
 .modal-panel {
-  position: relative;
-  z-index: 2;
+    position: relative;
+    z-index: 2;
 }
 
 .modal-overlay-enter {
-  animation: modalOverlayFadeIn var(--modal-transition-duration) var(--modal-transition-easing) forwards;
+    animation: modalOverlayFadeIn var(--modal-transition-duration) var(--modal-transition-easing) forwards;
 }
 
 .modal-overlay-exit {
-  animation: modalOverlayFadeOut var(--modal-transition-duration) var(--modal-transition-easing) forwards;
+    animation: modalOverlayFadeOut var(--modal-transition-duration) var(--modal-transition-easing) forwards;
 }
 
 .modal-panel-enter {
-  animation: modalPanelFadeIn var(--modal-transition-duration) var(--modal-transition-easing) forwards;
+    animation: modalPanelFadeIn var(--modal-transition-duration) var(--modal-transition-easing) forwards;
 }
 
 .modal-panel-exit {
-  animation: modalPanelFadeOut var(--modal-transition-duration) var(--modal-transition-easing) forwards;
-  pointer-events: none;
+    animation: modalPanelFadeOut var(--modal-transition-duration) var(--modal-transition-easing) forwards;
+    pointer-events: none;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .modal-overlay-enter,
-  .modal-overlay-exit,
-  .modal-panel-enter,
-  .modal-panel-exit {
-    animation: none !important;
-  }
+    .modal-overlay-enter,
+    .modal-overlay-exit,
+    .modal-panel-enter,
+    .modal-panel-exit {
+        animation: none !important;
+    }
 }
 
 @keyframes modalOverlayFadeIn {
-  from {
-    opacity: 0;
-  }
+    from {
+        opacity: 0;
+    }
 
-  to {
-    opacity: 1;
-  }
+    to {
+        opacity: 1;
+    }
 }
 
 @keyframes modalOverlayFadeOut {
-  from {
-    opacity: 1;
-  }
+    from {
+        opacity: 1;
+    }
 
-  to {
-    opacity: 0;
-  }
+    to {
+        opacity: 0;
+    }
 }
 
 @keyframes modalPanelFadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(20px) scale(0.98);
-  }
+    from {
+        opacity: 0;
+        transform: translateY(20px) scale(0.98);
+    }
 
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
 }
 
 @keyframes modalPanelFadeOut {
-  from {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
+    from {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
 
-  to {
-    opacity: 0;
-    transform: translateY(-10px) scale(0.98);
-  }
+    to {
+        opacity: 0;
+        transform: translateY(-10px) scale(0.98);
+    }
 }
 
 .panel-slide {
-  will-change: transform, opacity;
+    will-change: transform, opacity;
 }
 
 .panel-slide-enter {
-  animation: panelSlideIn var(--panel-transition-duration) var(--panel-transition-easing) forwards;
+    animation: panelSlideIn var(--panel-transition-duration) var(--panel-transition-easing) forwards;
 }
 
 .panel-slide-exit {
-  animation: panelSlideOut var(--panel-transition-duration) var(--panel-transition-easing) forwards;
-  pointer-events: none;
+    animation: panelSlideOut var(--panel-transition-duration) var(--panel-transition-easing) forwards;
+    pointer-events: none;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .panel-slide-enter,
-  .panel-slide-exit {
-    animation: none !important;
-  }
+    .panel-slide-enter,
+    .panel-slide-exit {
+        animation: none !important;
+    }
 }
 
 @keyframes panelSlideIn {
-  from {
-    opacity: 0;
-    transform: translateX(2.5rem);
-  }
+    from {
+        opacity: 0;
+        transform: translateX(2.5rem);
+    }
 
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
 }
 
 @keyframes panelSlideOut {
-  from {
-    opacity: 1;
-    transform: translateX(0);
-  }
+    from {
+        opacity: 1;
+        transform: translateX(0);
+    }
 
-  to {
-    opacity: 0;
-    transform: translateX(3rem);
-  }
+    to {
+        opacity: 0;
+        transform: translateX(3rem);
+    }
 }
 
 .dropdown-panel {
-  will-change: opacity, transform;
-  transform-origin: top right;
+    will-change: opacity, transform;
+    transform-origin: top right;
 }
 
 .dropdown-panel-enter {
-  animation: dropdownFadeIn var(--dropdown-transition-duration) var(--dropdown-transition-easing) forwards;
+    animation: dropdownFadeIn var(--dropdown-transition-duration) var(--dropdown-transition-easing) forwards;
 }
 
 .dropdown-panel-exit {
-  animation: dropdownFadeOut var(--dropdown-transition-duration) var(--dropdown-transition-easing) forwards;
-  pointer-events: none;
+    animation: dropdownFadeOut var(--dropdown-transition-duration) var(--dropdown-transition-easing) forwards;
+    pointer-events: none;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .dropdown-panel-enter,
-  .dropdown-panel-exit {
-    animation: none !important;
-  }
+    .dropdown-panel-enter,
+    .dropdown-panel-exit {
+        animation: none !important;
+    }
 }
 
 @keyframes dropdownFadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(0.25rem) scale(0.98);
-  }
+    from {
+        opacity: 0;
+        transform: translateY(0.25rem) scale(0.98);
+    }
 
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
 }
 
 @keyframes dropdownFadeOut {
-  from {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
+    from {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
 
-  to {
-    opacity: 0;
-    transform: translateY(0.35rem) scale(0.98);
-  }
+    to {
+        opacity: 0;
+        transform: translateY(0.35rem) scale(0.98);
+    }
 }
 
 .card-enter {
-  animation: cardEnter var(--modal-transition-duration) var(--modal-transition-easing) forwards;
-  will-change: opacity, transform;
+    animation: cardEnter var(--modal-transition-duration) var(--modal-transition-easing) forwards;
+    will-change: opacity, transform;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .card-enter {
-    animation: none !important;
-  }
+    .card-enter {
+        animation: none !important;
+    }
 }
 
 @keyframes cardEnter {
-  from {
-    opacity: 0;
-    transform: translateY(0.75rem);
-  }
+    from {
+        opacity: 0;
+        transform: translateY(0.75rem);
+    }
 
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }

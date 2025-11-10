@@ -3,6 +3,7 @@ package com.kanban.board;
 import com.kanban.entity.BaseEntity;
 import com.kanban.user.User;
 import com.kanban.workspace.Workspace;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -20,6 +21,7 @@ import java.util.List;
         @Index(name = "idx_boards_updated_at", columnList = "updated_at")
     }
 )
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 @Getter
 @Setter
 @Builder

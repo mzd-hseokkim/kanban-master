@@ -39,7 +39,7 @@ const cardColors = [
 ];
 
 export const EditCardModal: React.FC<EditCardModalProps> = ({ card, workspaceId, boardId, columnId, onClose }) => {
-    const { updateCard } = useCard();
+    const { updateCard, loadCards } = useCard();
     const { stage, close } = useModalAnimation(onClose);
     const [title, setTitle] = useState(card.title);
     const [description, setDescription] = useState(card.description || '');
@@ -170,6 +170,14 @@ export const EditCardModal: React.FC<EditCardModalProps> = ({ card, workspaceId,
             setLoading(true);
             setError(null);
 
+            // 라벨 업데이트 먼저 수행 (변경이 있을 경우에만)
+            const currentLabelIds = card.labels?.map((l) => l.id).sort() || [];
+            const newLabelIds = [...selectedLabelIds].sort();
+            if (JSON.stringify(currentLabelIds) !== JSON.stringify(newLabelIds)) {
+                await labelService.assignLabelsToCard(card.id, selectedLabelIds);
+            }
+
+            // 기본 정보 업데이트 후 전체 데이터 새로고침
             await updateCard(workspaceId, boardId, columnId, card.id, {
                 title: title.trim(),
                 description: description.trim() || undefined,
@@ -180,12 +188,8 @@ export const EditCardModal: React.FC<EditCardModalProps> = ({ card, workspaceId,
                 isCompleted,
             });
 
-            // 라벨 업데이트 (변경이 있을 경우에만)
-            const currentLabelIds = card.labels?.map((l) => l.id).sort() || [];
-            const newLabelIds = [...selectedLabelIds].sort();
-            if (JSON.stringify(currentLabelIds) !== JSON.stringify(newLabelIds)) {
-                await labelService.assignLabelsToCard(card.id, selectedLabelIds);
-            }
+            // 모든 변경사항이 반영된 최신 데이터를 가져옴
+            await loadCards(workspaceId, boardId, columnId);
 
             close();
         } catch (err) {

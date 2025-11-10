@@ -8,7 +8,6 @@ import {
   modalOverlayClass,
   modalPanelClass,
   modalLabelClass,
-  modalInputClass,
   modalSelectClass,
   modalTextareaClass,
   modalSecondaryButtonClass,

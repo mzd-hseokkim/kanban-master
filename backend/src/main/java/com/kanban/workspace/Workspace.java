@@ -1,6 +1,7 @@
 package com.kanban.workspace;
 
 import com.kanban.user.User;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -14,6 +15,7 @@ import java.time.LocalDateTime;
         @Index(name = "idx_workspaces_slug", columnList = "slug")
     }
 )
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 @Getter
 @Setter
 @Builder

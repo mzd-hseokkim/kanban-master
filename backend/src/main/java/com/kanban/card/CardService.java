@@ -227,6 +227,11 @@ public class CardService {
 
         String cardTitle = card.getTitle();
         int deletedPosition = card.getPosition();
+
+        // 카드 삭제 전에 관련된 모든 카드-라벨 연결을 먼저 삭제
+        cardLabelRepository.deleteByCardId(cardId);
+
+        // 카드 삭제
         cardRepository.delete(card);
 
         // 삭제된 카드 이후의 카드들의 position을 업데이트
