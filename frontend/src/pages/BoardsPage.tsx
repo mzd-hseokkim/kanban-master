@@ -43,7 +43,7 @@ export const BoardsPage = () => {
 
       {/* Header */}
       <header className="glass-light shadow-glass flex-shrink-0">
-        <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8 flex justify-between items-center">
+        <div className="w-full max-w-[95vw] mx-auto py-6 px-4 sm:px-6 lg:px-8 flex justify-between items-center">
           <div>
             <p className="text-sm text-pastel-blue-500 mb-1">{selectedWorkspaceName}</p>
             <h1 className="text-3xl font-bold text-pastel-blue-900">
@@ -61,7 +61,7 @@ export const BoardsPage = () => {
 
       {/* Main Content */}
       <main className="flex-1 overflow-auto p-6">
-        <div className="max-w-7xl mx-auto">
+        <div className="w-full max-w-[95vw] mx-auto">
           {error && (
             <div className="mb-4 p-4 rounded-lg bg-pastel-pink-100 text-pastel-pink-700 flex justify-between items-center">
               <span>{error}</span>

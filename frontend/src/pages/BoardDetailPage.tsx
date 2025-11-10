@@ -1,5 +1,5 @@
-import { useEffect, useState, useMemo } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useEffect, useState, useMemo, useCallback } from 'react';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { boardService } from '@/services/boardService';
 import { useColumn } from '@/context/ColumnContext';
 import { useCard } from '@/context/CardContext';
@@ -8,14 +8,18 @@ import { CreateColumnModal } from '@/components/CreateColumnModal';
 import { ActivityTimeline } from '@/components/ActivityTimeline';
 import { BoardMemberTable } from '@/components/BoardMemberTable';
 import { InviteMemberModal } from '@/components/InviteMemberModal';
+import { LabelManager } from '@/components/label/LabelManager';
+import { SearchPanel } from '@/components/SearchPanel';
 import { GlobalNavBar } from '@/components/GlobalNavBar';
 import { Footer } from '@/components/Footer';
 import type { Board } from '@/types/board';
+import type { CardSearchResult } from '@/types/search';
 import { usePresenceTransition } from '@/hooks/usePresenceTransition';
 
 const BoardDetailPage = () => {
   const navigate = useNavigate();
   const { workspaceId, boardId } = useParams<{ workspaceId: string; boardId: string }>();
+  const [searchParams] = useSearchParams();
   const [board, setBoard] = useState<Board | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -23,10 +27,24 @@ const BoardDetailPage = () => {
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [showMembersPanel, setShowMembersPanel] = useState(false);
   const [showActivityPanel, setShowActivityPanel] = useState(false);
+  const [showLabelManager, setShowLabelManager] = useState(false);
+  const [showSearchPanel, setShowSearchPanel] = useState(false);
   const { columns, loading: columnsLoading, loadColumns } = useColumn();
   const { cards } = useCard();
   const membersPanelTransition = usePresenceTransition(showMembersPanel);
   const activityPanelTransition = usePresenceTransition(showActivityPanel);
+  const targetCardIdParam = searchParams.get('cardId');
+  const targetColumnIdParam = searchParams.get('columnId');
+  const parsedCardId = targetCardIdParam !== null ? Number(targetCardIdParam) : null;
+  const parsedColumnId = targetColumnIdParam !== null ? Number(targetColumnIdParam) : null;
+  const autoOpenCardId = parsedCardId !== null && !Number.isNaN(parsedCardId) ? parsedCardId : null;
+  const autoOpenColumnId = parsedColumnId !== null && !Number.isNaN(parsedColumnId) ? parsedColumnId : null;
+  const [inlineCardFocus, setInlineCardFocus] = useState<{ cardId: number; columnId: number } | null>(null);
+  const effectiveAutoOpenCardId = inlineCardFocus?.cardId ?? autoOpenCardId;
+  const effectiveAutoOpenColumnId = inlineCardFocus?.columnId ?? autoOpenColumnId;
+  const handleInlineAutoOpenHandled = useCallback(() => {
+    setInlineCardFocus((prev) => (prev ? null : prev));
+  }, []);
 
   // 지연된 카드 개수 계산 (Due Date가 오늘보다 이전인 미완료 카드)
   const overdueCardCount = useMemo(() => {
@@ -104,7 +122,7 @@ const BoardDetailPage = () => {
     return (
       <div className="min-h-screen bg-gradient-pastel flex flex-col">
         <header className="glass-light shadow-glass flex-shrink-0">
-          <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
+          <div className="w-full max-w-[95vw] mx-auto py-6 px-4 sm:px-6 lg:px-8">
             <button
               onClick={() => navigate('/boards')}
               className="text-pastel-blue-600 hover:text-pastel-blue-700 font-semibold"
@@ -135,7 +153,7 @@ const BoardDetailPage = () => {
 
       {/* Header */}
       <header className="glass-light shadow-glass flex-shrink-0">
-        <div className="max-w-7xl mx-auto py-3 px-4 sm:px-6 lg:px-8 flex items-center justify-between">
+        <div className="w-full max-w-[95vw] mx-auto py-3 px-4 sm:px-6 lg:px-8 flex items-center justify-between">
           <div>
             <button
               onClick={() => navigate('/boards')}
@@ -155,6 +173,20 @@ const BoardDetailPage = () => {
 
           {/* Header Actions */}
           <div className="flex items-center gap-2">
+            <button
+              onClick={() => setShowSearchPanel(true)}
+              className="px-3 py-2 rounded-lg text-pastel-blue-600 hover:bg-white/20 transition font-medium text-sm"
+              title="카드 검색"
+            >
+              🔍 검색
+            </button>
+            <button
+              onClick={() => setShowLabelManager(true)}
+              className="px-3 py-2 rounded-lg text-pastel-blue-600 hover:bg-white/20 transition font-medium text-sm"
+              title="라벨 관리"
+            >
+              🏷️ 라벨
+            </button>
             <button
               onClick={() => setShowActivityPanel(!showActivityPanel)}
               className="px-3 py-2 rounded-lg text-pastel-blue-600 hover:bg-white/20 transition font-medium text-sm"
@@ -176,7 +208,7 @@ const BoardDetailPage = () => {
       {/* Main Content */}
       <main className="flex-1 overflow-hidden flex flex-col">
         <div className="w-full px-4 sm:px-6 lg:px-8 flex-1 overflow-hidden pt-4 pb-4 flex">
-          <div className="max-w-7xl w-full mx-auto flex flex-1 relative min-h-0 h-full">
+          <div className="w-full max-w-[95vw] mx-auto flex flex-1 relative min-h-0 h-full">
             {/* Columns Section */}
             <div className="flex-1 overflow-auto flex flex-col pr-0 lg:pr-4 h-full">
               {columnsLoading ? (
@@ -207,6 +239,12 @@ const BoardDetailPage = () => {
                         column={column}
                         workspaceId={Number(workspaceId)}
                         boardId={Number(boardId)}
+                        autoOpenCardId={
+                          effectiveAutoOpenColumnId && effectiveAutoOpenColumnId !== column.id
+                            ? null
+                            : effectiveAutoOpenCardId
+                        }
+                        onAutoOpenHandled={handleInlineAutoOpenHandled}
                       />
                     ))}
 
@@ -303,6 +341,25 @@ const BoardDetailPage = () => {
           setShowInviteModal(false);
         }}
       />
+
+      {/* Label Manager Modal */}
+      {showLabelManager && (
+        <LabelManager
+          boardId={Number(boardId)}
+          onClose={() => setShowLabelManager(false)}
+        />
+      )}
+
+      {/* Search Panel */}
+      {showSearchPanel && (
+        <SearchPanel
+          boardId={Number(boardId)}
+          onClose={() => setShowSearchPanel(false)}
+          onCardSelect={(result: CardSearchResult) => {
+            setInlineCardFocus({ cardId: result.id, columnId: result.columnId });
+          }}
+        />
+      )}
 
       <Footer />
     </div>

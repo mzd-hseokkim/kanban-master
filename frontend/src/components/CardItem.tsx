@@ -9,15 +9,27 @@ interface CardItemProps {
   workspaceId: number;
   boardId: number;
   columnId: number;
+  autoOpen?: boolean;
+  onAutoOpenHandled?: () => void;
+  animateOnMount?: boolean;
 }
 
-export const CardItem: React.FC<CardItemProps> = ({ card, workspaceId, boardId, columnId }) => {
+export const CardItem: React.FC<CardItemProps> = ({
+  card,
+  workspaceId,
+  boardId,
+  columnId,
+  autoOpen = false,
+  onAutoOpenHandled,
+  animateOnMount = false,
+}) => {
   const { deleteCard, updateCard, loadCards } = useCard();
   const [showMenu, setShowMenu] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [showEditModal, setShowEditModal] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
+  const [hasAutoOpened, setHasAutoOpened] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
   const handleDelete = async () => {
@@ -62,6 +74,14 @@ export const CardItem: React.FC<CardItemProps> = ({ card, workspaceId, boardId, 
   const handleDragEnd = () => {
     setIsDragging(false);
   };
+
+  useEffect(() => {
+    if (autoOpen && !hasAutoOpened) {
+      setShowEditModal(true);
+      setHasAutoOpened(true);
+      onAutoOpenHandled?.();
+    }
+  }, [autoOpen, hasAutoOpened, onAutoOpenHandled]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -151,15 +171,27 @@ export const CardItem: React.FC<CardItemProps> = ({ card, workspaceId, boardId, 
   const isDueSoon = dueDateInfo && dueDateInfo.daysUntilDue <= 3 && dueDateInfo.daysUntilDue >= 0;
   const isOverdue = dueDateInfo && dueDateInfo.isOverdue;
 
+  const handleCardClick = (e: React.MouseEvent) => {
+    // 메뉴 버튼이나 체크박스 클릭 시에는 모달을 열지 않음
+    const target = e.target as HTMLElement;
+    if (target.closest('button') || target.closest('[role="checkbox"]')) {
+      return;
+    }
+    setShowEditModal(true);
+  };
+
   return (
-    <>
+    <div className="relative">
       <div
-        className={`bg-white rounded-lg shadow-sm border border-pastel-blue-200 p-3 mb-2 hover:shadow-md transition cursor-grab ${isDragging ? 'opacity-50' : ''}`}
+        className={`bg-white rounded-lg shadow-sm border border-pastel-blue-200 p-3 hover:shadow-md transition cursor-pointer ${
+          isDragging ? 'opacity-50' : ''
+        } ${animateOnMount ? 'card-enter' : ''}`}
         draggable
         onDragStart={handleDragStart}
         onDragEnd={handleDragEnd}
         onDragOver={handleDragOver}
         onDrop={handleDrop}
+        onClick={handleCardClick}
       >
         {/* Title and Menu */}
         <div className="flex items-start justify-between gap-2 mb-2">
@@ -171,11 +203,16 @@ export const CardItem: React.FC<CardItemProps> = ({ card, workspaceId, boardId, 
                 title="Card color"
               />
             )}
-            <div className={`flex-shrink-0 w-6 h-6 rounded border-2 transition flex items-center justify-center cursor-pointer ${
+            <div
+              role="checkbox"
+              className={`flex-shrink-0 w-6 h-6 rounded border-2 transition flex items-center justify-center cursor-pointer ${
               card.isCompleted
                 ? 'bg-pastel-green-500 border-pastel-green-500'
                 : 'border-pastel-blue-300 hover:border-pastel-green-500 bg-white'
-            }`} onClick={handleToggleCompletion} title={card.isCompleted ? '미완료로 표시' : '완료로 표시'}>
+            }`}
+              onClick={handleToggleCompletion}
+              title={card.isCompleted ? '미완료로 표시' : '완료로 표시'}
+            >
               {card.isCompleted && <svg className="w-4 h-4 text-pastel-green-500" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg>}
             </div>
             <h4 className={`font-semibold text-sm flex-1 break-words transition ${
@@ -221,6 +258,41 @@ export const CardItem: React.FC<CardItemProps> = ({ card, workspaceId, boardId, 
           <p className="text-xs text-pastel-blue-600 mb-2 line-clamp-2">{card.description}</p>
         )}
 
+        {/* Labels */}
+        {card.labels && card.labels.length > 0 && (
+          <div className="flex items-center gap-1 flex-wrap mb-2">
+            {card.labels.slice(0, 3).map((label) => {
+              const colorToken = label.colorToken || 'pastel-blue-500';
+              const colorMap: { [key: string]: string } = {
+                'pastel-blue-500': '#8fb3ff',
+                'pastel-pink-500': '#ffb3e6',
+                'pastel-green-500': '#b3ffc4',
+                'pastel-purple-500': '#d4a5ff',
+                'pastel-yellow-500': '#fff4b3',
+                'pastel-orange-500': '#ffd4b3',
+                'pastel-red-500': '#ffb3b3',
+                'pastel-teal-500': '#b3ffe6',
+              };
+              const bgColor = colorMap[colorToken] || '#8fb3ff';
+              return (
+                <span
+                  key={label.id}
+                  className="text-xs px-2 py-1 rounded font-medium border border-white/50"
+                  style={{ backgroundColor: bgColor }}
+                  title={label.description || label.name}
+                >
+                  {label.name}
+                </span>
+              );
+            })}
+            {card.labels.length > 3 && (
+              <span className="text-xs text-pastel-blue-600 font-medium">
+                +{card.labels.length - 3}
+              </span>
+            )}
+          </div>
+        )}
+
         {/* Badges */}
         <div className="flex items-center gap-2 flex-wrap mb-2">
           {card.priority && (
@@ -260,7 +332,10 @@ export const CardItem: React.FC<CardItemProps> = ({ card, workspaceId, boardId, 
           workspaceId={workspaceId}
           boardId={boardId}
           columnId={columnId}
-          onClose={() => setShowEditModal(false)}
+          onClose={() => {
+            setShowEditModal(false);
+            onAutoOpenHandled?.();
+          }}
         />
       )}
 
@@ -271,6 +346,6 @@ export const CardItem: React.FC<CardItemProps> = ({ card, workspaceId, boardId, 
           duration={5000}
         />
       )}
-    </>
+    </div>
   );
 };

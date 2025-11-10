@@ -2,6 +2,8 @@
  * 카드 타입 정의
  */
 
+import type { Label } from './label';
+
 export interface Card {
   id: number;
   columnId: number;
@@ -13,6 +15,7 @@ export interface Card {
   assignee?: string;
   dueDate?: string;
   isCompleted: boolean;
+  labels?: Label[];
   createdAt: string;
   updatedAt: string;
 }

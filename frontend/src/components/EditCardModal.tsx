@@ -2,7 +2,9 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Card } from '@/types/card';
 import { useCard } from '@/context/CardContext';
 import { ErrorNotification } from '@/components/ErrorNotification';
+import { LabelSelector } from '@/components/label/LabelSelector';
 import { userService } from '@/services/userService';
+import { labelService } from '@/services/labelService';
 import type { UserSearchResult } from '@/types/user';
 import { useModalAnimation } from '@/hooks/useModalAnimation';
 
@@ -39,6 +41,9 @@ export const EditCardModal: React.FC<EditCardModalProps> = ({
   const [priority, setPriority] = useState(card.priority || '');
   const [dueDate, setDueDate] = useState(card.dueDate || '');
   const [isCompleted, setIsCompleted] = useState(card.isCompleted);
+  const [selectedLabelIds, setSelectedLabelIds] = useState<number[]>(
+    card.labels?.map((l) => l.id) || []
+  );
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [assigneeSearchInput, setAssigneeSearchInput] = useState('');
@@ -171,6 +176,13 @@ export const EditCardModal: React.FC<EditCardModalProps> = ({
         dueDate: dueDate || undefined,
         isCompleted,
       });
+
+      // 라벨 업데이트 (변경이 있을 경우에만)
+      const currentLabelIds = card.labels?.map((l) => l.id).sort() || [];
+      const newLabelIds = [...selectedLabelIds].sort();
+      if (JSON.stringify(currentLabelIds) !== JSON.stringify(newLabelIds)) {
+        await labelService.assignLabelsToCard(card.id, selectedLabelIds);
+      }
 
       close();
     } catch (err) {
@@ -341,6 +353,21 @@ export const EditCardModal: React.FC<EditCardModalProps> = ({
                   카드를 완료로 표시
                 </span>
               </label>
+            </div>
+
+            {/* 라벨 선택 */}
+            <div className="mb-6">
+              <label className="block text-sm font-semibold text-pastel-blue-900 mb-3">
+                라벨
+              </label>
+              <div className="max-h-48 overflow-y-auto">
+                <LabelSelector
+                  boardId={boardId}
+                  cardId={card.id}
+                  selectedLabelIds={selectedLabelIds}
+                  onChange={setSelectedLabelIds}
+                />
+              </div>
             </div>
 
             {/* 색상 선택 */}

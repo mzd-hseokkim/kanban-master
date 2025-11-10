@@ -10,18 +10,21 @@ interface ColumnCardProps {
   column: Column;
   workspaceId: number;
   boardId: number;
+  autoOpenCardId?: number | null;
+  onAutoOpenHandled?: () => void;
 }
 
-export const ColumnCard: React.FC<ColumnCardProps> = ({ column, workspaceId, boardId }) => {
+export const ColumnCard: React.FC<ColumnCardProps> = ({ column, workspaceId, boardId, autoOpenCardId, onAutoOpenHandled }) => {
   const { deleteColumn } = useColumn();
   const { cards, loadCards, updateCard } = useCard();
   const [showMenu, setShowMenu] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [showCreateCardModal, setShowCreateCardModal] = useState(false);
-  const [cardsLoading, setCardsLoading] = useState(false);
+  const [cardsLoading, setCardsLoading] = useState(true);
   const [dragOverEmpty, setDragOverEmpty] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const [animatedCardIds, setAnimatedCardIds] = useState<Set<number>>(new Set());
 
   useEffect(() => {
     const loadColumnCards = async () => {
@@ -37,6 +40,26 @@ export const ColumnCard: React.FC<ColumnCardProps> = ({ column, workspaceId, boa
 
     loadColumnCards();
   }, [column.id, workspaceId, boardId, loadCards]);
+
+  useEffect(() => {
+    const columnCards = cards[column.id] || [];
+    if (columnCards.length === 0) {
+      return;
+    }
+
+    setAnimatedCardIds((prev) => {
+      let hasChanges = false;
+      const next = new Set(prev);
+      columnCards.forEach((card) => {
+        if (!next.has(card.id)) {
+          next.add(card.id);
+          hasChanges = true;
+        }
+      });
+
+      return hasChanges ? next : prev;
+    });
+  }, [cards, column.id]);
 
   const handleDelete = async () => {
     if (!window.confirm('정말 이 칼럼을 삭제하시겠습니까?')) return;
@@ -151,7 +174,7 @@ export const ColumnCard: React.FC<ColumnCardProps> = ({ column, workspaceId, boa
 
         {/* 카드 영역 */}
         <div
-          className={`flex-1 p-4 overflow-y-auto min-h-96 ${dragOverEmpty ? 'bg-white/30' : ''} transition`}
+          className={`flex-1 p-4 overflow-y-auto min-h-96 ${dragOverEmpty ? 'bg-white/30' : ''} transition flex flex-col gap-3`}
           onDragOver={handleCardAreaDragOver}
           onDragLeave={handleCardAreaDragLeave}
           onDrop={handleCardAreaDrop}
@@ -160,35 +183,35 @@ export const ColumnCard: React.FC<ColumnCardProps> = ({ column, workspaceId, boa
             <div className="text-center text-pastel-blue-400 text-sm">
               <div className="animate-spin inline-block h-4 w-4 border-2 border-pastel-blue-500 border-t-transparent rounded-full"></div>
             </div>
-          ) : cards[column.id] && cards[column.id].length > 0 ? (
-            <div className="space-y-2">
-              {cards[column.id]
-                .sort((a, b) => a.position - b.position)
-                .map((card) => (
-                  <CardItem
-                    key={card.id}
-                    card={card}
-                    workspaceId={workspaceId}
-                    boardId={boardId}
-                    columnId={column.id}
-                  />
-                ))}
-            </div>
           ) : (
-            <div className="text-center text-pastel-blue-400 text-sm py-8">
-              카드가 없습니다
-            </div>
-          )}
-        </div>
+            <>
+              {cards[column.id] && cards[column.id].length > 0 && (
+                <div className="space-y-2">
+                  {cards[column.id]
+                    .sort((a, b) => a.position - b.position)
+                    .map((card) => (
+                      <CardItem
+                        key={card.id}
+                        card={card}
+                        workspaceId={workspaceId}
+                        boardId={boardId}
+                        columnId={column.id}
+                        autoOpen={autoOpenCardId === card.id}
+                        onAutoOpenHandled={onAutoOpenHandled}
+                        animateOnMount={!animatedCardIds.has(card.id)}
+                      />
+                    ))}
+                </div>
+              )}
 
-        {/* 추가 버튼 */}
-        <div className="p-4 border-t border-white/20">
-          <button
-            onClick={() => setShowCreateCardModal(true)}
-            className="w-full py-2 px-3 rounded-lg text-sm font-semibold bg-white/20 text-pastel-blue-700 hover:bg-white/30 transition"
-          >
-            + 카드 추가
-          </button>
+              <button
+                onClick={() => setShowCreateCardModal(true)}
+                className="w-full rounded-2xl border-4 border-dashed border-white/70 bg-white/10 text-pastel-blue-800 font-semibold text-base min-h-28 flex items-center justify-center hover:bg-white/20 hover:border-white transition"
+              >
+                + 카드 추가
+              </button>
+            </>
+          )}
         </div>
       </div>
 

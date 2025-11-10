@@ -1,6 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useCard } from '@/context/CardContext';
 import { ErrorNotification } from '@/components/ErrorNotification';
+import { LabelSelector } from '@/components/label/LabelSelector';
+import { labelService } from '@/services/labelService';
 import { userService } from '@/services/userService';
 import type { UserSearchResult } from '@/types/user';
 import { useModalAnimation } from '@/hooks/useModalAnimation';
@@ -35,6 +37,7 @@ export const CreateCardModal: React.FC<CreateCardModalProps> = ({
   const [selectedColor, setSelectedColor] = useState(cardColors[0].hex);
   const [priority, setPriority] = useState<string>('');
   const [dueDate, setDueDate] = useState('');
+  const [selectedLabelIds, setSelectedLabelIds] = useState<number[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [assigneeSearchInput, setAssigneeSearchInput] = useState('');
@@ -138,7 +141,7 @@ export const CreateCardModal: React.FC<CreateCardModalProps> = ({
       setLoading(true);
       setError(null);
 
-      await createCard(workspaceId, boardId, columnId, {
+      const newCard = await createCard(workspaceId, boardId, columnId, {
         title: title.trim(),
         description: description.trim() || undefined,
         bgColor: selectedColor,
@@ -146,6 +149,11 @@ export const CreateCardModal: React.FC<CreateCardModalProps> = ({
         assignee: selectedAssignee?.name,
         dueDate: dueDate || undefined,
       });
+
+      // 라벨 할당 (선택된 라벨이 있을 경우)
+      if (selectedLabelIds.length > 0 && newCard?.id) {
+        await labelService.assignLabelsToCard(newCard.id, selectedLabelIds);
+      }
 
       close();
     } catch (err) {
@@ -300,6 +308,20 @@ export const CreateCardModal: React.FC<CreateCardModalProps> = ({
                 className="w-full px-4 py-2 rounded-lg bg-pastel-blue-50 border border-pastel-blue-200 text-pastel-blue-900 focus:outline-none focus:ring-2 focus:ring-pastel-blue-400"
                 disabled={loading}
               />
+            </div>
+
+            {/* 라벨 선택 */}
+            <div className="mb-6">
+              <label className="block text-sm font-semibold text-pastel-blue-900 mb-3">
+                라벨
+              </label>
+              <div className="max-h-48 overflow-y-auto">
+                <LabelSelector
+                  boardId={boardId}
+                  selectedLabelIds={selectedLabelIds}
+                  onChange={setSelectedLabelIds}
+                />
+              </div>
             </div>
 
             {/* 색상 선택 */}

@@ -11,11 +11,16 @@ import com.kanban.card.dto.UpdateCardRequest;
 import com.kanban.column.BoardColumn;
 import com.kanban.column.ColumnRepository;
 import com.kanban.exception.ResourceNotFoundException;
+import com.kanban.label.CardLabel;
+import com.kanban.label.CardLabelRepository;
+import com.kanban.label.dto.LabelResponse;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * 카드 비즈니스 로직 서비스
@@ -29,14 +34,23 @@ public class CardService {
     private final ColumnRepository columnRepository;
     private final ActivityService activityService;
     private final BoardMemberRoleValidator roleValidator;
+    private final CardLabelRepository cardLabelRepository;
 
     /**
      * 특정 칼럼의 모든 카드 조회
      */
     public List<CardResponse> getCardsByColumn(Long columnId) {
-        return cardRepository.findByColumnIdOrderByPosition(columnId)
-                .stream()
-                .map(CardResponse::from)
+        List<Card> cards = cardRepository.findByColumnIdOrderByPosition(columnId);
+        if (cards.isEmpty()) {
+            return List.of();
+        }
+
+        Map<Long, List<LabelResponse>> labelsByCardId = getLabelsByCardIds(cards.stream()
+                .map(Card::getId)
+                .toList());
+
+        return cards.stream()
+                .map(card -> CardResponse.from(card, labelsByCardId.getOrDefault(card.getId(), List.of())))
                 .toList();
     }
 
@@ -46,7 +60,12 @@ public class CardService {
     public CardResponse getCard(Long columnId, Long cardId) {
         Card card = cardRepository.findByIdAndColumnId(cardId, columnId)
                 .orElseThrow(() -> new ResourceNotFoundException("Card not found"));
-        return CardResponse.from(card);
+        List<LabelResponse> labels = cardLabelRepository.findByCardId(cardId)
+                .stream()
+                .map(cardLabel -> LabelResponse.from(cardLabel.getLabel()))
+                .toList();
+
+        return CardResponse.from(card, labels);
     }
 
     /**
@@ -240,5 +259,19 @@ public class CardService {
         }
 
         card.setPosition(newPosition);
+    }
+
+    private Map<Long, List<LabelResponse>> getLabelsByCardIds(List<Long> cardIds) {
+        if (cardIds.isEmpty()) {
+            return Map.of();
+        }
+
+        List<CardLabel> cardLabels = cardLabelRepository.findByCardIdIn(cardIds);
+
+        return cardLabels.stream()
+                .collect(Collectors.groupingBy(
+                        cardLabel -> cardLabel.getCard().getId(),
+                        Collectors.mapping(cardLabel -> LabelResponse.from(cardLabel.getLabel()), Collectors.toList())
+                ));
     }
 }
