@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card } from '@/types/card';
 import { useCard } from '@/context/CardContext';
 import { ErrorNotification } from '@/components/ErrorNotification';
@@ -9,6 +9,7 @@ interface CardItemProps {
   workspaceId: number;
   boardId: number;
   columnId: number;
+  canEdit: boolean;
   autoOpen?: boolean;
   onAutoOpenHandled?: () => void;
   animateOnMount?: boolean;
@@ -19,18 +20,17 @@ export const CardItem: React.FC<CardItemProps> = ({
   workspaceId,
   boardId,
   columnId,
+  canEdit,
   autoOpen = false,
   onAutoOpenHandled,
   animateOnMount = false,
 }) => {
   const { deleteCard, updateCard, loadCards } = useCard();
-  const [showMenu, setShowMenu] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [showEditModal, setShowEditModal] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const [hasAutoOpened, setHasAutoOpened] = useState(false);
-  const menuRef = useRef<HTMLDivElement>(null);
 
   const handleDelete = async () => {
     if (!window.confirm('정말 이 카드를 삭제하시겠습니까?')) return;
@@ -45,7 +45,6 @@ export const CardItem: React.FC<CardItemProps> = ({
       console.error('Failed to delete card:', err);
     } finally {
       setIsDeleting(false);
-      setShowMenu(false);
     }
   };
 
@@ -64,6 +63,10 @@ export const CardItem: React.FC<CardItemProps> = ({
   };
 
   const handleDragStart = (e: React.DragEvent<HTMLDivElement>) => {
+    if (!canEdit) {
+      e.preventDefault();
+      return;
+    }
     setIsDragging(true);
     e.dataTransfer.effectAllowed = 'move';
     e.dataTransfer.setData('cardId', String(card.id));
@@ -72,6 +75,7 @@ export const CardItem: React.FC<CardItemProps> = ({
   };
 
   const handleDragEnd = () => {
+    if (!canEdit) return;
     setIsDragging(false);
   };
 
@@ -83,27 +87,14 @@ export const CardItem: React.FC<CardItemProps> = ({
     }
   }, [autoOpen, hasAutoOpened, onAutoOpenHandled]);
 
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
-        setShowMenu(false);
-      }
-    };
-
-    if (showMenu) {
-      document.addEventListener('mousedown', handleClickOutside);
-      return () => {
-        document.removeEventListener('mousedown', handleClickOutside);
-      };
-    }
-  }, [showMenu]);
-
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    if (!canEdit) return;
     e.preventDefault();
     e.dataTransfer.dropEffect = 'move';
   };
 
   const handleDrop = async (e: React.DragEvent<HTMLDivElement>) => {
+    if (!canEdit) return;
     e.preventDefault();
     e.stopPropagation();
 
@@ -185,12 +176,12 @@ export const CardItem: React.FC<CardItemProps> = ({
       <div
         className={`bg-white rounded-lg shadow-sm border border-pastel-blue-200 p-3 hover:shadow-md transition cursor-pointer ${
           isDragging ? 'opacity-50' : ''
-        } ${animateOnMount ? 'card-enter' : ''}`}
-        draggable
-        onDragStart={handleDragStart}
-        onDragEnd={handleDragEnd}
-        onDragOver={handleDragOver}
-        onDrop={handleDrop}
+        } ${animateOnMount ? 'card-enter' : ''} ${!canEdit ? 'cursor-default' : ''}`}
+        draggable={canEdit}
+        onDragStart={canEdit ? handleDragStart : undefined}
+        onDragEnd={canEdit ? handleDragEnd : undefined}
+        onDragOver={canEdit ? handleDragOver : undefined}
+        onDrop={canEdit ? handleDrop : undefined}
         onClick={handleCardClick}
       >
         {/* Title and Menu */}
@@ -198,20 +189,24 @@ export const CardItem: React.FC<CardItemProps> = ({
           <div className="flex items-center gap-2 flex-1 min-w-0">
             {card.bgColor && (
               <div
-                className="w-3 h-3 rounded-full flex-shrink-0"
-                style={{ backgroundColor: card.bgColor }}
+                className="w-3 h-6 rounded-sm flex-shrink-0"
+                style={{ backgroundColor: card.bgColor, border: '1px solid rgba(0, 0, 0, 0.15)' }}
                 title="Card color"
               />
             )}
             <div
               role="checkbox"
-              className={`flex-shrink-0 w-6 h-6 rounded border-2 transition flex items-center justify-center cursor-pointer ${
+              className={`flex-shrink-0 w-6 h-6 rounded border-2 transition flex items-center justify-center ${
+                canEdit ? 'cursor-pointer' : 'cursor-default'
+              } ${
               card.isCompleted
                 ? 'bg-pastel-green-500 border-pastel-green-500'
-                : 'border-pastel-blue-300 hover:border-pastel-green-500 bg-white'
+                : canEdit
+                  ? 'border-pastel-blue-300 hover:border-pastel-green-500 bg-white'
+                  : 'border-pastel-blue-300 bg-white'
             }`}
-              onClick={handleToggleCompletion}
-              title={card.isCompleted ? '미완료로 표시' : '완료로 표시'}
+              onClick={canEdit ? handleToggleCompletion : undefined}
+              title={canEdit ? (card.isCompleted ? '미완료로 표시' : '완료로 표시') : '읽기 전용'}
             >
               {card.isCompleted && <svg className="w-4 h-4 text-pastel-green-500" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg>}
             </div>
@@ -226,36 +221,41 @@ export const CardItem: React.FC<CardItemProps> = ({
               </span>
             )}
           </div>
-          <div className="relative flex-shrink-0" ref={menuRef}>
-            <button
-              onClick={() => setShowMenu(!showMenu)}
-              className="p-1 hover:bg-pastel-blue-100 rounded transition text-xs"
-              disabled={isDeleting}
-            >
-              ⋮
-            </button>
-            {showMenu && (
-              <div className="absolute right-0 top-full mt-1 w-36 bg-white rounded-lg shadow-lg z-50 border border-pastel-blue-200 py-1">
-                <button
-                  onClick={() => {
-                    setShowEditModal(true);
-                    setShowMenu(false);
-                  }}
-                  disabled={isDeleting}
-                  className="w-full text-left px-3 py-2 text-xs text-pastel-blue-600 hover:bg-pastel-blue-50 transition disabled:opacity-50"
-                >
-                  ✏️ 수정
-                </button>
-                <button
-                  onClick={handleDelete}
-                  disabled={isDeleting}
-                  className="w-full text-left px-3 py-2 text-xs text-pastel-pink-600 hover:bg-pastel-pink-50 transition disabled:opacity-50"
-                >
-                  {isDeleting ? '삭제 중...' : '🗑️ 삭제'}
-                </button>
-              </div>
-            )}
-          </div>
+          {canEdit && (
+            <div className="relative flex-shrink-0">
+              <button
+                onClick={handleDelete}
+                disabled={isDeleting}
+                title="카드 삭제"
+                aria-label="카드 삭제"
+                className={`w-7 h-7 inline-flex items-center justify-center rounded-full transition border border-transparent self-start -mt-0.5 ${
+                  isDeleting
+                    ? 'text-pastel-pink-300 cursor-not-allowed'
+                    : 'text-pastel-pink-600 hover:text-pastel-pink-700 hover:bg-pastel-pink-50 border-pastel-pink-100'
+                }`}
+              >
+                {isDeleting ? (
+                  <span className="text-xs font-medium">삭제 중...</span>
+                ) : (
+                  <svg
+                    className="w-3.5 h-3.5"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.8"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="M3 6h18" />
+                    <path d="M8 6V4.5a1.5 1.5 0 011.5-1.5h5a1.5 1.5 0 011.5 1.5V6" />
+                    <path d="M10 11v6" />
+                    <path d="M14 11v6" />
+                    <path d="M5 6l1 14a2 2 0 002 2h8a2 2 0 002-2l1-14" />
+                  </svg>
+                )}
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Description */}
@@ -332,6 +332,7 @@ export const CardItem: React.FC<CardItemProps> = ({
           workspaceId={workspaceId}
           boardId={boardId}
           columnId={columnId}
+          canEdit={canEdit}
           onClose={() => {
             setShowEditModal(false);
             onAutoOpenHandled?.();

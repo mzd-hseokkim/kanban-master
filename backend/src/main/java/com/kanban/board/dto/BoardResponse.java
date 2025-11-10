@@ -2,6 +2,7 @@ package com.kanban.board.dto;
 
 import com.kanban.board.Board;
 import com.kanban.board.BoardStatus;
+import com.kanban.board.member.BoardMemberRole;
 import com.kanban.board.member.InvitationStatus;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -51,7 +52,23 @@ public class BoardResponse {
     private String invitationToken;
 
     /**
-     * Entity를 Response DTO로 변환
+     * 현재 사용자의 보드 내 역할 (VIEWER, EDITOR, MANAGER)
+     * Owner인 경우 MANAGER로 설정됨
+     */
+    private BoardMemberRole currentUserRole;
+
+    /**
+     * 현재 사용자가 편집 권한이 있는지 (EDITOR 이상)
+     */
+    private Boolean canEdit;
+
+    /**
+     * 현재 사용자가 관리 권한이 있는지 (MANAGER 또는 Owner)
+     */
+    private Boolean canManage;
+
+    /**
+     * Entity를 Response DTO로 변환 (Owner용 - MANAGER 권한)
      */
     public static BoardResponse from(Board board) {
         return BoardResponse.builder()
@@ -69,11 +86,14 @@ public class BoardResponse {
             .updatedAt(board.getUpdatedAt())
             .invitationStatus(null)
             .invitationToken(null)
+            .currentUserRole(BoardMemberRole.MANAGER)
+            .canEdit(true)
+            .canManage(true)
             .build();
     }
 
     /**
-     * Entity를 Response DTO로 변환 (초대 상태 포함)
+     * Entity를 Response DTO로 변환 (초대 상태 및 권한 포함)
      */
     public static BoardResponse fromWithInvitation(Board board, InvitationStatus status, String token) {
         return BoardResponse.builder()
@@ -91,6 +111,37 @@ public class BoardResponse {
             .updatedAt(board.getUpdatedAt())
             .invitationStatus(status)
             .invitationToken(token)
+            .currentUserRole(BoardMemberRole.MANAGER)
+            .canEdit(true)
+            .canManage(true)
+            .build();
+    }
+
+    /**
+     * Entity를 Response DTO로 변환 (멤버용 - 역할 기반 권한)
+     */
+    public static BoardResponse fromWithRole(Board board, BoardMemberRole role, InvitationStatus status, String token) {
+        boolean canEdit = role == BoardMemberRole.EDITOR || role == BoardMemberRole.MANAGER;
+        boolean canManage = role == BoardMemberRole.MANAGER;
+
+        return BoardResponse.builder()
+            .id(board.getId())
+            .workspaceId(board.getWorkspace().getId())
+            .ownerId(board.getOwner().getId())
+            .ownerName(board.getOwner().getName())
+            .name(board.getName())
+            .description(board.getDescription())
+            .themeColor(board.getThemeColor())
+            .icon(board.getIcon())
+            .status(board.getStatus())
+            .deletedAt(board.getDeletedAt())
+            .createdAt(board.getCreatedAt())
+            .updatedAt(board.getUpdatedAt())
+            .invitationStatus(status)
+            .invitationToken(token)
+            .currentUserRole(role)
+            .canEdit(canEdit)
+            .canManage(canManage)
             .build();
     }
 }

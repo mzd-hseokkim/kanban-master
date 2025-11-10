@@ -6,6 +6,7 @@ type ColumnsSectionProps = {
   columnsLoading: boolean;
   workspaceId: number;
   boardId: number;
+  canEdit: boolean;
   onCreateColumn: () => void;
   autoOpenCardId: number | null;
   autoOpenColumnId: number | null;
@@ -17,6 +18,7 @@ export const ColumnsSection = ({
   columnsLoading,
   workspaceId,
   boardId,
+  canEdit,
   onCreateColumn,
   autoOpenCardId,
   autoOpenColumnId,
@@ -35,13 +37,17 @@ export const ColumnsSection = ({
       <div className="flex flex-col items-center justify-center h-96">
         <div className="glass rounded-2xl p-8 shadow-glass-lg text-center max-w-md">
           <p className="text-lg text-pastel-blue-600 mb-4">칼럼이 없습니다</p>
-          <p className="text-sm text-pastel-blue-500 mb-6">첫 번째 칼럼을 만들어 시작하세요</p>
-          <button
-            onClick={onCreateColumn}
-            className="px-6 py-2 rounded-lg bg-pastel-blue-500 text-white font-semibold hover:bg-pastel-blue-600 transition"
-          >
-            + 칼럼 생성
-          </button>
+          <p className="text-sm text-pastel-blue-500 mb-6">
+            {canEdit ? '첫 번째 칼럼을 만들어 시작하세요' : '아직 칼럼이 생성되지 않았습니다'}
+          </p>
+          {canEdit && (
+            <button
+              onClick={onCreateColumn}
+              className="px-6 py-2 rounded-lg bg-pastel-blue-500 text-white font-semibold hover:bg-pastel-blue-600 transition"
+            >
+              + 칼럼 생성
+            </button>
+          )}
         </div>
       </div>
     );
@@ -63,18 +69,21 @@ export const ColumnsSection = ({
                 column={column}
                 workspaceId={workspaceId}
                 boardId={boardId}
+                canEdit={canEdit}
                 autoOpenCardId={cardIdForColumn}
                 onAutoOpenHandled={onAutoOpenHandled}
               />
             );
           })}
 
-        <button
-          onClick={onCreateColumn}
-          className="flex-shrink-0 w-80 h-12 rounded-xl border-2 border-dashed border-white/40 flex items-center justify-center text-pastel-blue-600 font-semibold hover:border-white/60 hover:bg-white/10 transition"
-        >
-          + 칼럼 추가
-        </button>
+        {canEdit && (
+          <button
+            onClick={onCreateColumn}
+            className="flex-shrink-0 w-80 min-h-28 rounded-2xl border-4 border-dashed border-white/70 bg-white/10 flex items-center justify-center text-pastel-blue-800 font-semibold text-base hover:bg-white/20 hover:border-black transition"
+          >
+            + 칼럼 추가
+          </button>
+        )}
       </div>
     </div>
   );

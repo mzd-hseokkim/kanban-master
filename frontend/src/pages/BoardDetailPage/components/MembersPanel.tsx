@@ -1,5 +1,5 @@
-import { BoardMemberTable } from '@/components/BoardMemberTable';
-import type { PresenceStage } from '@/hooks/usePresenceTransition';
+import { BoardMemberTable } from "@/components/BoardMemberTable";
+import type { PresenceStage } from "@/hooks/usePresenceTransition";
 
 interface PanelTransition {
   shouldRender: boolean;
@@ -9,11 +9,18 @@ interface PanelTransition {
 interface MembersPanelProps {
   transition: PanelTransition;
   boardId: number;
+  canManage: boolean;
   onInvite: () => void;
   onClose: () => void;
 }
 
-export const MembersPanel = ({ transition, boardId, onInvite, onClose }: MembersPanelProps) => {
+export const MembersPanel = ({
+  transition,
+  boardId,
+  canManage,
+  onInvite,
+  onClose,
+}: MembersPanelProps) => {
   if (!transition.shouldRender) {
     return null;
   }
@@ -27,19 +34,24 @@ export const MembersPanel = ({ transition, boardId, onInvite, onClose }: Members
           <div className="px-4 py-3 border-b border-white/20 flex items-center justify-between">
             <span className="font-semibold text-pastel-blue-800">멤버</span>
             <div className="flex items-center gap-2">
+              {canManage && (
+                <button
+                  onClick={onInvite}
+                  className="px-3 py-1.5 rounded-lg bg-pastel-blue-500 text-white hover:bg-pastel-blue-600 transition font-medium text-sm"
+                >
+                  + 초대
+                </button>
+              )}
               <button
-                onClick={onInvite}
-                className="px-3 py-1.5 rounded-lg bg-pastel-blue-500 text-white hover:bg-pastel-blue-600 transition font-medium text-sm"
+                onClick={onClose}
+                className="text-pastel-blue-500 hover:text-pastel-blue-700 text-sm font-medium"
               >
-                + 초대
-              </button>
-              <button onClick={onClose} className="text-pastel-blue-500 hover:text-pastel-blue-700 text-sm font-medium">
                 닫기
               </button>
             </div>
           </div>
           <div className="flex-1 overflow-auto">
-            <BoardMemberTable boardId={boardId} />
+            <BoardMemberTable boardId={boardId} canManage={canManage} />
           </div>
         </div>
       </aside>

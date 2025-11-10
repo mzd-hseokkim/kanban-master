@@ -10,11 +10,12 @@ interface ColumnCardProps {
   column: Column;
   workspaceId: number;
   boardId: number;
+  canEdit: boolean;
   autoOpenCardId?: number | null;
   onAutoOpenHandled?: () => void;
 }
 
-export const ColumnCard: React.FC<ColumnCardProps> = ({ column, workspaceId, boardId, autoOpenCardId, onAutoOpenHandled }) => {
+export const ColumnCard: React.FC<ColumnCardProps> = ({ column, workspaceId, boardId, canEdit, autoOpenCardId, onAutoOpenHandled }) => {
   const { deleteColumn } = useColumn();
   const { cards, loadCards, updateCard } = useCard();
   const [showMenu, setShowMenu] = useState(false);
@@ -94,16 +95,19 @@ export const ColumnCard: React.FC<ColumnCardProps> = ({ column, workspaceId, boa
   }, [showMenu]);
 
   const handleCardAreaDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    if (!canEdit) return; // Viewers cannot drop cards
     e.preventDefault();
     e.dataTransfer.dropEffect = 'move';
     setDragOverEmpty(true);
   };
 
   const handleCardAreaDragLeave = () => {
+    if (!canEdit) return;
     setDragOverEmpty(false);
   };
 
   const handleCardAreaDrop = async (e: React.DragEvent<HTMLDivElement>) => {
+    if (!canEdit) return; // Viewers cannot drop cards
     e.preventDefault();
     e.stopPropagation();
     setDragOverEmpty(false);
@@ -150,26 +154,28 @@ export const ColumnCard: React.FC<ColumnCardProps> = ({ column, workspaceId, boa
               <p className="text-xs text-pastel-blue-600 mt-1">{column.description}</p>
             )}
           </div>
-          <div className="relative" ref={menuRef}>
-            <button
-              onClick={() => setShowMenu(!showMenu)}
-              className="menu-button p-2 hover:bg-white/20 rounded-lg transition"
-              disabled={isDeleting}
-            >
-              ⋮
-            </button>
-            {showMenu && (
-              <div className="absolute right-0 top-full mt-2 w-40 glass-light rounded-lg shadow-lg z-50 border border-white/30 py-1">
-                <button
-                  onClick={handleDelete}
-                  disabled={isDeleting}
-                  className="w-full text-left px-4 py-2 text-sm text-pastel-pink-600 hover:bg-white/30 transition disabled:opacity-50"
-                >
-                  {isDeleting ? '삭제 중...' : '🗑️ 삭제'}
-                </button>
-              </div>
-            )}
-          </div>
+          {canEdit && (
+            <div className="relative" ref={menuRef}>
+              <button
+                onClick={() => setShowMenu(!showMenu)}
+                className="menu-button p-2 hover:bg-white/20 rounded-lg transition"
+                disabled={isDeleting}
+              >
+                ⋮
+              </button>
+              {showMenu && (
+                <div className="absolute right-0 top-full mt-2 w-40 glass-light rounded-lg shadow-lg z-50 border border-white/30 py-1">
+                  <button
+                    onClick={handleDelete}
+                    disabled={isDeleting}
+                    className="w-full text-left px-4 py-2 text-sm text-pastel-pink-600 hover:bg-white/30 transition disabled:opacity-50"
+                  >
+                    {isDeleting ? '삭제 중...' : '🗑️ 삭제'}
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {/* 카드 영역 */}
@@ -196,6 +202,7 @@ export const ColumnCard: React.FC<ColumnCardProps> = ({ column, workspaceId, boa
                         workspaceId={workspaceId}
                         boardId={boardId}
                         columnId={column.id}
+                        canEdit={canEdit}
                         autoOpen={autoOpenCardId === card.id}
                         onAutoOpenHandled={onAutoOpenHandled}
                         animateOnMount={!animatedCardIds.has(card.id)}
@@ -204,12 +211,14 @@ export const ColumnCard: React.FC<ColumnCardProps> = ({ column, workspaceId, boa
                 </div>
               )}
 
-              <button
-                onClick={() => setShowCreateCardModal(true)}
-                className="w-full rounded-2xl border-4 border-dashed border-white/70 bg-white/10 text-pastel-blue-800 font-semibold text-base min-h-28 flex items-center justify-center hover:bg-white/20 hover:border-black transition"
-              >
-                + 카드 추가
-              </button>
+              {canEdit && (
+                <button
+                  onClick={() => setShowCreateCardModal(true)}
+                  className="w-full rounded-2xl border-4 border-dashed border-white/70 bg-white/10 text-pastel-blue-800 font-semibold text-base min-h-28 flex items-center justify-center hover:bg-white/20 hover:border-black transition"
+                >
+                  + 카드 추가
+                </button>
+              )}
             </>
           )}
         </div>

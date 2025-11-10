@@ -1,20 +1,31 @@
-import { useState, useCallback } from 'react';
-import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
-import { useColumn } from '@/context/ColumnContext';
-import { useCard } from '@/context/CardContext';
-import { usePresenceTransition } from '@/hooks/usePresenceTransition';
-import type { CardSearchResult } from '@/types/search';
-import { BoardHeader } from './BoardDetailPage/components/BoardHeader';
-import { ColumnsSection } from './BoardDetailPage/components/ColumnsSection';
-import { MembersPanel } from './BoardDetailPage/components/MembersPanel';
-import { ActivityPanel } from './BoardDetailPage/components/ActivityPanel';
-import { BoardLoadingState, BoardErrorState } from './BoardDetailPage/components/BoardStateFallbacks';
-import { BoardModals } from './BoardDetailPage/components/BoardModals';
-import { useAutoOpenTargets, useBoardData, useOverdueCardCount } from './BoardDetailPage/hooks';
+import { useState, useCallback } from "react";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
+import { useColumn } from "@/context/ColumnContext";
+import { useCard } from "@/context/CardContext";
+import { usePresenceTransition } from "@/hooks/usePresenceTransition";
+import { usePermissions } from "@/hooks/usePermissions";
+import type { CardSearchResult } from "@/types/search";
+import { BoardHeader } from "./BoardDetailPage/components/BoardHeader";
+import { ColumnsSection } from "./BoardDetailPage/components/ColumnsSection";
+import { MembersPanel } from "./BoardDetailPage/components/MembersPanel";
+import { ActivityPanel } from "./BoardDetailPage/components/ActivityPanel";
+import {
+  BoardLoadingState,
+  BoardErrorState,
+} from "./BoardDetailPage/components/BoardStateFallbacks";
+import { BoardModals } from "./BoardDetailPage/components/BoardModals";
+import {
+  useAutoOpenTargets,
+  useBoardData,
+  useOverdueCardCount,
+} from "./BoardDetailPage/hooks";
 
 const BoardDetailPage = () => {
   const navigate = useNavigate();
-  const { workspaceId, boardId } = useParams<{ workspaceId: string; boardId: string }>();
+  const { workspaceId, boardId } = useParams<{
+    workspaceId: string;
+    boardId: string;
+  }>();
   const [searchParams] = useSearchParams();
   const { columns, loading: columnsLoading, loadColumns } = useColumn();
   const { cards } = useCard();
@@ -29,7 +40,12 @@ const BoardDetailPage = () => {
   const membersPanelTransition = usePresenceTransition(showMembersPanel);
   const activityPanelTransition = usePresenceTransition(showActivityPanel);
 
-  const { board, loading, error } = useBoardData(workspaceId, boardId, loadColumns);
+  const { board, loading, error } = useBoardData(
+    workspaceId,
+    boardId,
+    loadColumns,
+  );
+  const { canEdit, canManage } = usePermissions(board);
   const {
     effectiveAutoOpenCardId,
     effectiveAutoOpenColumnId,
@@ -40,7 +56,8 @@ const BoardDetailPage = () => {
 
   const workspaceNumericId = workspaceId ? Number(workspaceId) : Number.NaN;
   const boardNumericId = boardId ? Number(boardId) : Number.NaN;
-  const hasValidNumericIds = !Number.isNaN(workspaceNumericId) && !Number.isNaN(boardNumericId);
+  const hasValidNumericIds =
+    !Number.isNaN(workspaceNumericId) && !Number.isNaN(boardNumericId);
 
   const refreshColumns = useCallback(async () => {
     if (!hasValidNumericIds) {
@@ -49,13 +66,13 @@ const BoardDetailPage = () => {
     await loadColumns(workspaceNumericId, boardNumericId);
   }, [hasValidNumericIds, loadColumns, workspaceNumericId, boardNumericId]);
 
-  const handleNavigateBack = () => navigate('/boards');
+  const handleNavigateBack = () => navigate("/boards");
 
   const handleCardSelect = useCallback(
     (result: CardSearchResult) => {
       setInlineCardFocus({ cardId: result.id, columnId: result.columnId });
     },
-    [setInlineCardFocus]
+    [setInlineCardFocus],
   );
 
   if (loading) {
@@ -87,6 +104,7 @@ const BoardDetailPage = () => {
                 columnsLoading={columnsLoading}
                 workspaceId={workspaceNumericId}
                 boardId={boardNumericId}
+                canEdit={canEdit}
                 onCreateColumn={() => setShowCreateColumnModal(true)}
                 autoOpenCardId={effectiveAutoOpenCardId}
                 autoOpenColumnId={effectiveAutoOpenColumnId}
@@ -95,14 +113,21 @@ const BoardDetailPage = () => {
             </div>
 
             <MembersPanel
-              transition={{ shouldRender: membersPanelTransition.shouldRender, stage: membersPanelTransition.stage }}
+              transition={{
+                shouldRender: membersPanelTransition.shouldRender,
+                stage: membersPanelTransition.stage,
+              }}
               boardId={boardNumericId}
+              canManage={canManage}
               onInvite={() => setShowInviteModal(true)}
               onClose={() => setShowMembersPanel(false)}
             />
 
             <ActivityPanel
-              transition={{ shouldRender: activityPanelTransition.shouldRender, stage: activityPanelTransition.stage }}
+              transition={{
+                shouldRender: activityPanelTransition.shouldRender,
+                stage: activityPanelTransition.stage,
+              }}
               boardId={boardNumericId}
               onClose={() => setShowActivityPanel(false)}
             />

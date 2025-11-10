@@ -3,7 +3,6 @@ package com.kanban.template;
 import com.kanban.board.Board;
 import com.kanban.board.BoardRepository;
 import com.kanban.board.dto.BoardResponse;
-import com.kanban.board.dto.BoardResponse;
 import com.kanban.column.BoardColumn;
 import com.kanban.column.ColumnRepository;
 import com.kanban.common.SecurityUtil;
@@ -101,10 +100,6 @@ public class TemplateService {
         // 워크스페이스 조회
         Workspace workspace = workspaceRepository.findById(workspaceId)
                 .orElseThrow(() -> new IllegalArgumentException("워크스페이스를 찾을 수 없습니다: " + workspaceId));
-
-        // 보드 조회
-        Board board = boardRepository.findById(boardId)
-                .orElseThrow(() -> new IllegalArgumentException("보드를 찾을 수 없습니다: " + boardId));
 
         // 템플릿 생성
         BoardTemplate template = BoardTemplate.builder()

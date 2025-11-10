@@ -80,7 +80,7 @@ public class BoardService {
 
     /**
      * 보드 정보를 조회한다.
-     * 현재 사용자의 초대 상태 정보도 함께 반환한다.
+     * 현재 사용자의 초대 상태 정보 및 권한도 함께 반환한다.
      * 접근 권한: owner 또는 ACCEPTED 멤버만 조회 가능
      */
     @Transactional(readOnly = true)
@@ -96,7 +96,7 @@ public class BoardService {
         // 현재 사용자의 접근 권한 확인
         Long currentUserId = SecurityUtil.getCurrentUserId();
 
-        // Owner인 경우 항상 접근 가능
+        // Owner인 경우 항상 접근 가능 (MANAGER 권한)
         if (board.getOwner().getId().equals(currentUserId)) {
             var memberOptional = boardMemberRepository.findByBoardIdAndUserId(boardId, currentUserId);
             if (memberOptional.isPresent()) {
@@ -117,7 +117,7 @@ public class BoardService {
             throw new IllegalArgumentException("초대를 수락하지 않아 보드에 접근할 수 없습니다");
         }
 
-        return BoardResponse.fromWithInvitation(board, member.getInvitationStatus(), member.getInvitationToken());
+        return BoardResponse.fromWithRole(board, member.getRole(), member.getInvitationStatus(), member.getInvitationToken());
     }
 
     /**
@@ -148,7 +148,7 @@ public class BoardService {
         ownerBoards.forEach(board -> allBoards.put(board.getId(), board));
         memberBoards.forEach(board -> allBoards.putIfAbsent(board.getId(), board));
 
-        // 최종 응답 구성 (멤버 정보 포함)
+        // 최종 응답 구성 (멤버 정보 및 권한 포함)
         var userBoards = allBoards.values().stream()
             .filter(board -> {
                 // Owner인 경우는 항상 포함
@@ -167,10 +167,21 @@ public class BoardService {
                 return member.getInvitationStatus() == com.kanban.board.member.InvitationStatus.ACCEPTED;
             })
             .map(board -> {
+                // Owner인 경우 MANAGER 권한
+                if (board.getOwner().getId().equals(currentUserId)) {
+                    var memberOpt = boardMemberRepository.findByBoardIdAndUserId(board.getId(), currentUserId);
+                    if (memberOpt.isPresent()) {
+                        var member = memberOpt.get();
+                        return BoardResponse.fromWithInvitation(board, member.getInvitationStatus(), member.getInvitationToken());
+                    }
+                    return BoardResponse.from(board);
+                }
+
+                // 멤버인 경우 역할 기반 권한
                 var memberOpt = boardMemberRepository.findByBoardIdAndUserId(board.getId(), currentUserId);
                 if (memberOpt.isPresent()) {
                     var member = memberOpt.get();
-                    return BoardResponse.fromWithInvitation(board, member.getInvitationStatus(), member.getInvitationToken());
+                    return BoardResponse.fromWithRole(board, member.getRole(), member.getInvitationStatus(), member.getInvitationToken());
                 }
                 return BoardResponse.from(board);
             })

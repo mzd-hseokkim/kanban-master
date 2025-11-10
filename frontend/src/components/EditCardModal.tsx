@@ -25,6 +25,7 @@ interface EditCardModalProps {
     workspaceId: number;
     boardId: number;
     columnId: number;
+    canEdit: boolean;
     onClose: () => void;
 }
 
@@ -38,7 +39,7 @@ const cardColors = [
     { label: 'Purple', hex: '#f0e8ff' },
 ];
 
-export const EditCardModal: React.FC<EditCardModalProps> = ({ card, workspaceId, boardId, columnId, onClose }) => {
+export const EditCardModal: React.FC<EditCardModalProps> = ({ card, workspaceId, boardId, columnId, canEdit, onClose }) => {
     const { updateCard, loadCards } = useCard();
     const { stage, close } = useModalAnimation(onClose);
     const [title, setTitle] = useState(card.title);
@@ -216,7 +217,14 @@ export const EditCardModal: React.FC<EditCardModalProps> = ({ card, workspaceId,
                     <h2 className="text-2xl font-bold text-pastel-blue-900 mb-1">카드 수정</h2>
                     <p className="text-sm text-pastel-blue-600 mb-6">카드 정보를 수정하세요</p>
 
-                    <form onSubmit={handleSubmit}>
+                    <form onSubmit={canEdit ? handleSubmit : (e) => e.preventDefault()}>
+                        {/* Read-Only Notice */}
+                        {!canEdit && (
+                            <div className="mb-4 px-4 py-3 rounded-xl bg-pastel-yellow-100 border border-pastel-yellow-300 text-pastel-yellow-800 text-sm font-medium">
+                                🔒 읽기 전용 모드 - 이 카드를 수정할 권한이 없습니다
+                            </div>
+                        )}
+
                         {/* 제목 입력 */}
                         <div className="mb-4">
                             <label className={modalLabelClass}>카드 제목 *</label>
@@ -226,7 +234,8 @@ export const EditCardModal: React.FC<EditCardModalProps> = ({ card, workspaceId,
                                 onChange={(e) => setTitle(e.target.value)}
                                 placeholder="예: 로그인 기능 구현"
                                 className={modalInputClass}
-                                disabled={loading}
+                                disabled={loading || !canEdit}
+                                readOnly={!canEdit}
                             />
                         </div>
 
@@ -239,7 +248,8 @@ export const EditCardModal: React.FC<EditCardModalProps> = ({ card, workspaceId,
                                 placeholder="카드에 대한 설명을 입력하세요 (선택사항)"
                                 className={modalTextareaClass}
                                 rows={3}
-                                disabled={loading}
+                                disabled={loading || !canEdit}
+                                readOnly={!canEdit}
                             />
                         </div>
 
@@ -250,7 +260,7 @@ export const EditCardModal: React.FC<EditCardModalProps> = ({ card, workspaceId,
                                 value={priority}
                                 onChange={(e) => setPriority(e.target.value)}
                                 className={modalSelectClass}
-                                disabled={loading}
+                                disabled={loading || !canEdit}
                             >
                                 <option value="">우선순위 선택 (선택사항)</option>
                                 {cardPriorities.map((p) => (
@@ -272,15 +282,17 @@ export const EditCardModal: React.FC<EditCardModalProps> = ({ card, workspaceId,
                                     {selectedAssignee && (
                                         <div className="flex items-center gap-1 px-3 py-1 rounded-lg bg-white/60 border border-white/40 text-pastel-blue-700 text-sm font-medium shadow-sm">
                                             <span>{selectedAssignee.name}</span>
-                                            <button
-                                                type="button"
-                                                onClick={handleRemoveAssignee}
-                                                disabled={loading}
-                                                className="text-pastel-blue-500 hover:text-pastel-blue-700 disabled:opacity-50"
-                                                aria-label="담당자 제거"
-                                            >
-                                                ✕
-                                            </button>
+                                            {canEdit && (
+                                                <button
+                                                    type="button"
+                                                    onClick={handleRemoveAssignee}
+                                                    disabled={loading}
+                                                    className="text-pastel-blue-500 hover:text-pastel-blue-700 disabled:opacity-50"
+                                                    aria-label="담당자 제거"
+                                                >
+                                                    ✕
+                                                </button>
+                                            )}
                                         </div>
                                     )}
 
@@ -289,10 +301,11 @@ export const EditCardModal: React.FC<EditCardModalProps> = ({ card, workspaceId,
                     type="text"
                     value={assigneeSearchInput}
                     onChange={handleAssigneeInputChange}
-                    onFocus={() => assigneeResults.length > 0 && setAssigneeDropdownOpen(true)}
+                    onFocus={() => canEdit && assigneeResults.length > 0 && setAssigneeDropdownOpen(true)}
                     placeholder={selectedAssignee ? '' : '이름 또는 이메일로 검색 (선택사항)'}
                     className="borderless-input flex-1 min-w-0 bg-transparent text-pastel-blue-900 placeholder-pastel-blue-500 focus:outline-none"
-                    disabled={loading}
+                    disabled={loading || !canEdit}
+                    readOnly={!canEdit}
                   />
 
                                     {assigneeSearching && (
@@ -332,7 +345,8 @@ export const EditCardModal: React.FC<EditCardModalProps> = ({ card, workspaceId,
                                 value={dueDate}
                                 onChange={(e) => setDueDate(e.target.value)}
                                 className={modalInputClass}
-                                disabled={loading}
+                                disabled={loading || !canEdit}
+                                readOnly={!canEdit}
                             />
                         </div>
 
@@ -343,25 +357,27 @@ export const EditCardModal: React.FC<EditCardModalProps> = ({ card, workspaceId,
                                     type="checkbox"
                                     checked={isCompleted}
                                     onChange={(e) => setIsCompleted(e.target.checked)}
-                                    disabled={loading}
-                                    className="w-5 h-5 rounded border-2 border-pastel-blue-200 cursor-pointer accent-pastel-green-500 bg-white"
+                                    disabled={loading || !canEdit}
+                                    className="w-5 h-5 rounded border-2 border-pastel-blue-200 cursor-pointer accent-pastel-green-500 bg-white disabled:cursor-not-allowed"
                                 />
                                 <span className="text-sm font-semibold text-pastel-blue-900">카드를 완료로 표시</span>
                             </div>
                         </div>
 
                         {/* 라벨 선택 */}
-                        <div className="mb-6">
-                            <label className={`${modalLabelClass} !mb-3`}>라벨</label>
-                            <div className="max-h-48 overflow-y-auto rounded-2xl border border-white/30 bg-white/30 p-3">
-                                <LabelSelector
-                                    boardId={boardId}
-                                    cardId={card.id}
-                                    selectedLabelIds={selectedLabelIds}
-                                    onChange={setSelectedLabelIds}
-                                />
+                        {canEdit && (
+                            <div className="mb-6">
+                                <label className={`${modalLabelClass} !mb-3`}>라벨</label>
+                                <div className="max-h-48 overflow-y-auto rounded-2xl border border-white/30 bg-white/30 p-3">
+                                    <LabelSelector
+                                        boardId={boardId}
+                                        cardId={card.id}
+                                        selectedLabelIds={selectedLabelIds}
+                                        onChange={setSelectedLabelIds}
+                                    />
+                                </div>
                             </div>
-                        </div>
+                        )}
 
                         {/* 색상 선택 */}
                         <div className="mb-6">
@@ -371,11 +387,11 @@ export const EditCardModal: React.FC<EditCardModalProps> = ({ card, workspaceId,
                                     <button
                                         key={color.hex}
                                         type="button"
-                                        onClick={() => setSelectedColor(color.hex)}
+                                        onClick={canEdit ? () => setSelectedColor(color.hex) : undefined}
                                         style={{ backgroundColor: color.hex }}
                                         className={`w-full h-12 ${modalColorButtonClass(selectedColor === color.hex)}`}
                                         title={color.label}
-                                        disabled={loading}
+                                        disabled={loading || !canEdit}
                                     />
                                 ))}
                             </div>
@@ -392,11 +408,13 @@ export const EditCardModal: React.FC<EditCardModalProps> = ({ card, workspaceId,
                                 disabled={loading}
                                 className={`flex-1 ${modalSecondaryButtonClass}`}
                             >
-                                취소
+                                {canEdit ? '취소' : '닫기'}
                             </button>
-                            <button type="submit" disabled={loading} className={`flex-1 ${modalPrimaryButtonClass}`}>
-                                {loading ? '수정 중...' : '수정'}
-                            </button>
+                            {canEdit && (
+                                <button type="submit" disabled={loading} className={`flex-1 ${modalPrimaryButtonClass}`}>
+                                    {loading ? '수정 중...' : '수정'}
+                                </button>
+                            )}
                         </div>
                     </form>
                 </div>
