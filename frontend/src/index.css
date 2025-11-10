@@ -20,7 +20,7 @@ body,
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  --page-transition-duration: 420ms;
+  --page-transition-duration: 750ms;
   --page-transition-distance: 12px;
   --page-transition-easing: cubic-bezier(0.22, 1, 0.36, 1);
   --page-transition-background: #f5f6ff;
@@ -30,6 +30,15 @@ body,
   --panel-transition-easing: cubic-bezier(0.22, 1, 0.36, 1);
   --dropdown-transition-duration: 220ms;
   --dropdown-transition-easing: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+input:not([type='checkbox']):not([type='radio']):not(.borderless-input):not(:focus),
+textarea:not(.borderless-input):not(:focus),
+select:not(.borderless-input):not(:focus) {
+  border-width: 1px;
+  border-style: solid;
+  border-color: rgba(0, 0, 0, 0.2);
+  border-radius: 0.75rem;
 }
 
 @layer utilities {
@@ -120,7 +129,7 @@ body,
 @keyframes pageFadeIn {
   0% {
     opacity: 0;
-    transform: translateX(calc(var(--page-transition-distance) * 1.25));
+    transform: translateX(calc(var(--page-transition-distance) * -1.25));
     filter: blur(6px);
   }
 
@@ -156,7 +165,7 @@ body,
 
   100% {
     opacity: 0;
-    transform: translateX(calc(var(--page-transition-distance) * -1));
+    transform: translateX(calc(var(--page-transition-distance) * 1));
     filter: blur(6px);
   }
 }

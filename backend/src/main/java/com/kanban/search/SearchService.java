@@ -68,7 +68,7 @@ public class SearchService {
             predicates.add(card.get("priority").in(request.getPriorities()));
         }
 
-        // 할당자 필터
+        // 담당자 필터
         if (request.getAssignees() != null && !request.getAssignees().isEmpty()) {
             predicates.add(card.get("assignee").in(request.getAssignees()));
         }
@@ -143,7 +143,7 @@ public class SearchService {
             predicates.add(card.get("priority").in(request.getPriorities()));
         }
 
-        // 할당자 필터
+        // 담당자 필터
         if (request.getAssignees() != null && !request.getAssignees().isEmpty()) {
             predicates.add(card.get("assignee").in(request.getAssignees()));
         }

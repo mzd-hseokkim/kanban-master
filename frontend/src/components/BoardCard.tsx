@@ -4,6 +4,12 @@ import { Board } from '@/types/board';
 import { useBoard } from '@/context/BoardContext';
 import { BoardActionsMenu } from './BoardActionsMenu';
 import { useModalAnimation } from '@/hooks/useModalAnimation';
+import {
+  modalOverlayClass,
+  modalPanelClass,
+  modalSecondaryButtonClass,
+  modalPrimaryButtonClass,
+} from '@/styles/modalStyles';
 
 interface BoardCardProps {
   board: Board;
@@ -33,7 +39,7 @@ const DeleteBoardConfirmModal = ({ onCancel, onConfirm }: DeleteBoardConfirmModa
 
   return (
     <div
-      className={`modal-overlay modal-overlay-${stage} bg-black bg-opacity-50`}
+      className={modalOverlayClass(stage)}
       onClick={(e) => {
         if (e.target === e.currentTarget) {
           close();
@@ -41,7 +47,7 @@ const DeleteBoardConfirmModal = ({ onCancel, onConfirm }: DeleteBoardConfirmModa
       }}
     >
       <div
-        className={`modal-panel modal-panel-${stage} glass-light rounded-2xl p-8 shadow-glass-lg max-w-sm w-full mx-4 border border-white/30`}
+        className={modalPanelClass({ stage, maxWidth: 'max-w-sm' })}
         onClick={(e) => e.stopPropagation()}
       >
         <h2 className="text-xl font-bold text-pastel-blue-900 mb-2">보드를 삭제하시겠어요?</h2>
@@ -50,14 +56,14 @@ const DeleteBoardConfirmModal = ({ onCancel, onConfirm }: DeleteBoardConfirmModa
           <button
             onClick={close}
             disabled={loading}
-            className="flex-1 px-4 py-2 rounded-xl bg-white/30 text-pastel-blue-700 font-semibold hover:bg-white/40 border border-white/40 backdrop-blur-sm transition disabled:opacity-50"
+            className={`flex-1 ${modalSecondaryButtonClass}`}
           >
             취소
           </button>
           <button
             onClick={handleConfirmClick}
             disabled={loading}
-            className="flex-1 px-4 py-2 rounded-xl bg-pastel-pink-500 text-white font-semibold hover:bg-pastel-pink-600 transition disabled:opacity-50"
+            className="flex-1 px-4 py-3 rounded-xl bg-gradient-to-r from-pastel-pink-400 to-pastel-pink-600 text-white font-semibold hover:shadow-lg transition disabled:opacity-50 shadow-glass-sm"
           >
             {loading ? '삭제 중...' : '삭제'}
           </button>

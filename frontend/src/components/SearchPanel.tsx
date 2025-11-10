@@ -4,6 +4,14 @@ import { labelService } from '@/services/labelService';
 import type { CardSearchRequest, CardSearchResult } from '@/types/search';
 import type { Label } from '@/types/label';
 import { useModalAnimation } from '@/hooks/useModalAnimation';
+import {
+  modalOverlayClass,
+  modalPanelClass,
+  modalLabelClass,
+  modalInputClass,
+  modalSecondaryButtonClass,
+  modalPrimaryButtonClass,
+} from '@/styles/modalStyles';
 
 interface SearchPanelProps {
   boardId: number;
@@ -113,7 +121,7 @@ export const SearchPanel: React.FC<SearchPanelProps> = ({ boardId, onClose, onCa
 
   return (
     <div
-      className={`modal-overlay modal-overlay-${stage} bg-black/40 backdrop-blur-sm p-4`}
+      className={modalOverlayClass(stage)}
       onClick={(event) => {
         if (event.target === event.currentTarget) {
           close();
@@ -121,7 +129,12 @@ export const SearchPanel: React.FC<SearchPanelProps> = ({ boardId, onClose, onCa
       }}
     >
       <div
-        className={`modal-panel modal-panel-${stage} rounded-3xl shadow-glass-lg border border-white/30 w-full max-w-4xl max-h-[85vh] flex flex-col overflow-hidden bg-gradient-to-b from-pastel-blue-50 via-white to-pastel-blue-100/60 backdrop-blur-xl`}
+        className={modalPanelClass({
+          stage,
+          maxWidth: 'max-w-4xl',
+          padding: 'p-0',
+          extra: 'max-h-[85vh] flex flex-col overflow-hidden bg-gradient-to-b from-pastel-blue-50 via-white to-pastel-blue-100/60',
+        })}
       >
         {/* Header */}
         <div className="px-6 py-5 border-b border-white/40 bg-gradient-to-r from-white via-pastel-blue-50 to-white">
@@ -150,14 +163,12 @@ export const SearchPanel: React.FC<SearchPanelProps> = ({ boardId, onClose, onCa
               onChange={(e) => setKeyword(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
               placeholder="카드 제목이나 설명으로 검색..."
-              className="flex-1 px-4 py-3 rounded-2xl bg-pastel-blue-50 border border-pastel-blue-200 text-pastel-blue-900 placeholder-pastel-blue-400 focus:outline-none focus:ring-2 focus:ring-pastel-blue-400"
+              className={`${modalInputClass} flex-1`}
             />
             <button
               onClick={() => setShowFilters(!showFilters)}
-              className={`px-5 py-3 rounded-2xl font-semibold transition flex items-center justify-center gap-2 ${
-                showFilters
-                  ? 'bg-pastel-blue-500 text-white'
-                  : 'bg-pastel-blue-100 text-pastel-blue-700 hover:bg-pastel-blue-200'
+              className={`flex items-center justify-center gap-2 ${modalSecondaryButtonClass} !px-5 !py-3 ${
+                showFilters ? '!bg-white/50 !text-pastel-blue-900 ring-2 ring-white/50' : ''
               }`}
               type="button"
             >
@@ -166,7 +177,7 @@ export const SearchPanel: React.FC<SearchPanelProps> = ({ boardId, onClose, onCa
             <button
               onClick={handleSearch}
               disabled={searching}
-              className="px-6 py-3 rounded-2xl bg-gradient-to-r from-pastel-blue-500 to-pastel-cyan-400 text-white font-semibold hover:opacity-90 transition disabled:opacity-50"
+              className={`${modalPrimaryButtonClass} !px-6 !py-3`}
               type="button"
             >
               {searching ? '검색 중...' : '검색'}
@@ -179,7 +190,7 @@ export const SearchPanel: React.FC<SearchPanelProps> = ({ boardId, onClose, onCa
           <div className="px-6 py-4 border-b border-white/30 bg-gradient-to-r from-pastel-blue-50 via-pastel-purple-50 to-pastel-cyan-50 space-y-4 flex-shrink-0">
             {/* Priority Filter */}
             <div>
-              <label className="block text-sm font-semibold text-pastel-blue-900 mb-2">
+              <label className={modalLabelClass}>
                 우선순위
               </label>
               <div className="flex gap-2">
@@ -200,10 +211,10 @@ export const SearchPanel: React.FC<SearchPanelProps> = ({ boardId, onClose, onCa
 
             {/* Label Filter */}
             {labels.length > 0 && (
-              <div>
-                <label className="block text-sm font-semibold text-pastel-blue-900 mb-2">
-                  라벨
-                </label>
+            <div>
+              <label className={modalLabelClass}>
+                라벨
+              </label>
                 <div className="flex gap-2 flex-wrap">
                   {labels.map((label) => {
                     const bgColor = labelColorMap[label.colorToken] || '#8fb3ff';
@@ -229,7 +240,7 @@ export const SearchPanel: React.FC<SearchPanelProps> = ({ boardId, onClose, onCa
 
             {/* Status Filters */}
             <div>
-              <label className="block text-sm font-semibold text-pastel-blue-900 mb-2">
+              <label className={modalLabelClass}>
                 상태
               </label>
               <div className="flex gap-2 flex-wrap">

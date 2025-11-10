@@ -3,6 +3,12 @@ import { createPortal } from 'react-dom';
 import { memberService } from '@/services/memberService';
 import type { BoardMember } from '@/types/member';
 import { useModalAnimation } from '@/hooks/useModalAnimation';
+import {
+  modalOverlayClass,
+  modalPanelClass,
+  modalPrimaryButtonClass,
+  modalSecondaryButtonClass,
+} from '@/styles/modalStyles';
 
 interface InvitationResponseModalProps {
   invitation: BoardMember | null;
@@ -70,29 +76,38 @@ export const InvitationResponseModal: React.FC<InvitationResponseModalProps> = (
 
   const modalContent = (
     <div
-      className={`modal-overlay modal-overlay-${stage} bg-black/50 z-[9999]`}
+      className={modalOverlayClass(stage, 'z-[9999]')}
       onClick={handleBackdropClick}
     >
-      <div className={`modal-panel modal-panel-${stage} bg-white rounded-lg p-8 max-w-md w-full mx-4 shadow-xl`}>
+      <div className={modalPanelClass({ stage })}>
         {/* Header with close button */}
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-2xl font-bold text-gray-900">보드 초대</h2>
+        <div className="flex items-start justify-between mb-6">
+          <div>
+            <p className="text-xs uppercase tracking-[0.3em] text-pastel-blue-500 font-semibold">
+              Invitation
+            </p>
+            <h2 className="text-2xl font-bold text-pastel-blue-900 mt-1">보드 초대</h2>
+          </div>
           <button
             onClick={close}
             disabled={loading}
-            className="text-2xl text-gray-500 hover:text-gray-700 transition disabled:opacity-50"
+            className="w-10 h-10 rounded-full text-xl text-pastel-blue-500 hover:bg-white/40 transition disabled:opacity-50 flex items-center justify-center"
             aria-label="닫기"
           >
-            ×
+            ✕
           </button>
         </div>
 
-        <div className="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
-          <p className="text-gray-700 mb-2">
+        <div className="mb-6 p-5 rounded-2xl border border-white/40 bg-white/30 backdrop-blur-sm shadow-glass-sm">
+          <p className="text-pastel-blue-900 mb-2">
             <span className="font-semibold">{invitation.invitedByName}</span>님이
-            <span className="font-semibold text-blue-600"> {invitation.boardName}</span> 보드에 초대하셨습니다.
+            <span className="font-semibold text-pastel-blue-700">
+              {' '}
+              {invitation.boardName}
+            </span>{' '}
+            보드에 초대하셨습니다.
           </p>
-          <p className="text-sm text-gray-600">
+          <p className="text-sm text-pastel-blue-600">
             초대를 수락하면 보드에 멤버로 추가됩니다.
           </p>
         </div>
@@ -101,14 +116,14 @@ export const InvitationResponseModal: React.FC<InvitationResponseModalProps> = (
           <button
             onClick={handleDecline}
             disabled={loading}
-            className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-50 disabled:opacity-50 transition"
+            className={`flex-1 ${modalSecondaryButtonClass}`}
           >
             거절
           </button>
           <button
             onClick={handleAccept}
             disabled={loading}
-            className="flex-1 px-4 py-2 bg-blue-500 text-white rounded-lg font-medium hover:bg-blue-600 disabled:opacity-50 transition flex items-center justify-center gap-2"
+            className={`flex-1 ${modalPrimaryButtonClass} flex items-center justify-center gap-2`}
           >
             {loading ? (
               <>

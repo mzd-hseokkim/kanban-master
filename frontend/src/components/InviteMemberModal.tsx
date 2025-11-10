@@ -4,6 +4,17 @@ import { userService } from '@/services/userService';
 import type { BoardMemberRole } from '@/types/member';
 import type { UserSearchResult } from '@/types/user';
 import { useModalAnimation } from '@/hooks/useModalAnimation';
+import {
+  modalOverlayClass,
+  modalPanelClass,
+  modalLabelClass,
+  modalInputClass,
+  modalSelectClass,
+  modalTextareaClass,
+  modalSecondaryButtonClass,
+  modalPrimaryButtonClass,
+  modalErrorClass,
+} from '@/styles/modalStyles';
 
 interface InviteMemberModalProps {
   boardId: number;
@@ -153,45 +164,53 @@ export const InviteMemberModal = ({
   }
 
   return (
-    <div className={`modal-overlay modal-overlay-${stage} bg-black bg-opacity-50 p-4`}>
-      <div className={`modal-panel modal-panel-${stage} bg-white rounded-lg shadow-xl max-w-md w-full`}>
+    <div
+      className={modalOverlayClass(stage)}
+      onClick={(e) => {
+        if (e.target === e.currentTarget) {
+          close();
+        }
+      }}
+    >
+      <div className={modalPanelClass({ stage })}>
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
-          <h2 className="text-lg font-semibold text-gray-900">멤버 초대</h2>
+        <div className="flex items-start justify-between mb-6">
+          <div>
+            <p className="text-xs uppercase tracking-[0.3em] text-pastel-blue-500 font-semibold">
+              Collaboration
+            </p>
+            <h2 className="text-2xl font-bold text-pastel-blue-900 mt-1">멤버 초대</h2>
+          </div>
           <button
             onClick={close}
             disabled={loading}
-            className="text-gray-400 hover:text-gray-600 disabled:opacity-50"
+            className="w-10 h-10 rounded-full text-xl text-pastel-blue-500 hover:bg-white/40 transition disabled:opacity-50 flex items-center justify-center"
           >
             ✕
           </button>
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
-          {error && (
-            <div className="p-3 bg-red-50 border border-red-200 rounded text-sm text-red-700">
-              {error}
-            </div>
-          )}
+        <form onSubmit={handleSubmit} className="space-y-5">
+          {error && <div className={modalErrorClass}>{error}</div>}
 
           {/* User Search with Badge */}
           <div className="relative">
-            <label htmlFor="userSearch" className="block text-sm font-medium text-gray-700 mb-2">
+            <label htmlFor="userSearch" className={modalLabelClass}>
               사용자 검색
             </label>
             <div className="relative">
               {/* Input Container with Badge */}
-              <div className="flex items-center gap-2 px-3 py-2 border border-gray-300 rounded-lg focus-within:outline-none focus-within:ring-2 focus-within:ring-blue-500 bg-white">
+              <div className="flex flex-wrap items-center gap-2 px-4 py-2 border border-white/40 rounded-xl focus-within:outline-none focus-within:ring-2 focus-within:ring-pastel-blue-300/60 bg-white/40 backdrop-blur-sm">
                 {/* Selected User Badge */}
                 {selectedUser && (
-                  <div className="flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-700 rounded text-sm font-medium flex-shrink-0">
+                  <div className="flex items-center gap-1 px-3 py-1 bg-white/60 border border-white/40 text-pastel-blue-700 rounded-lg text-sm font-medium flex-shrink-0 shadow-sm">
                     <span>{selectedUser.name}</span>
                     <button
                       type="button"
                       onClick={handleRemoveUser}
                       disabled={loading}
-                      className="text-blue-500 hover:text-blue-700 disabled:opacity-50 flex items-center justify-center w-4 h-4"
+                      className="text-pastel-blue-500 hover:text-pastel-blue-700 disabled:opacity-50 flex items-center justify-center w-4 h-4"
                     >
                       ✕
                     </button>
@@ -208,12 +227,12 @@ export const InviteMemberModal = ({
                   onFocus={() => searchResults.length > 0 && setShowDropdown(true)}
                   disabled={loading}
                   placeholder={selectedUser ? '' : '이름 또는 이메일로 검색...'}
-                  className="flex-1 min-w-0 outline-none text-gray-900 placeholder-gray-400 disabled:bg-transparent disabled:opacity-50"
+                  className="borderless-input flex-1 min-w-0 outline-none bg-transparent text-pastel-blue-900 placeholder-pastel-blue-500 disabled:bg-transparent disabled:opacity-50"
                 />
 
                 {/* Loading Spinner */}
                 {searching && (
-                  <div className="animate-spin h-4 w-4 border-2 border-blue-500 border-t-transparent rounded-full flex-shrink-0" />
+                  <div className="animate-spin h-4 w-4 border-2 border-pastel-blue-400 border-t-transparent rounded-full flex-shrink-0" />
                 )}
               </div>
 
@@ -221,17 +240,17 @@ export const InviteMemberModal = ({
               {showDropdown && searchResults.length > 0 && (
                 <div
                   ref={dropdownRef}
-                  className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-300 rounded-lg shadow-lg z-10 max-h-48 overflow-y-auto"
+                  className="absolute top-full left-0 right-0 mt-2 bg-white/80 border border-white/40 rounded-2xl shadow-glass z-10 max-h-48 overflow-y-auto backdrop-blur-lg"
                 >
                   {searchResults.map((user) => (
                     <button
                       key={user.id}
                       type="button"
                       onClick={() => handleSelectUser(user)}
-                      className="w-full px-3 py-2 text-left hover:bg-blue-50 border-b border-gray-100 last:border-b-0 transition-colors"
+                      className="w-full px-4 py-2 text-left hover:bg-white/70 border-b border-white/30 last:border-b-0 transition-colors"
                     >
-                      <div className="font-medium text-gray-900">{user.name}</div>
-                      <div className="text-xs text-gray-500">{user.email}</div>
+                      <div className="font-medium text-pastel-blue-900">{user.name}</div>
+                      <div className="text-xs text-pastel-blue-500">{user.email}</div>
                     </button>
                   ))}
                 </div>
@@ -239,13 +258,13 @@ export const InviteMemberModal = ({
             </div>
 
             {searchInput && searchResults.length === 0 && !searching && (
-              <p className="text-xs text-gray-500 mt-1">검색 결과가 없습니다</p>
+              <p className="text-xs text-pastel-blue-500 mt-1">검색 결과가 없습니다</p>
             )}
           </div>
 
           {/* Role Select */}
           <div>
-            <label htmlFor="role" className="block text-sm font-medium text-gray-700 mb-2">
+            <label htmlFor="role" className={modalLabelClass}>
               권한
             </label>
             <select
@@ -253,22 +272,22 @@ export const InviteMemberModal = ({
               value={role}
               onChange={(e) => setRole(e.target.value as BoardMemberRole)}
               disabled={loading}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-50 disabled:opacity-50"
+              className={modalSelectClass}
             >
               <option value="VIEWER">보기 (Viewer)</option>
               <option value="EDITOR">편집 (Editor)</option>
               <option value="MANAGER">관리 (Manager)</option>
             </select>
-            <p className="text-xs text-gray-500 mt-1">
-              • Viewer: 보드 및 카드 조회만 가능<br/>
-              • Editor: 카드 생성, 편집, 이동 가능<br/>
+            <p className="text-xs text-pastel-blue-500 mt-2 leading-5">
+              • Viewer: 보드 및 카드 조회만 가능<br />
+              • Editor: 카드 생성, 편집, 이동 가능<br />
               • Manager: 멤버 관리, 보드 설정 변경 가능
             </p>
           </div>
 
           {/* Message Input */}
           <div>
-            <label htmlFor="message" className="block text-sm font-medium text-gray-700 mb-2">
+            <label htmlFor="message" className={modalLabelClass}>
               초대 메시지 (선택사항)
             </label>
             <textarea
@@ -278,24 +297,24 @@ export const InviteMemberModal = ({
               disabled={loading}
               placeholder="초대 메시지를 입력하세요"
               rows={3}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-50 disabled:opacity-50 resize-none"
+              className={modalTextareaClass}
             />
           </div>
 
           {/* Buttons */}
-          <div className="flex gap-3 pt-4">
+          <div className="flex gap-3 pt-2">
             <button
               type="button"
               onClick={close}
               disabled={loading}
-              className="flex-1 px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg disabled:opacity-50 transition-colors"
+              className={`flex-1 ${modalSecondaryButtonClass}`}
             >
               취소
             </button>
             <button
               type="submit"
               disabled={loading || !selectedUser}
-              className="flex-1 px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg disabled:opacity-50 transition-colors"
+              className={`flex-1 ${modalPrimaryButtonClass}`}
             >
               {loading ? '초대 중…' : '초대하기'}
             </button>

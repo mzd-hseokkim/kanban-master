@@ -28,7 +28,7 @@ public class CardSearchRequest {
     private List<String> priorities;
 
     /**
-     * 할당자 필터
+     * 담당자 필터
      */
     private List<String> assignees;
 

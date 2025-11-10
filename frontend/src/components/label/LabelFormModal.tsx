@@ -1,5 +1,15 @@
 import { useState } from 'react';
 import type { Label, CreateLabelRequest } from '@/types/label';
+import { useModalAnimation } from '@/hooks/useModalAnimation';
+import {
+  modalOverlayClass,
+  modalPanelClass,
+  modalLabelClass,
+  modalInputClass,
+  modalSecondaryButtonClass,
+  modalPrimaryButtonClass,
+  modalColorButtonClass,
+} from '@/styles/modalStyles';
 
 interface ColorToken {
   value: string;
@@ -24,6 +34,7 @@ export const LabelFormModal = ({
   onSubmit,
   onClose,
 }: LabelFormModalProps) => {
+  const { stage, close } = useModalAnimation(onClose);
   const [formData, setFormData] = useState<CreateLabelRequest>({
     name: label?.name || '',
     colorToken: label?.colorToken || 'pastel-blue-500',
@@ -57,7 +68,7 @@ export const LabelFormModal = ({
     try {
       setSubmitting(true);
       await onSubmit(formData);
-      onClose();
+      close();
     } catch (err) {
       console.error('Failed to submit label:', err);
     } finally {
@@ -67,21 +78,21 @@ export const LabelFormModal = ({
 
   return (
     <div
-      className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[60]"
+      className={modalOverlayClass(stage)}
       onClick={(e) => {
         if (e.target === e.currentTarget) {
-          onClose();
+          close();
         }
       }}
     >
-      <div className="bg-white rounded-3xl shadow-glass-lg w-full max-w-md mx-4 p-8 border border-white/60">
+      <div className={modalPanelClass({ stage })}>
         <h3 className="text-xl font-bold text-pastel-blue-900 mb-6">
           {label ? '라벨 수정' : '새 라벨 만들기'}
         </h3>
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
-            <label className="block text-sm font-semibold text-pastel-blue-900 mb-2">
+            <label className={modalLabelClass}>
               라벨 이름 *
             </label>
             <input
@@ -93,7 +104,7 @@ export const LabelFormModal = ({
               }}
               maxLength={30}
               placeholder="예: 긴급, 버그, 개선"
-              className="w-full px-4 py-3 rounded-xl border border-pastel-blue-100 bg-white text-pastel-blue-900 placeholder-pastel-blue-400 shadow-sm focus:outline-none focus:border-pastel-blue-400 focus:ring-2 focus:ring-pastel-blue-200/70 transition"
+              className={modalInputClass}
             />
             {fieldErrors.name && (
               <p className="mt-1 text-sm text-pastel-pink-600 font-medium">
@@ -103,7 +114,7 @@ export const LabelFormModal = ({
           </div>
 
           <div>
-            <label className="block text-sm font-semibold text-pastel-blue-900 mb-2">
+            <label className={modalLabelClass}>
               색상 *
             </label>
             <div className="grid grid-cols-4 gap-3">
@@ -114,11 +125,7 @@ export const LabelFormModal = ({
                   onClick={() =>
                     setFormData({ ...formData, colorToken: token.value })
                   }
-                  className={`h-12 rounded-lg border-2 transition ${
-                    formData.colorToken === token.value
-                      ? 'border-pastel-blue-600 ring-2 ring-pastel-blue-300/60 scale-105'
-                      : 'border-pastel-blue-100 hover:border-pastel-blue-200'
-                  }`}
+                  className={`w-full h-12 ${modalColorButtonClass(formData.colorToken === token.value)}`}
                   style={{ backgroundColor: token.color }}
                   title={token.label}
                 ></button>
@@ -127,7 +134,7 @@ export const LabelFormModal = ({
           </div>
 
           <div>
-            <label className="block text-sm font-semibold text-pastel-blue-900 mb-2">
+            <label className={modalLabelClass}>
               설명 (선택)
             </label>
             <input
@@ -139,7 +146,7 @@ export const LabelFormModal = ({
               }}
               maxLength={100}
               placeholder="라벨에 대한 간단한 설명"
-              className="w-full px-4 py-3 rounded-xl border border-pastel-blue-100 bg-white text-pastel-blue-900 placeholder-pastel-blue-400 shadow-sm focus:outline-none focus:border-pastel-blue-400 focus:ring-2 focus:ring-pastel-blue-200/70 transition"
+              className={modalInputClass}
             />
             {fieldErrors.description && (
               <p className="mt-1 text-sm text-pastel-pink-600 font-medium">
@@ -151,15 +158,15 @@ export const LabelFormModal = ({
           <div className="flex space-x-3">
             <button
               type="button"
-              onClick={onClose}
-              className="flex-1 px-6 py-3 rounded-xl font-semibold text-pastel-blue-700 bg-white border border-pastel-blue-100 hover:bg-pastel-blue-50 transition"
+              onClick={close}
+              className={`flex-1 ${modalSecondaryButtonClass}`}
               disabled={submitting}
             >
               취소
             </button>
             <button
               type="submit"
-              className="flex-1 px-6 py-3 rounded-xl bg-gradient-to-r from-pastel-blue-500 to-pastel-cyan-400 text-white font-semibold shadow-glass-sm hover:shadow-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
+              className={`flex-1 ${modalPrimaryButtonClass}`}
               disabled={submitting}
             >
               {submitting ? '저장 중...' : label ? '수정' : '생성'}

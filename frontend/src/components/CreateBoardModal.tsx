@@ -2,6 +2,17 @@ import { useState } from 'react';
 import { useBoard } from '@/context/BoardContext';
 import type { CreateBoardRequest } from '@/types/board';
 import { useModalAnimation } from '@/hooks/useModalAnimation';
+import {
+  modalOverlayClass,
+  modalPanelClass,
+  modalLabelClass,
+  modalInputClass,
+  modalTextareaClass,
+  modalSecondaryButtonClass,
+  modalPrimaryButtonClass,
+  modalErrorClass,
+  modalColorButtonClass,
+} from '@/styles/modalStyles';
 
 interface CreateBoardModalProps {
   workspaceId: number;
@@ -61,25 +72,25 @@ export const CreateBoardModal = ({
 
   return (
     <div
-      className={`modal-overlay modal-overlay-${stage} bg-gradient-pastel/80 backdrop-blur-sm`}
+      className={modalOverlayClass(stage)}
       onClick={(e) => {
         if (e.target === e.currentTarget) {
           close();
         }
       }}
     >
-      <div className={`modal-panel modal-panel-${stage} glass-light rounded-3xl shadow-glass-lg w-full max-w-md mx-4 p-8 border border-white/30`}>
+      <div className={modalPanelClass({ stage })}>
         <h2 className="text-2xl font-bold text-pastel-blue-900 mb-6">새 보드 만들기</h2>
 
         {error && (
-          <div className="mb-4 p-4 rounded-xl bg-pastel-pink-100/70 text-pastel-pink-700 text-sm border border-pastel-pink-200">
+          <div className={`mb-4 ${modalErrorClass}`}>
             {error}
           </div>
         )}
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
-            <label className="block text-sm font-semibold text-pastel-blue-900 mb-2">
+            <label className={modalLabelClass}>
               보드 이름 *
             </label>
             <input
@@ -91,7 +102,7 @@ export const CreateBoardModal = ({
               }}
               maxLength={100}
               placeholder="예: 제품 로드맵"
-              className="w-full px-4 py-3 rounded-xl border border-white/40 bg-white/40 backdrop-blur-sm text-pastel-blue-900 placeholder-pastel-blue-500 focus:outline-none focus:border-pastel-blue-400 focus:ring-2 focus:ring-pastel-blue-300/50 transition"
+              className={modalInputClass}
             />
             {fieldErrors.name && (
               <p className="mt-1 text-sm text-pastel-pink-600 font-medium">{fieldErrors.name}</p>
@@ -99,7 +110,7 @@ export const CreateBoardModal = ({
           </div>
 
           <div>
-            <label className="block text-sm font-semibold text-pastel-blue-900 mb-2">
+            <label className={modalLabelClass}>
               설명 (선택사항)
             </label>
             <textarea
@@ -108,12 +119,12 @@ export const CreateBoardModal = ({
               maxLength={500}
               placeholder="보드에 대한 설명을 입력하세요..."
               rows={3}
-              className="w-full px-4 py-3 rounded-xl border border-white/40 bg-white/40 backdrop-blur-sm text-pastel-blue-900 placeholder-pastel-blue-500 focus:outline-none focus:border-pastel-blue-400 focus:ring-2 focus:ring-pastel-blue-300/50 transition resize-none"
+              className={modalTextareaClass}
             />
           </div>
 
           <div>
-            <label className="block text-sm font-semibold text-pastel-blue-900 mb-3">
+            <label className={`${modalLabelClass} !mb-3`}>
               테마 색상
             </label>
             <div className="flex gap-3 justify-between">
@@ -123,11 +134,9 @@ export const CreateBoardModal = ({
                   type="button"
                   onClick={() => setFormData({ ...formData, themeColor: color.value })}
                   style={{ backgroundColor: color.color }}
-                  className={`flex-1 h-12 rounded-xl transition-all shadow-glass-sm ${
-                    formData.themeColor === color.value
-                      ? 'ring-3 ring-white/60 scale-105 shadow-lg'
-                      : 'opacity-70 hover:opacity-100'
-                  }`}
+                  className={`flex-1 h-12 ${modalColorButtonClass(
+                    formData.themeColor === color.value,
+                  )}`}
                   title={color.label}
                 />
               ))}
@@ -139,14 +148,14 @@ export const CreateBoardModal = ({
               type="button"
               onClick={close}
               disabled={loading}
-              className="flex-1 px-4 py-3 rounded-xl bg-white/30 hover:bg-white/40 backdrop-blur-sm text-pastel-blue-700 font-semibold border border-white/40 transition disabled:opacity-50"
+              className={`flex-1 ${modalSecondaryButtonClass}`}
             >
               취소
             </button>
             <button
               type="submit"
               disabled={loading || !formData.name.trim()}
-              className="flex-1 px-4 py-3 rounded-xl bg-gradient-to-r from-pastel-blue-500 to-pastel-cyan-400 text-white font-semibold hover:shadow-lg transition disabled:opacity-50 shadow-glass-sm"
+              className={`flex-1 ${modalPrimaryButtonClass}`}
             >
               {loading ? '생성 중...' : '생성'}
             </button>

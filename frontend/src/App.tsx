@@ -11,7 +11,7 @@ import BoardsPage from '@/pages/BoardsPage';
 import BoardDetailPage from '@/pages/BoardDetailPage';
 import { usePrefersReducedMotion } from '@/hooks/usePrefersReducedMotion';
 
-const TRANSITION_DURATION = 420;
+const TRANSITION_DURATION = 750;
 
 const App = () => {
   const location = useLocation();

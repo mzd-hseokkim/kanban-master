@@ -64,7 +64,7 @@ public class Card extends BaseEntity {
     private String priority;
 
     /**
-     * 할당자 (추후 User 관계 추가 가능)
+     * 담당자 (추후 User 관계 추가 가능)
      */
     private String assignee;
 

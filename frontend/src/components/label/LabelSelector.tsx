@@ -124,7 +124,7 @@ export const LabelSelector = ({
             onChange={(e) => setNewLabelName(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder="라벨 이름 입력 후 Enter..."
-            className="w-full bg-transparent text-sm text-pastel-blue-900 placeholder-pastel-blue-400 focus:outline-none"
+            className="borderless-input w-full bg-transparent text-sm text-pastel-blue-900 placeholder-pastel-blue-400 focus:outline-none"
             disabled={creating || loading}
           />
         </div>
