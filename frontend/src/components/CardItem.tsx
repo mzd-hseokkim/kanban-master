@@ -309,14 +309,14 @@ export const CardItem: React.FC<CardItemProps> = ({
 
         {/* Due Date - 완료된 카드는 평범한 스타일로만 표시 */}
         {dueDateInfo && (
-          <div className={`text-xs px-2 py-1 rounded ${
+          <div className={`text-xs ${
             card.isCompleted
-              ? 'bg-pastel-blue-100 text-pastel-blue-700'
+              ? 'text-pastel-blue-500'
               : isOverdue
-              ? 'bg-pastel-pink-100 text-pastel-pink-700 font-semibold'
+              ? 'bg-pastel-pink-100 text-pastel-pink-700 font-semibold border-2 border-pastel-pink-500 px-2 py-1 rounded'
               : isDueSoon
-              ? 'bg-pastel-yellow-100 text-pastel-yellow-700 font-semibold'
-              : 'bg-pastel-blue-100 text-pastel-blue-700'
+              ? 'bg-pastel-yellow-100 text-pastel-yellow-700 font-semibold border-2 border-pastel-yellow-500 px-2 py-1 rounded'
+              : 'text-pastel-blue-600'
           }`}>
             📅 {dueDateInfo.dateStr}
             {!card.isCompleted && isOverdue && ' (지남)'}

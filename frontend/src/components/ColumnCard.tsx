@@ -107,7 +107,10 @@ export const ColumnCard: React.FC<ColumnCardProps> = ({ column, workspaceId, boa
   };
 
   const handleCardAreaDrop = async (e: React.DragEvent<HTMLDivElement>) => {
-    if (!canEdit) return; // Viewers cannot drop cards
+    if (!canEdit) {
+      setDragOverEmpty(false);
+      return; // Viewers cannot drop cards
+    }
     e.preventDefault();
     e.stopPropagation();
     setDragOverEmpty(false);
@@ -145,7 +148,7 @@ export const ColumnCard: React.FC<ColumnCardProps> = ({ column, workspaceId, boa
 
   return (
     <>
-      <div className={`${bgColorClass} rounded-xl shadow-md border border-white/30 w-80 flex-shrink-0 flex flex-col h-full`}>
+      <div className={`${bgColorClass} rounded-xl shadow-md w-80 flex-shrink-0 flex flex-col h-full transition ${dragOverEmpty ? 'border-4 border-dashed border-black' : 'border border-white/30'}`}>
         {/* 헤더 */}
         <div className="flex items-center justify-between p-4 border-b border-white/20">
           <div className="flex-1">
@@ -194,7 +197,50 @@ export const ColumnCard: React.FC<ColumnCardProps> = ({ column, workspaceId, boa
               {cards[column.id] && cards[column.id].length > 0 && (
                 <div className="space-y-2 w-full">
                   {cards[column.id]
-                    .sort((a, b) => a.position - b.position)
+                    .sort((a, b) => {
+                      // Helper function to calculate due date status
+                      const getDueDateStatus = (dueDate?: string) => {
+                        if (!dueDate) return { isOverdue: false, isDueSoon: false, daysUntilDue: Infinity };
+                        try {
+                          const today = new Date();
+                          today.setHours(0, 0, 0, 0);
+                          const due = new Date(dueDate);
+                          due.setHours(0, 0, 0, 0);
+                          const daysUntilDue = Math.floor((due.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+                          return {
+                            isOverdue: daysUntilDue < 0,
+                            isDueSoon: daysUntilDue >= 0 && daysUntilDue <= 3,
+                            daysUntilDue
+                          };
+                        } catch {
+                          return { isOverdue: false, isDueSoon: false, daysUntilDue: Infinity };
+                        }
+                      };
+
+                      const aStatus = getDueDateStatus(a.dueDate);
+                      const bStatus = getDueDateStatus(b.dueDate);
+
+                      // 1. 기한 지남 우선
+                      if (aStatus.isOverdue !== bStatus.isOverdue) {
+                        return aStatus.isOverdue ? -1 : 1;
+                      }
+
+                      // 2. 임박 우선
+                      if (aStatus.isDueSoon !== bStatus.isDueSoon) {
+                        return aStatus.isDueSoon ? -1 : 1;
+                      }
+
+                      // 3. 중요도 순 (HIGH > MEDIUM > LOW > 없음)
+                      const priorityOrder: { [key: string]: number } = { HIGH: 0, MEDIUM: 1, LOW: 2 };
+                      const aPriority = a.priority ? priorityOrder[a.priority] ?? 3 : 3;
+                      const bPriority = b.priority ? priorityOrder[b.priority] ?? 3 : 3;
+                      if (aPriority !== bPriority) {
+                        return aPriority - bPriority;
+                      }
+
+                      // 4. 같은 카테고리 내에서는 position 순서 유지
+                      return a.position - b.position;
+                    })
                     .map((card) => (
                       <CardItem
                         key={card.id}
