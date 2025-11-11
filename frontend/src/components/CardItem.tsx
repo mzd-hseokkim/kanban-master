@@ -4,6 +4,7 @@ import { useCard } from '@/context/CardContext';
 import { ErrorNotification } from '@/components/ErrorNotification';
 import { EditCardModal } from '@/components/EditCardModal';
 import { useDialog } from '@/hooks/useDialog';
+import { Avatar } from '@/components/common/Avatar';
 
 interface CardItemProps {
   card: Card;
@@ -308,11 +309,16 @@ export const CardItem: React.FC<CardItemProps> = ({
           </div>
         )}
 
-        {/* Badges */}
+        {/* Assignee */}
         {card.assignee && (
-          <div className="flex items-center gap-2 flex-wrap mb-2">
-            <span className="text-xs bg-pastel-blue-100 text-pastel-blue-700 px-2 py-1 rounded">
-              👤 {card.assignee}
+          <div className="flex items-center gap-2 mb-2">
+            <Avatar
+              avatarUrl={card.assigneeAvatarUrl}
+              userName={card.assignee}
+              size="sm"
+            />
+            <span className="text-xs text-pastel-blue-700 font-medium">
+              {card.assignee}
             </span>
           </div>
         )}

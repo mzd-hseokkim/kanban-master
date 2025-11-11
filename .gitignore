@@ -66,3 +66,6 @@ backend/data/*.db
 
 # Log files
 backend/logs/
+
+# Data directories
+uploads/

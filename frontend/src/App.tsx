@@ -9,6 +9,7 @@ import LoginPage from '@/pages/LoginPage';
 import { SignupPage } from '@/pages/SignupPage';
 import BoardsPage from '@/pages/BoardsPage';
 import BoardDetailPage from '@/pages/BoardDetailPage';
+import ProfilePage from '@/pages/ProfilePage';
 import { GlobalNavBar } from '@/components/GlobalNavBar';
 import { Footer } from '@/components/Footer';
 import { useAuth } from '@/context/AuthContext';
@@ -70,6 +71,14 @@ const App = () => {
         element={(
           <ProtectedRoute>
             <BoardDetailPage />
+          </ProtectedRoute>
+        )}
+      />
+      <Route
+        path="/profile"
+        element={(
+          <ProtectedRoute>
+            <ProfilePage />
           </ProtectedRoute>
         )}
       />

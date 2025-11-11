@@ -13,6 +13,7 @@ export interface Card {
   bgColor?: string;
   priority?: string;
   assignee?: string;
+  assigneeAvatarUrl?: string;
   dueDate?: string;
   isCompleted: boolean;
   labels?: Label[];

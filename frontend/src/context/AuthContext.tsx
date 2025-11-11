@@ -10,6 +10,8 @@ interface AuthContextValue {
   login: (payload: LoginRequest) => Promise<void>;
   logout: () => Promise<void>;
   refreshProfile: () => Promise<void>;
+  updateAvatar: (avatarUrl: string) => void;
+  removeAvatar: () => void;
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
@@ -104,6 +106,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setUser(profile);
   }, []);
 
+  const updateAvatar = useCallback((avatarUrl: string) => {
+    setUser(prev => prev ? { ...prev, avatarUrl } : null);
+  }, []);
+
+  const removeAvatar = useCallback(() => {
+    setUser(prev => prev ? { ...prev, avatarUrl: null } : null);
+  }, []);
+
   const value = useMemo<AuthContextValue>(() => ({
     user,
     isAuthenticated: Boolean(user),
@@ -111,7 +121,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     login,
     logout,
     refreshProfile,
-  }), [user, loading, login, logout, refreshProfile]);
+    updateAvatar,
+    removeAvatar,
+  }), [user, loading, login, logout, refreshProfile, updateAvatar, removeAvatar]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };

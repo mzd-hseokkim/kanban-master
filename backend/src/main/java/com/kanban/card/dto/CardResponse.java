@@ -28,6 +28,7 @@ public class CardResponse {
     private String bgColor;
     private String priority;
     private String assignee;
+    private String assigneeAvatarUrl;
     private LocalDate dueDate;
     private Boolean isCompleted;
     private LocalDateTime createdAt;

@@ -176,22 +176,22 @@ export const AlertDialog: React.FC<AlertDialogProps> = ({
 
   const variantStyles = {
     error: {
-      button: 'bg-gradient-to-r from-pastel-pink-500 to-pastel-pink-600 hover:shadow-lg text-white',
+      button: 'bg-gradient-to-r from-pastel-blue-500 to-pastel-cyan-400 text-white font-semibold hover:shadow-lg transition shadow-glass-sm',
       icon: '❌',
       iconBg: 'bg-pastel-pink-100/70',
     },
     warning: {
-      button: 'bg-gradient-to-r from-pastel-pink-400 to-pastel-pink-500 hover:shadow-lg text-white',
+      button: 'bg-gradient-to-r from-pastel-blue-500 to-pastel-cyan-400 text-white font-semibold hover:shadow-lg transition shadow-glass-sm',
       icon: '⚠️',
       iconBg: 'bg-pastel-pink-100/70',
     },
     info: {
-      button: 'bg-gradient-to-r from-pastel-blue-500 to-pastel-cyan-400 hover:shadow-lg text-white',
+      button: 'bg-gradient-to-r from-pastel-blue-500 to-pastel-cyan-400 text-white font-semibold hover:shadow-lg transition shadow-glass-sm',
       icon: 'ℹ️',
       iconBg: 'bg-pastel-blue-100/70',
     },
     success: {
-      button: 'bg-gradient-to-r from-pastel-mint-500 to-pastel-cyan-400 hover:shadow-lg text-white',
+      button: 'bg-gradient-to-r from-pastel-blue-500 to-pastel-cyan-400 text-white font-semibold hover:shadow-lg transition shadow-glass-sm',
       icon: '✅',
       iconBg: 'bg-pastel-mint-100/70',
     },

@@ -18,6 +18,10 @@ export default defineConfig({
         changeOrigin: true,
         // Enable cookie handling for the proxy
         // The proxy will preserve cookies from the backend response
+      },
+      '/uploads': {
+        target: 'http://localhost:8080',
+        changeOrigin: true,
       }
     }
   }

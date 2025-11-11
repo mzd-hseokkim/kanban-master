@@ -1,5 +1,9 @@
 package com.kanban.exception;
 
+import com.kanban.file.FileTooLargeException;
+import com.kanban.file.FileStorageException;
+import com.kanban.file.InvalidFileException;
+import com.kanban.file.UnsupportedFileTypeException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
@@ -11,6 +15,7 @@ import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
@@ -99,6 +104,71 @@ public class GlobalExceptionHandler {
                 violations
         );
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(body);
+    }
+
+    /**
+     * 파일 크기 초과 예외 처리 (5MB 초과)
+     */
+    @ExceptionHandler({FileTooLargeException.class, MaxUploadSizeExceededException.class})
+    public ResponseEntity<ApiErrorResponse> handleFileTooLarge(
+            Exception ex,
+            HttpServletRequest request
+    ) {
+        ApiErrorResponse body = ApiErrorResponse.of(
+                HttpStatus.BAD_REQUEST,
+                "파일 크기는 5MB 이하여야 합니다",
+                request.getRequestURI()
+        );
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(body);
+    }
+
+    /**
+     * 지원하지 않는 파일 형식 예외 처리
+     */
+    @ExceptionHandler(UnsupportedFileTypeException.class)
+    public ResponseEntity<ApiErrorResponse> handleUnsupportedFileType(
+            UnsupportedFileTypeException ex,
+            HttpServletRequest request
+    ) {
+        ApiErrorResponse body = ApiErrorResponse.of(
+                HttpStatus.UNSUPPORTED_MEDIA_TYPE,
+                ex.getMessage(),
+                request.getRequestURI()
+        );
+        return ResponseEntity.status(HttpStatus.UNSUPPORTED_MEDIA_TYPE).body(body);
+    }
+
+    /**
+     * 유효하지 않은 파일 예외 처리
+     */
+    @ExceptionHandler(InvalidFileException.class)
+    public ResponseEntity<ApiErrorResponse> handleInvalidFile(
+            InvalidFileException ex,
+            HttpServletRequest request
+    ) {
+        ApiErrorResponse body = ApiErrorResponse.of(
+                HttpStatus.BAD_REQUEST,
+                ex.getMessage(),
+                request.getRequestURI()
+        );
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(body);
+    }
+
+    /**
+     * 파일 저장 실패 예외 처리
+     */
+    @ExceptionHandler(FileStorageException.class)
+    public ResponseEntity<ApiErrorResponse> handleFileStorage(
+            FileStorageException ex,
+            HttpServletRequest request
+    ) {
+        log.error("File storage error occurred", ex);
+        ApiErrorResponse body = ApiErrorResponse.of(
+                HttpStatus.INTERNAL_SERVER_ERROR,
+                "파일 저장에 실패했습니다",
+                request.getRequestURI()
+        );
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(body);
     }
 
     @ExceptionHandler(Exception.class)

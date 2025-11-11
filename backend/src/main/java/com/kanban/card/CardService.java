@@ -14,6 +14,7 @@ import com.kanban.exception.ResourceNotFoundException;
 import com.kanban.label.CardLabel;
 import com.kanban.label.CardLabelRepository;
 import com.kanban.label.dto.LabelResponse;
+import com.kanban.user.UserRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -35,6 +36,7 @@ public class CardService {
     private final ActivityService activityService;
     private final BoardMemberRoleValidator roleValidator;
     private final CardLabelRepository cardLabelRepository;
+    private final UserRepository userRepository;
 
     /**
      * 특정 칼럼의 모든 카드 조회
@@ -50,7 +52,7 @@ public class CardService {
                 .toList());
 
         return cards.stream()
-                .map(card -> CardResponse.from(card, labelsByCardId.getOrDefault(card.getId(), List.of())))
+                .map(card -> enrichWithAssigneeAvatar(CardResponse.from(card, labelsByCardId.getOrDefault(card.getId(), List.of()))))
                 .toList();
     }
 
@@ -65,7 +67,7 @@ public class CardService {
                 .map(cardLabel -> LabelResponse.from(cardLabel.getLabel()))
                 .toList();
 
-        return CardResponse.from(card, labels);
+        return enrichWithAssigneeAvatar(CardResponse.from(card, labels));
     }
 
     /**
@@ -110,7 +112,7 @@ public class CardService {
             "\"" + savedCard.getTitle() + "\" 카드가 생성되었습니다"
         );
 
-        return CardResponse.from(savedCard);
+        return enrichWithAssigneeAvatar(CardResponse.from(savedCard));
     }
 
     /**
@@ -205,7 +207,7 @@ public class CardService {
             );
         }
 
-        return CardResponse.from(updatedCard);
+        return enrichWithAssigneeAvatar(CardResponse.from(updatedCard));
     }
 
     /**
@@ -278,5 +280,16 @@ public class CardService {
                         cardLabel -> cardLabel.getCard().getId(),
                         Collectors.mapping(cardLabel -> LabelResponse.from(cardLabel.getLabel()), Collectors.toList())
                 ));
+    }
+
+    /**
+     * CardResponse에 담당자의 아바타 URL 추가
+     */
+    private CardResponse enrichWithAssigneeAvatar(CardResponse cardResponse) {
+        if (cardResponse.getAssignee() != null && !cardResponse.getAssignee().isEmpty()) {
+            userRepository.findByName(cardResponse.getAssignee())
+                    .ifPresent(user -> cardResponse.setAssigneeAvatarUrl(user.getAvatarUrl()));
+        }
+        return cardResponse;
     }
 }

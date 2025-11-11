@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { memberService } from "@/services/memberService";
 import type { BoardMember, BoardMemberRole } from "@/types/member";
 import { useDialog } from "@/hooks/useDialog";
+import { Avatar } from "@/components/common/Avatar";
 
 interface BoardMemberTableProps {
   boardId: number;
@@ -174,11 +175,18 @@ export const BoardMemberTable = ({
                 key={member.userId}
                 className={`grid ${canManage ? "grid-cols-4" : "grid-cols-3"} gap-4 border-b border-gray-100 px-4 py-2 items-center hover:bg-blue-50 transition-colors`}
               >
-                {/* Name with Tooltip */}
+                {/* Name with Avatar and Tooltip */}
                 <div className="col-span-1 relative group">
-                  <span className="text-xs text-gray-900 font-medium cursor-help inline-block">
-                    {member.userName}
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <Avatar
+                      avatarUrl={member.avatarUrl}
+                      userName={member.userName}
+                      size="sm"
+                    />
+                    <span className="text-xs text-gray-900 font-medium cursor-help inline-block">
+                      {member.userName}
+                    </span>
+                  </div>
                   {/* Tooltip */}
                   <div className="absolute left-0 bottom-full mb-2 hidden group-hover:block z-50 bg-gray-900 text-white text-xs px-2 py-1 rounded whitespace-nowrap">
                     {member.userEmail}

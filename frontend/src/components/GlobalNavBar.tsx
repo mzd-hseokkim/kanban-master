@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { memberService } from '@/services/memberService';
 import { InvitationResponseModal } from './InvitationResponseModal';
+import { Avatar } from './common/Avatar';
 import type { BoardMember } from '@/types/member';
 import { usePresenceTransition } from '@/hooks/usePresenceTransition';
 
@@ -177,9 +178,11 @@ export const GlobalNavBar: React.FC = () => {
                                     onClick={() => setShowMenu(!showMenu)}
                                     className="flex items-center gap-3 px-4 py-2 rounded-lg hover:bg-white/20 transition"
                                 >
-                                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-pastel-blue-400 to-pastel-cyan-400 flex items-center justify-center text-white text-sm font-semibold">
-                                        {user.name.charAt(0).toUpperCase()}
-                                    </div>
+                                    <Avatar
+                                        avatarUrl={user.avatarUrl}
+                                        userName={user.name}
+                                        size="md"
+                                    />
                                     <span className="text-sm font-semibold text-pastel-blue-900 hidden sm:inline">
                                         {user.name}
                                     </span>
@@ -213,6 +216,15 @@ export const GlobalNavBar: React.FC = () => {
                                             className="w-full text-left px-4 py-2 text-sm text-pastel-blue-700 hover:bg-pastel-blue-50 transition md:hidden"
                                         >
                                             보드
+                                        </button>
+                                        <button
+                                            onClick={() => {
+                                                setShowMenu(false);
+                                                navigate('/profile');
+                                            }}
+                                            className="w-full text-left px-4 py-2 text-sm text-pastel-blue-700 hover:bg-pastel-blue-50 transition border-t border-pastel-blue-100"
+                                        >
+                                            프로필 설정
                                         </button>
                                         <button
                                             onClick={() => {
