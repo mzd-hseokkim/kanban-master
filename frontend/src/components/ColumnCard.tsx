@@ -5,6 +5,7 @@ import { useCard } from '@/context/CardContext';
 import { ErrorNotification } from '@/components/ErrorNotification';
 import { CardItem } from '@/components/CardItem';
 import { CreateCardModal } from '@/components/CreateCardModal';
+import { CreateColumnModal } from '@/components/CreateColumnModal';
 
 interface ColumnCardProps {
   column: Column;
@@ -22,6 +23,7 @@ export const ColumnCard: React.FC<ColumnCardProps> = ({ column, workspaceId, boa
   const [isDeleting, setIsDeleting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [showCreateCardModal, setShowCreateCardModal] = useState(false);
+  const [showEditColumnModal, setShowEditColumnModal] = useState(false);
   const [cardsLoading, setCardsLoading] = useState(true);
   const [dragOverEmpty, setDragOverEmpty] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -145,10 +147,25 @@ export const ColumnCard: React.FC<ColumnCardProps> = ({ column, workspaceId, boa
   };
 
   const bgColorClass = column.bgColor || 'bg-gradient-to-br from-pastel-blue-100 to-pastel-cyan-100';
+  const isHexColor = bgColorClass.startsWith('#');
+
+  // hex 색상을 rgba로 변환하여 투명도 적용
+  const hexToRgba = (hex: string, alpha: number = 0.5) => {
+    const r = parseInt(hex.slice(1, 3), 16);
+    const g = parseInt(hex.slice(3, 5), 16);
+    const b = parseInt(hex.slice(5, 7), 16);
+    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+  };
+
+  const bgStyle = isHexColor ? { backgroundColor: hexToRgba(bgColorClass, 0.33) } : {};
+  const bgClassName = isHexColor ? '' : bgColorClass;
 
   return (
     <>
-      <div className={`${bgColorClass} rounded-xl shadow-md w-80 flex-shrink-0 flex flex-col h-full transition ${dragOverEmpty ? 'border-4 border-dashed border-black' : 'border border-white/30'}`}>
+      <div
+        className={`${bgClassName} rounded-xl shadow-md w-80 flex-shrink-0 flex flex-col h-full transition ${dragOverEmpty ? 'border-4 border-dashed border-black' : 'border border-white/30'}`}
+        style={bgStyle}
+      >
         {/* 헤더 */}
         <div className="flex items-center justify-between p-4 border-b border-white/20">
           <div className="flex-1">
@@ -168,6 +185,15 @@ export const ColumnCard: React.FC<ColumnCardProps> = ({ column, workspaceId, boa
               </button>
               {showMenu && (
                 <div className="absolute right-0 top-full mt-2 w-40 glass-light rounded-lg shadow-lg z-50 border border-white/30 py-1">
+                  <button
+                    onClick={() => {
+                      setShowEditColumnModal(true);
+                      setShowMenu(false);
+                    }}
+                    className="w-full text-left px-4 py-2 text-sm text-pastel-blue-700 hover:bg-white/30 transition"
+                  >
+                    ✏️ 수정
+                  </button>
                   <button
                     onClick={handleDelete}
                     disabled={isDeleting}
@@ -280,6 +306,18 @@ export const ColumnCard: React.FC<ColumnCardProps> = ({ column, workspaceId, boa
             setShowCreateCardModal(false);
             // 카드 목록 새로고침
             loadCards(workspaceId, boardId, column.id);
+          }}
+        />
+      )}
+
+      {/* Edit Column Modal */}
+      {showEditColumnModal && (
+        <CreateColumnModal
+          workspaceId={workspaceId}
+          boardId={boardId}
+          editColumn={column}
+          onClose={() => {
+            setShowEditColumnModal(false);
           }}
         />
       )}

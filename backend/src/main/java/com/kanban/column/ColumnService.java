@@ -52,17 +52,17 @@ public class ColumnService {
     /**
      * 칼럼 생성 (권한 검증 포함)
      */
-    public ColumnResponse createColumnWithValidation(Long boardId, String name, String description, Long userId) {
+    public ColumnResponse createColumnWithValidation(Long boardId, String name, String description, String bgColor, Long userId) {
         // EDITOR 이상 권한 필요
         roleValidator.validateRole(boardId, BoardMemberRole.EDITOR);
 
-        return createColumn(boardId, name, description, userId);
+        return createColumn(boardId, name, description, bgColor, userId);
     }
 
     /**
      * 칼럼 생성 (권한 검증 없음 - 내부 사용)
      */
-    public ColumnResponse createColumn(Long boardId, String name, String description, Long userId) {
+    public ColumnResponse createColumn(Long boardId, String name, String description, String bgColor, Long userId) {
         Board board = boardRepository.findById(boardId)
             .orElseThrow(() -> new NoSuchElementException("보드를 찾을 수 없습니다: " + boardId));
 
@@ -73,6 +73,7 @@ public class ColumnService {
             .board(board)
             .name(name)
             .description(description)
+            .bgColor(bgColor)
             .position(position)
             .build();
 

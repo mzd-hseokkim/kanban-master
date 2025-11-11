@@ -65,6 +65,7 @@ public class ColumnController {
             boardId,
             request.getName(),
             request.getDescription(),
+            request.getBgColor(),
             userId
         );
         return ResponseEntity.status(HttpStatus.CREATED)

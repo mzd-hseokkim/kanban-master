@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useColumn } from '@/context/ColumnContext';
+import { Column } from '@/types/column';
 import { ErrorNotification } from '@/components/ErrorNotification';
 import { useModalAnimation } from '@/hooks/useModalAnimation';
 import {
@@ -18,6 +19,7 @@ interface CreateColumnModalProps {
   workspaceId: number;
   boardId: number;
   onClose: () => void;
+  editColumn?: Column; // 편집 모드: 기존 컬럼 데이터
 }
 
 const columnColors = [
@@ -32,14 +34,25 @@ export const CreateColumnModal: React.FC<CreateColumnModalProps> = ({
   workspaceId,
   boardId,
   onClose,
+  editColumn,
 }) => {
-  const { createColumn } = useColumn();
+  const { createColumn, updateColumn } = useColumn();
   const { stage, close } = useModalAnimation(onClose);
+  const isEditMode = !!editColumn;
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [selectedColor, setSelectedColor] = useState(columnColors[0].hex);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // 편집 모드일 때 기존 데이터로 초기화
+  useEffect(() => {
+    if (editColumn) {
+      setName(editColumn.name);
+      setDescription(editColumn.description || '');
+      setSelectedColor(editColumn.bgColor || columnColors[0].hex);
+    }
+  }, [editColumn]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -53,17 +66,27 @@ export const CreateColumnModal: React.FC<CreateColumnModalProps> = ({
       setLoading(true);
       setError(null);
 
-      await createColumn(workspaceId, boardId, {
-        name: name.trim(),
-        description: description.trim() || undefined,
-        bgColor: selectedColor,
-      });
+      if (isEditMode && editColumn) {
+        // 편집 모드: 기존 컬럼 업데이트
+        await updateColumn(workspaceId, boardId, editColumn.id, {
+          name: name.trim(),
+          description: description.trim() || undefined,
+          bgColor: selectedColor,
+        });
+      } else {
+        // 생성 모드: 새 컬럼 생성
+        await createColumn(workspaceId, boardId, {
+          name: name.trim(),
+          description: description.trim() || undefined,
+          bgColor: selectedColor,
+        });
+      }
 
       close();
     } catch (err) {
-      const message = err instanceof Error ? err.message : '칼럼 생성에 실패했습니다';
+      const message = err instanceof Error ? err.message : isEditMode ? '칼럼 수정에 실패했습니다' : '칼럼 생성에 실패했습니다';
       setError(message);
-      console.error('Failed to create column:', err);
+      console.error(`Failed to ${isEditMode ? 'update' : 'create'} column:`, err);
     } finally {
       setLoading(false);
     }
@@ -81,8 +104,12 @@ export const CreateColumnModal: React.FC<CreateColumnModalProps> = ({
       >
         <div className={modalPanelClass({ stage })}>
           {/* 헤더 */}
-          <h2 className="text-2xl font-bold text-pastel-blue-900 mb-1">칼럼 생성</h2>
-          <p className="text-sm text-pastel-blue-600 mb-6">새로운 칼럼을 생성하세요</p>
+          <h2 className="text-2xl font-bold text-pastel-blue-900 mb-1">
+            {isEditMode ? '칼럼 수정' : '칼럼 생성'}
+          </h2>
+          <p className="text-sm text-pastel-blue-600 mb-6">
+            {isEditMode ? '칼럼 정보를 수정하세요' : '새로운 칼럼을 생성하세요'}
+          </p>
 
           <form onSubmit={handleSubmit}>
             {/* 이름 입력 */}
@@ -153,7 +180,7 @@ export const CreateColumnModal: React.FC<CreateColumnModalProps> = ({
                 disabled={loading}
                 className={`flex-1 ${modalPrimaryButtonClass}`}
               >
-                {loading ? '생성 중...' : '생성'}
+                {loading ? (isEditMode ? '수정 중...' : '생성 중...') : (isEditMode ? '수정' : '생성')}
               </button>
             </div>
           </form>
