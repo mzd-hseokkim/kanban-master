@@ -45,7 +45,7 @@ out/
 **/out/
 
 # Spring Boot
-*.jar
+# *.jar
 *.war
 *.ear
 spring.log
