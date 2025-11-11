@@ -240,13 +240,13 @@ export const CreateCardModal: React.FC<CreateCardModalProps> = ({ workspaceId, b
                                     className="flex flex-wrap items-center gap-2 px-4 py-2 rounded-xl border border-white/40 bg-white/40 backdrop-blur-sm focus-within:ring-2 focus-within:ring-pastel-blue-300/60"
                                 >
                                     {selectedAssignee && (
-                                        <div className="flex items-center gap-1 px-3 py-1 rounded-lg bg-white/60 border border-white/40 text-pastel-blue-700 text-sm font-medium shadow-sm">
-                                            <span>{selectedAssignee.name}</span>
+                                        <div className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-gradient-to-br from-pastel-blue-400 to-pastel-cyan-400 border-2 border-pastel-blue-500 text-white text-sm font-bold shadow-md">
+                                            <span>👤 {selectedAssignee.name}</span>
                                             <button
                                                 type="button"
                                                 onClick={handleRemoveAssignee}
                                                 disabled={loading}
-                                                className="text-pastel-blue-500 hover:text-pastel-blue-700 disabled:opacity-50"
+                                                className="text-white hover:text-pastel-pink-200 disabled:opacity-50 transition-colors"
                                                 aria-label="담당자 제거"
                                             >
                                                 ✕
