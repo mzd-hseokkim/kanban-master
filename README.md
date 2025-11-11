@@ -6,6 +6,13 @@ Spring Boot와 React로 구축한 아름다운 글래스모피즘 디자인의 �
 
 - 🎨 **아름다운 글래스모피즘 UI** - 쿨한 파스텔 톤 색상과 유리 효과
 - 📋 **모던 칸반 보드** - 보드, 컬럼, 카드로 작업 관리
+- 🔐 **사용자 인증** - JWT 기반 회원가입/로그인, 토큰 갱신
+- 👥 **보드 멤버 관리** - 멤버 초대, 역할 기반 권한 관리 (OWNER, ADMIN, MEMBER, VIEWER)
+- 🏷️ **라벨 시스템** - 카드에 라벨 추가/관리, 색상 및 순서 지정
+- 🔍 **고급 검색** - 제목, 설명, 라벨, 담당자 기반 카드 검색
+- 📝 **보드 템플릿** - 보드를 템플릿으로 저장하고 재사용
+- 📊 **활동 로그** - 보드 및 카드의 모든 변경 사항 추적
+- 🏢 **워크스페이스** - 사용자별 워크스페이스 관리
 - ⚡ **빠르고 반응적** - React 19와 Spring Boot 3로 구축
 - 🔄 **실시간 업데이트** - Backend REST API 연동
 - 📱 **반응형 디자인** - 모든 디바이스에서 동작
@@ -34,12 +41,27 @@ Spring Boot와 React로 구축한 아름다운 글래스모피즘 디자인의 �
 kanban-master/
 ├── backend/                      # Spring Boot REST API
 │   ├── src/main/java/com/kanban/
-│   │   ├── config/              # JPA, CORS 설정
-│   │   ├── controller/          # REST 컨트롤러
-│   │   ├── dto/                 # Data Transfer Objects
-│   │   ├── entity/              # JPA 엔티티
-│   │   ├── repository/          # Spring Data 리포지토리
-│   │   └── service/             # 비즈니스 로직
+│   │   ├── activity/            # 활동 로그 (Activity, ActivityController, ActivityService, Repository)
+│   │   ├── auth/                # 인증/인가 (AuthController, AuthService, JWT, Security Config)
+│   │   │   ├── config/          # JWT 설정
+│   │   │   ├── dto/             # 인증 관련 DTO
+│   │   │   ├── security/        # Security Filter, Entry Point
+│   │   │   └── token/           # JWT Token Provider
+│   │   ├── board/               # 보드 관리 (Board, BoardController, BoardService, Repository)
+│   │   │   ├── dto/             # 보드 DTO
+│   │   │   └── member/          # 보드 멤버 및 초대 관리
+│   │   ├── card/                # 카드 관리 (Card, CardController, CardService, Repository)
+│   │   ├── column/              # 컬럼 관리 (BoardColumn, ColumnController, ColumnService, Repository)
+│   │   ├── label/               # 라벨 관리 (Label, CardLabel, Controller, Service, Repository)
+│   │   ├── search/              # 검색 기능 (SearchController, SearchService)
+│   │   ├── template/            # 보드 템플릿 (BoardTemplate, TemplateController, TemplateService)
+│   │   ├── user/                # 사용자 관리 (User, UserController, UserRepository)
+│   │   ├── workspace/           # 워크스페이스 관리 (Workspace, WorkspaceMember, Repository)
+│   │   ├── common/              # 공통 유틸리티 (SecurityUtil)
+│   │   ├── config/              # 설정 (JPA, Web, RestClient, OpenAPI, Async, Jackson)
+│   │   ├── controller/          # 공통 컨트롤러 (HealthController)
+│   │   ├── entity/              # 공통 엔티티 (BaseEntity)
+│   │   └── exception/           # 예외 처리 (GlobalExceptionHandler, Custom Exceptions)
 │   ├── src/main/resources/
 │   │   └── application.yml      # 애플리케이션 설정
 │   ├── build.gradle.kts         # Gradle 빌드 스크립트
@@ -47,12 +69,21 @@ kanban-master/
 │
 ├── frontend/                     # React SPA
 │   ├── src/
-│   │   ├── components/          # React 컴포넌트 (추가 예정)
-│   │   ├── hooks/               # 커스텀 React Hooks
-│   │   ├── services/            # API 서비스 레이어
-│   │   ├── types/               # TypeScript 타입 정의
-│   │   ├── utils/               # 유틸리티 함수
+│   │   ├── api/                 # API 레이어 (빈 디렉토리)
+│   │   ├── components/          # React 컴포넌트
+│   │   │   ├── board/           # 보드 관련 컴포넌트
+│   │   │   └── label/           # 라벨 관련 컴포넌트
+│   │   ├── context/             # React Context (AuthContext, BoardContext, CardContext, ColumnContext)
+│   │   ├── hooks/               # 커스텀 React Hooks (useBoards, usePermissions, useModalAnimation 등)
+│   │   ├── pages/               # 페이지 컴포넌트 (LoginPage, SignupPage, BoardsPage, DashboardPage, BoardDetailPage)
+│   │   │   ├── BoardDetailPage/ # 보드 상세 페이지 및 하위 컴포넌트
+│   │   │   └── DashboardPage/   # 대시보드 페이지 및 하위 컴포넌트
+│   │   ├── services/            # API 서비스 레이어 (authService, boardService, cardService 등)
+│   │   ├── styles/              # 스타일 유틸리티 (modalStyles)
+│   │   ├── types/               # TypeScript 타입 정의 (board, card, column, label, user 등)
+│   │   ├── utils/               # 유틸리티 함수 (axios, authStorage)
 │   │   ├── App.tsx              # 메인 애플리케이션 컴포넌트
+│   │   ├── main.tsx             # 진입점
 │   │   └── index.css            # 글로벌 스타일 + 글래스모피즘
 │   ├── tailwind.config.js       # Tailwind + 디자인 시스템 설정
 │   ├── vite.config.ts           # Vite 설정
@@ -143,13 +174,35 @@ cd frontend && npm run dev
 - 글래스모피즘 디자인의 칸반 보드가 보여야 합니다
 - 하단 상태바에 "✅ kanban-backend" 및 상태 "UP"이 표시되어야 합니다
 
-### 5️⃣ H2 콘솔 접속 (선택사항)
+### 5️⃣ 개발 도구 접속 (선택사항)
 
-데이터베이스 확인을 위해:
+#### H2 콘솔 (데이터베이스 확인)
 - **URL**: http://localhost:8080/h2-console
-- **JDBC URL**: `jdbc:h2:mem:kanban`
+- **JDBC URL**: `jdbc:h2:file:./data/kanban`
 - **사용자명**: `sa`
 - **비밀번호**: (비워두기)
+
+#### Swagger UI (API 문서 및 테스트)
+- **URL**: http://localhost:8080/swagger-ui/index.html
+- REST API 엔드포인트 확인 및 직접 테스트 가능
+
+### 6️⃣ API 엔드포인트 개요
+
+백엔드는 다음과 같은 REST API를 제공합니다:
+
+- **`/api/v1/auth`** - 인증 (회원가입, 로그인, 토큰 갱신, 프로필 조회)
+- **`/api/v1/boards`** - 보드 관리 (CRUD, 멤버 관리, 초대)
+- **`/api/v1/columns`** - 컬럼 관리 (생성, 수정, 삭제, 순서 변경)
+- **`/api/v1/cards`** - 카드 관리 (CRUD, 이동, 순서 변경)
+- **`/api/v1/labels`** - 라벨 관리 (CRUD, 순서 변경)
+- **`/api/v1/card-labels`** - 카드-라벨 연결 관리
+- **`/api/v1/search`** - 카드 검색
+- **`/api/v1/templates`** - 보드 템플릿 관리
+- **`/api/v1/activities`** - 활동 로그 조회
+- **`/api/v1/users`** - 사용자 검색
+- **`/api/v1/health`** - 헬스 체크
+
+자세한 API 명세는 Swagger UI에서 확인하세요.
 
 ## 🎨 Vibe Coding 가이드
 
@@ -199,20 +252,24 @@ Monorepo의 각 부분마다 고유한 코딩 표준이 있습니다:
 - 보안 가이드라인
 
 #### 📗 백엔드 - `./backend/CLAUDE.md`
-- Java/Spring Boot 모범 사례
-- 패키지 구조 (controller, service, repository, entity, dto)
-- 네이밍 규칙
-- 에러 처리 패턴
-- 테스트 표준
-- SOLID 원칙
+- Java 17/Spring Boot 3.2 모범 사례
+- 도메인 중심 패키지 구조 (각 도메인별 entity, controller, service, repository, dto)
+- Modern Java 기능 활용 (records, var, streams, Optional, pattern matching)
+- 네이밍 규칙 및 레이어별 책임
+- 에러 처리 및 예외 전략
+- 트랜잭션 관리 및 페이지네이션
+- 테스트 표준 (Unit, Integration, Repository Tests)
+- SOLID 원칙 및 보안 가이드
 
 #### 📙 프론트엔드 - `./frontend/CLAUDE.md`
-- React/TypeScript 모범 사례
+- React 19/TypeScript 5.3+ 모범 사례
 - 컴포넌트 구조 (함수형 컴포넌트 + Hooks)
-- 커스텀 훅 패턴
+- 프로젝트 구조 (components, pages, hooks, contexts, services, types, utils)
+- 커스텀 훅 패턴 및 Context API
 - API 호출을 위한 서비스 레이어
-- 경로 별칭 (`@/` imports)
-- React Testing Library를 사용한 테스트
+- Tailwind CSS 스타일링 가이드
+- 에러 처리 및 타입 안정성
+- 디자인 시스템 참조 (DESIGN.md)
 
 ### API 연동 가이드
 
@@ -226,6 +283,13 @@ Monorepo의 각 부분마다 고유한 코딩 표준이 있습니다:
 API 사용 예제:
 ```typescript
 import { boardService } from '@/services/boardService';
+import { authService } from '@/services/authService';
+
+// 사용자 인증
+const { accessToken, user } = await authService.login({
+  email: 'user@example.com',
+  password: 'password'
+});
 
 // 모든 보드 가져오기
 const boards = await boardService.getAll();
@@ -234,6 +298,13 @@ const boards = await boardService.getAll();
 const newBoard = await boardService.create({
   name: '내 보드',
   description: '보드 설명'
+});
+
+// 카드 검색
+import { searchService } from '@/services/searchService';
+const results = await searchService.searchCards(boardId, {
+  keyword: '검색어',
+  labelIds: [1, 2]
 });
 ```
 
@@ -250,35 +321,44 @@ const newBoard = await boardService.create({
 
 #### 백엔드 API
 ```bash
-# 1. backend/src/main/java/com/kanban/entity/에 엔티티 생성
-# 2. 리포지토리 인터페이스 생성
-# 3. DTO 클래스 생성
-# 4. 비즈니스 로직을 가진 서비스 생성
-# 5. REST 엔드포인트를 가진 컨트롤러 생성
-# 6. H2 콘솔이나 curl로 테스트
+# 1. backend/src/main/java/com/kanban/{domain}/에 도메인별 패키지 생성
+#    예: activity/, auth/, board/, card/, column/, label/, search/, template/, user/, workspace/
+# 2. 도메인 엔티티 생성 (Entity 클래스)
+# 3. 리포지토리 인터페이스 생성 (Repository)
+# 4. DTO 클래스 생성 (dto/ 하위 패키지)
+# 5. 비즈니스 로직을 가진 서비스 생성 (Service)
+# 6. REST 엔드포인트를 가진 컨트롤러 생성 (Controller)
+# 7. H2 콘솔이나 curl, Swagger UI로 테스트
 ```
 
 #### 프론트엔드 컴포넌트
 ```bash
 # 1. frontend/src/types/에 TypeScript 타입 정의
-# 2. frontend/src/services/에 서비스 생성
-# 3. frontend/src/hooks/에 커스텀 훅 생성 (선택사항)
-# 4. frontend/src/components/에 컴포넌트 생성
-# 5. DESIGN.md의 디자인 시스템 스타일 적용
-# 6. 브라우저에서 테스트
+# 2. frontend/src/services/에 API 서비스 생성
+# 3. frontend/src/context/에 Context API 생성 (상태 관리가 필요한 경우)
+# 4. frontend/src/hooks/에 커스텀 훅 생성 (선택사항)
+# 5. frontend/src/components/ 또는 frontend/src/pages/에 컴포넌트 생성
+#    - 공통 컴포넌트: components/
+#    - 페이지 컴포넌트: pages/
+#    - 페이지별 하위 컴포넌트: pages/{PageName}/components/
+# 6. DESIGN.md의 디자인 시스템 스타일 적용
+# 7. 브라우저에서 테스트
 ```
 
 ## 🔧 사용 가능한 스크립트
 
 ### 루트 레벨
 ```bash
-npm run dev              # 백엔드 & 프론트엔드 동시 실행
-npm run dev:backend      # 백엔드만 실행
-npm run dev:frontend     # 프론트엔드만 실행
-npm run build            # 두 프로젝트 모두 빌드
-npm run build:backend    # 백엔드만 빌드
-npm run build:frontend   # 프론트엔드만 빌드
-npm run clean            # 모든 빌드 결과물 삭제
+npm run dev                # 백엔드 & 프론트엔드 동시 실행 (hot reload 포함)
+npm run dev:backend        # 백엔드만 실행
+npm run dev:backend:watch  # 백엔드 hot reload (자동 재컴파일)
+npm run dev:frontend       # 프론트엔드만 실행
+npm run build              # 두 프로젝트 모두 빌드
+npm run build:backend      # 백엔드만 빌드
+npm run build:frontend     # 프론트엔드만 빌드
+npm run install:frontend   # 프론트엔드 의존성 설치
+npm run install:backend    # 백엔드 의존성 갱신
+npm run clean              # 모든 빌드 결과물 삭제
 ```
 
 ### 백엔드 (backend/ 디렉토리에서)
@@ -383,16 +463,29 @@ npm run build
 
 [라이선스를 여기에 작성하세요]
 
-## 🎯 다음 단계
+## 🎯 구현 현황 및 다음 단계
 
-- [ ] 보드 관리 구현 (CRUD)
-- [ ] 컬럼 관리 추가
-- [ ] 드래그 앤 드롭으로 카드 관리 추가
-- [ ] 사용자 인증
-- [ ] 실시간 협업
+### ✅ 완료된 기능
+- [x] 보드 관리 구현 (CRUD)
+- [x] 컬럼 관리 추가
+- [x] 카드 관리 추가
+- [x] 사용자 인증 (JWT 기반)
+- [x] 보드 멤버 관리 및 권한 제어 (RBAC)
+- [x] 라벨 시스템
+- [x] 고급 검색 기능
+- [x] 보드 템플릿
+- [x] 활동 로그
+- [x] 워크스페이스 관리
+
+### 🚧 진행 중 및 계획
+- [ ] 드래그 앤 드롭으로 카드 이동
+- [ ] 실시간 협업 (WebSocket)
+- [ ] 카드 코멘트 및 첨부파일
+- [ ] 알림 시스템
 - [ ] 프로덕션용 PostgreSQL
 - [ ] Docker 배포
 - [ ] CI/CD 파이프라인
+- [ ] E2E 테스트 자동화
 
 ---
 
