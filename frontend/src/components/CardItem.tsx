@@ -3,6 +3,7 @@ import { Card } from '@/types/card';
 import { useCard } from '@/context/CardContext';
 import { ErrorNotification } from '@/components/ErrorNotification';
 import { EditCardModal } from '@/components/EditCardModal';
+import { useDialog } from '@/hooks/useDialog';
 
 interface CardItemProps {
   card: Card;
@@ -26,6 +27,7 @@ export const CardItem: React.FC<CardItemProps> = ({
   animateOnMount = false,
 }) => {
   const { deleteCard, updateCard, loadCards } = useCard();
+  const { showConfirm } = useDialog();
   const [isDeleting, setIsDeleting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -33,7 +35,15 @@ export const CardItem: React.FC<CardItemProps> = ({
   const [hasAutoOpened, setHasAutoOpened] = useState(false);
 
   const handleDelete = async () => {
-    if (!window.confirm('정말 이 카드를 삭제하시겠습니까?')) return;
+    const confirmed = await showConfirm({
+      title: '카드 삭제',
+      message: '정말 이 카드를 삭제하시겠습니까?',
+      confirmText: '삭제',
+      cancelText: '취소',
+      variant: 'danger',
+    });
+
+    if (!confirmed) return;
 
     try {
       setIsDeleting(true);

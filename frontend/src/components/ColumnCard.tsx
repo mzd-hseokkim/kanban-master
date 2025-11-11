@@ -6,6 +6,7 @@ import { ErrorNotification } from '@/components/ErrorNotification';
 import { CardItem } from '@/components/CardItem';
 import { CreateCardModal } from '@/components/CreateCardModal';
 import { CreateColumnModal } from '@/components/CreateColumnModal';
+import { useDialog } from '@/hooks/useDialog';
 
 interface ColumnCardProps {
   column: Column;
@@ -19,6 +20,7 @@ interface ColumnCardProps {
 export const ColumnCard: React.FC<ColumnCardProps> = ({ column, workspaceId, boardId, canEdit, autoOpenCardId, onAutoOpenHandled }) => {
   const { deleteColumn } = useColumn();
   const { cards, loadCards, updateCard } = useCard();
+  const { showConfirm } = useDialog();
   const [showMenu, setShowMenu] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -65,7 +67,15 @@ export const ColumnCard: React.FC<ColumnCardProps> = ({ column, workspaceId, boa
   }, [cards, column.id]);
 
   const handleDelete = async () => {
-    if (!window.confirm('정말 이 칼럼을 삭제하시겠습니까?')) return;
+    const confirmed = await showConfirm({
+      title: '칼럼 삭제',
+      message: '정말 이 칼럼을 삭제하시겠습니까?',
+      confirmText: '삭제',
+      cancelText: '취소',
+      variant: 'danger',
+    });
+
+    if (!confirmed) return;
 
     try {
       setIsDeleting(true);

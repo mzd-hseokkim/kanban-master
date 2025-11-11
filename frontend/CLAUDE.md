@@ -28,6 +28,15 @@
 - Handle async side effects with abort controllers or guards to avoid state updates on unmounted components.
 - Return stable references (useCallback/useMemo) when hooks expose functions that consumers pass down further.
 
+### User Dialogs and Confirmations
+- Never use native browser alert() or confirm() functions; they break UI consistency and lack styling control.
+- Always use the useDialog hook from @/hooks/useDialog for all user confirmations and alerts.
+- Import useDialog and call showConfirm() for yes/no decisions or showAlert() for simple notifications.
+- The hook provides Promise-based API with variant options (danger, warning, info, error, success) for semantic meaning.
+- Example confirm: `const confirmed = await showConfirm({ title: 'Delete Item', message: 'Are you sure?', variant: 'danger' });`
+- Example alert: `await showAlert({ title: 'Error', message: 'Operation failed', variant: 'error' });`
+- All dialogs automatically include accessibility features, keyboard support, and consistent animations.
+
 ### Service Layer
 - Centralize HTTP calls inside services, one file per resource, and keep base URLs plus interceptors in a shared client module.
 - Each service method returns typed data (DTOs defined in types/) and throws domain-specific errors that components can handle.

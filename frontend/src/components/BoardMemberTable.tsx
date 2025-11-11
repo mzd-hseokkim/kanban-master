@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { memberService } from "@/services/memberService";
 import type { BoardMember, BoardMemberRole } from "@/types/member";
+import { useDialog } from "@/hooks/useDialog";
 
 interface BoardMemberTableProps {
   boardId: number;
@@ -25,6 +26,7 @@ export const BoardMemberTable = ({
   canManage,
   onMemberCountChange,
 }: BoardMemberTableProps) => {
+  const { showConfirm } = useDialog();
   const [members, setMembers] = useState<BoardMember[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -82,9 +84,15 @@ export const BoardMemberTable = ({
   };
 
   const handleRemoveMember = async (memberId: number) => {
-    if (!confirm("이 멤버를 제거하시겠습니까?")) {
-      return;
-    }
+    const confirmed = await showConfirm({
+      title: '멤버 제거',
+      message: '이 멤버를 제거하시겠습니까?',
+      confirmText: '제거',
+      cancelText: '취소',
+      variant: 'danger',
+    });
+
+    if (!confirmed) return;
 
     try {
       setRemovingMember(memberId);

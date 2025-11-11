@@ -4,6 +4,7 @@ import type { Label, CreateLabelRequest } from '@/types/label';
 import { LabelItem } from './LabelItem';
 import { LabelFormModal } from './LabelFormModal';
 import { useModalAnimation } from '@/hooks/useModalAnimation';
+import { useDialog } from '@/hooks/useDialog';
 import {
   modalOverlayClass,
   modalPanelClass,
@@ -22,6 +23,7 @@ interface LabelManagerProps {
  */
 export const LabelManager = ({ boardId, onClose }: LabelManagerProps) => {
   const { stage, close } = useModalAnimation(onClose);
+  const { showConfirm } = useDialog();
   const [labels, setLabels] = useState<Label[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -74,9 +76,15 @@ export const LabelManager = ({ boardId, onClose }: LabelManagerProps) => {
   };
 
   const handleDeleteLabel = async (labelId: number) => {
-    if (!confirm('이 라벨을 삭제하시겠습니까?')) {
-      return;
-    }
+    const confirmed = await showConfirm({
+      title: '라벨 삭제',
+      message: '이 라벨을 삭제하시겠습니까?',
+      confirmText: '삭제',
+      cancelText: '취소',
+      variant: 'danger',
+    });
+
+    if (!confirmed) return;
 
     try {
       setError(null);

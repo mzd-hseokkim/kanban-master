@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { labelService } from '@/services/labelService';
 import type { Label } from '@/types/label';
+import { useDialog } from '@/hooks/useDialog';
 
 interface LabelSelectorProps {
   boardId: number;
@@ -19,6 +20,7 @@ export const LabelSelector = ({
   selectedLabelIds,
   onChange,
 }: LabelSelectorProps) => {
+  const { showAlert } = useDialog();
   const [labels, setLabels] = useState<Label[]>([]);
   const [loading, setLoading] = useState(false);
   const [newLabelName, setNewLabelName] = useState('');
@@ -54,7 +56,11 @@ export const LabelSelector = ({
 
     // 중복 체크
     if (labels.some((label) => label.name.toLowerCase() === trimmedName.toLowerCase())) {
-      alert('동일한 이름의 라벨이 이미 존재합니다');
+      await showAlert({
+        title: '경고',
+        message: '동일한 이름의 라벨이 이미 존재합니다',
+        variant: 'warning',
+      });
       return;
     }
 
@@ -89,7 +95,11 @@ export const LabelSelector = ({
       setNewLabelName('');
     } catch (err) {
       console.error('Failed to create label:', err);
-      alert('라벨 생성에 실패했습니다');
+      await showAlert({
+        title: '오류',
+        message: '라벨 생성에 실패했습니다',
+        variant: 'error',
+      });
     } finally {
       setCreating(false);
     }

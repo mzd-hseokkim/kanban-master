@@ -12,6 +12,7 @@ import BoardDetailPage from '@/pages/BoardDetailPage';
 import { GlobalNavBar } from '@/components/GlobalNavBar';
 import { Footer } from '@/components/Footer';
 import { useAuth } from '@/context/AuthContext';
+import { DialogProvider } from '@/hooks/useDialog';
 
 const AUTH_CHROME_EXCLUDED_PATHS = ['/login', '/signup'];
 
@@ -77,30 +78,32 @@ const App = () => {
   );
 
   return (
-    <BoardProvider>
-      <ColumnProvider>
-        <CardProvider>
-          <div className="min-h-screen bg-gradient-pastel flex flex-col">
-            {shouldShowAppChrome && <GlobalNavBar />}
-            <div className="flex-1 relative min-h-0 overflow-hidden">
-              {isAnimating && prevLocation && (
-                <div className="page-transition-wrapper fadeOut" onAnimationEnd={handleAnimationEnd}>
-                  <Routes location={prevLocation}>
+    <DialogProvider>
+      <BoardProvider>
+        <ColumnProvider>
+          <CardProvider>
+            <div className="min-h-screen bg-gradient-pastel flex flex-col">
+              {shouldShowAppChrome && <GlobalNavBar />}
+              <div className="flex-1 relative min-h-0 overflow-hidden">
+                {isAnimating && prevLocation && (
+                  <div className="page-transition-wrapper fadeOut" onAnimationEnd={handleAnimationEnd}>
+                    <Routes location={prevLocation}>
+                      {routes}
+                    </Routes>
+                  </div>
+                )}
+                <div className={`page-transition-wrapper ${isAnimating ? 'fadeIn' : ''}`}>
+                  <Routes location={displayLocation}>
                     {routes}
                   </Routes>
                 </div>
-              )}
-              <div className={`page-transition-wrapper ${isAnimating ? 'fadeIn' : ''}`}>
-                <Routes location={displayLocation}>
-                  {routes}
-                </Routes>
               </div>
+              {shouldShowAppChrome && <Footer />}
             </div>
-            {shouldShowAppChrome && <Footer />}
-          </div>
-        </CardProvider>
-      </ColumnProvider>
-    </BoardProvider>
+          </CardProvider>
+        </ColumnProvider>
+      </BoardProvider>
+    </DialogProvider>
   );
 };
 

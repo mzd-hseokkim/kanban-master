@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { templateService } from '@/services/templateService';
 import type { BoardTemplate, ApplyTemplateRequest } from '@/types/template';
 import { useModalAnimation } from '@/hooks/useModalAnimation';
+import { useDialog } from '@/hooks/useDialog';
 import {
   modalOverlayClass,
   modalPanelClass,
@@ -33,6 +34,7 @@ export const TemplateGallery: React.FC<TemplateGalleryProps> = ({
   const [showApplyModal, setShowApplyModal] = useState(false);
 
   const { stage, close } = useModalAnimation(onClose);
+  const { showAlert } = useDialog();
 
   useEffect(() => {
     loadData();
@@ -80,7 +82,11 @@ export const TemplateGallery: React.FC<TemplateGalleryProps> = ({
       close();
     } catch (err) {
       console.error('Failed to apply template:', err);
-      alert('템플릿 적용에 실패했습니다');
+      await showAlert({
+        title: '오류',
+        message: '템플릿 적용에 실패했습니다',
+        variant: 'error',
+      });
     } finally {
       setApplying(false);
     }
