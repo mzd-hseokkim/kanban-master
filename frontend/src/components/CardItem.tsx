@@ -106,9 +106,6 @@ export const CardItem: React.FC<CardItemProps> = ({
 
   const handleDrop = async (e: React.DragEvent<HTMLDivElement>) => {
     if (!canEdit) return;
-    e.preventDefault();
-    e.stopPropagation();
-
     const draggedCardId = parseInt(e.dataTransfer.getData('cardId'), 10);
     const sourceColumnId = parseInt(e.dataTransfer.getData('sourceColumnId'), 10);
 
@@ -119,6 +116,8 @@ export const CardItem: React.FC<CardItemProps> = ({
 
     // 같은 컬럼 내에서의 이동
     if (sourceColumnId === columnId) {
+      e.preventDefault();
+      e.stopPropagation();
       try {
         // 드래그된 카드를 현재 카드 위치에 드롭
         // 현재 카드의 position을 드래그된 카드의 새 위치로 설정
