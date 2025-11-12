@@ -2,6 +2,8 @@
 
 Spring Boot와 React로 구축한 아름다운 글래스모피즘 디자인의 모던 칸반 보드 애플리케이션입니다.
 
+![Board Detail](docs/images/board-detail.png)
+
 ## ✨ 주요 기능
 
 -   🎨 **아름다운 글래스모피즘 UI** - 쿨한 파스텔 톤 색상과 유리 효과
