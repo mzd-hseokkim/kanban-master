@@ -1,39 +1,41 @@
-# Kanban Board
+# Kanban Master
 
 Spring Boot와 React로 구축한 아름다운 글래스모피즘 디자인의 모던 칸반 보드 애플리케이션입니다.
 
 ## ✨ 주요 기능
 
-- 🎨 **아름다운 글래스모피즘 UI** - 쿨한 파스텔 톤 색상과 유리 효과
-- 📋 **모던 칸반 보드** - 보드, 컬럼, 카드로 작업 관리
-- 🔐 **사용자 인증** - JWT 기반 회원가입/로그인, 토큰 갱신
-- 👥 **보드 멤버 관리** - 멤버 초대, 역할 기반 권한 관리 (OWNER, ADMIN, MEMBER, VIEWER)
-- 🏷️ **라벨 시스템** - 카드에 라벨 추가/관리, 색상 및 순서 지정
-- 🔍 **고급 검색** - 제목, 설명, 라벨, 담당자 기반 카드 검색
-- 📝 **보드 템플릿** - 보드를 템플릿으로 저장하고 재사용
-- 📊 **활동 로그** - 보드 및 카드의 모든 변경 사항 추적
-- 🏢 **워크스페이스** - 사용자별 워크스페이스 관리
-- ⚡ **빠르고 반응적** - React 19와 Spring Boot 3로 구축
-- 🔄 **실시간 업데이트** - Backend REST API 연동
-- 📱 **반응형 디자인** - 모든 디바이스에서 동작
+-   🎨 **아름다운 글래스모피즘 UI** - 쿨한 파스텔 톤 색상과 유리 효과
+-   📋 **모던 칸반 보드** - 보드, 컬럼, 카드로 작업 관리
+-   🔐 **사용자 인증** - JWT 기반 회원가입/로그인, 토큰 갱신
+-   👥 **보드 멤버 관리** - 멤버 초대, 역할 기반 권한 관리 (OWNER, ADMIN, MEMBER, VIEWER)
+-   🏷️ **라벨 시스템** - 카드에 라벨 추가/관리, 색상 및 순서 지정
+-   🔍 **고급 검색** - 제목, 설명, 라벨, 담당자 기반 카드 검색
+-   📝 **보드 템플릿** - 보드를 템플릿으로 저장하고 재사용
+-   📊 **활동 로그** - 보드 및 카드의 모든 변경 사항 추적
+-   🏢 **워크스페이스** - 사용자별 워크스페이스 관리
+-   ⚡ **빠르고 반응적** - React 19와 Spring Boot 3로 구축
+-   🔄 **실시간 업데이트** - Backend REST API 연동
+-   📱 **반응형 디자인** - 모든 디바이스에서 동작
 
 ## 🛠 기술 스택
 
 ### Backend
-- **Java 17** - 최신 Java LTS 버전
-- **Spring Boot 3.2.0** - 엔터프라이즈급 프레임워크
-- **Gradle (Kotlin DSL)** - 빌드 자동화 도구
-- **H2 Database** - 개발용 인메모리 데이터베이스
-- **Spring Data JPA** - 데이터 영속성 관리
-- **Lombok** - 보일러플레이트 코드 감소
+
+-   **Java 17** - 최신 Java LTS 버전
+-   **Spring Boot 3.2.0** - 엔터프라이즈급 프레임워크
+-   **Gradle (Kotlin DSL)** - 빌드 자동화 도구
+-   **H2 Database** - 개발용 인메모리 데이터베이스
+-   **Spring Data JPA** - 데이터 영속성 관리
+-   **Lombok** - 보일러플레이트 코드 감소
 
 ### Frontend
-- **React 19** - 최신 React와 모던 Hooks
-- **TypeScript** - 타입 안정성
-- **Vite** - 초고속 빌드 도구
-- **Tailwind CSS** - 유틸리티 우선 CSS 프레임워크
-- **Axios** - HTTP 클라이언트
-- **커스텀 디자인 시스템** - 글래스모피즘 + 파스텔 컬러
+
+-   **React 19** - 최신 React와 모던 Hooks
+-   **TypeScript** - 타입 안정성
+-   **Vite** - 초고속 빌드 도구
+-   **Tailwind CSS** - 유틸리티 우선 CSS 프레임워크
+-   **Axios** - HTTP 클라이언트
+-   **커스텀 디자인 시스템** - 글래스모피즘 + 파스텔 컬러
 
 ## 📁 프로젝트 구조
 
@@ -102,11 +104,13 @@ kanban-master/
 ### 필수 요구사항
 
 다음 프로그램들이 설치되어 있어야 합니다:
-- **Java 17** 이상
-- **Node.js 18+** 및 **npm 9+**
-- **Git** (버전 관리용)
+
+-   **Java 17** 이상
+-   **Node.js 18+** 및 **npm 9+**
+-   **Git** (버전 관리용)
 
 버전 확인:
+
 ```bash
 java -version   # 17 이상이어야 함
 node -version   # 18 이상이어야 함
@@ -123,6 +127,7 @@ cd kanban-master
 ### 2️⃣ 의존성 설치
 
 #### 방법 A: 한 번에 설치 (권장)
+
 ```bash
 # 루트 의존성 설치 (concurrently)
 npm install
@@ -132,6 +137,7 @@ npm run install:frontend
 ```
 
 #### 방법 B: 개별 설치
+
 ```bash
 # 루트 의존성
 npm install
@@ -147,14 +153,18 @@ cd ..
 ### 3️⃣ 애플리케이션 실행
 
 #### 빠른 시작 (백엔드 + 프론트엔드 동시 실행)
+
 ```bash
 npm run dev
 ```
+
 백엔드와 프론트엔드를 동시에 실행합니다:
-- Backend: http://localhost:8080
-- Frontend: http://localhost:3000
+
+-   Backend: http://localhost:8080
+-   Frontend: http://localhost:3000
 
 #### 개별 실행
+
 ```bash
 # 터미널 1 - Backend
 npm run dev:backend
@@ -170,37 +180,40 @@ cd frontend && npm run dev
 ### 4️⃣ 설치 확인
 
 브라우저를 열고 다음 주소로 이동:
-- **프론트엔드**: http://localhost:3000
-- 글래스모피즘 디자인의 칸반 보드가 보여야 합니다
-- 하단 상태바에 "✅ kanban-backend" 및 상태 "UP"이 표시되어야 합니다
+
+-   **프론트엔드**: http://localhost:3000
+-   글래스모피즘 디자인의 칸반 보드가 보여야 합니다
+-   하단 상태바에 "✅ kanban-backend" 및 상태 "UP"이 표시되어야 합니다
 
 ### 5️⃣ 개발 도구 접속 (선택사항)
 
 #### H2 콘솔 (데이터베이스 확인)
-- **URL**: http://localhost:8080/h2-console
-- **JDBC URL**: `jdbc:h2:file:./data/kanban`
-- **사용자명**: `sa`
-- **비밀번호**: (비워두기)
+
+-   **URL**: http://localhost:8080/h2-console
+-   **JDBC URL**: `jdbc:h2:file:./data/kanban`
+-   **사용자명**: `sa`
+-   **비밀번호**: (비워두기)
 
 #### Swagger UI (API 문서 및 테스트)
-- **URL**: http://localhost:8080/swagger-ui/index.html
-- REST API 엔드포인트 확인 및 직접 테스트 가능
+
+-   **URL**: http://localhost:8080/swagger-ui/index.html
+-   REST API 엔드포인트 확인 및 직접 테스트 가능
 
 ### 6️⃣ API 엔드포인트 개요
 
 백엔드는 다음과 같은 REST API를 제공합니다:
 
-- **`/api/v1/auth`** - 인증 (회원가입, 로그인, 토큰 갱신, 프로필 조회)
-- **`/api/v1/boards`** - 보드 관리 (CRUD, 멤버 관리, 초대)
-- **`/api/v1/columns`** - 컬럼 관리 (생성, 수정, 삭제, 순서 변경)
-- **`/api/v1/cards`** - 카드 관리 (CRUD, 이동, 순서 변경)
-- **`/api/v1/labels`** - 라벨 관리 (CRUD, 순서 변경)
-- **`/api/v1/card-labels`** - 카드-라벨 연결 관리
-- **`/api/v1/search`** - 카드 검색
-- **`/api/v1/templates`** - 보드 템플릿 관리
-- **`/api/v1/activities`** - 활동 로그 조회
-- **`/api/v1/users`** - 사용자 검색
-- **`/api/v1/health`** - 헬스 체크
+-   **`/api/v1/auth`** - 인증 (회원가입, 로그인, 토큰 갱신, 프로필 조회)
+-   **`/api/v1/boards`** - 보드 관리 (CRUD, 멤버 관리, 초대)
+-   **`/api/v1/columns`** - 컬럼 관리 (생성, 수정, 삭제, 순서 변경)
+-   **`/api/v1/cards`** - 카드 관리 (CRUD, 이동, 순서 변경)
+-   **`/api/v1/labels`** - 라벨 관리 (CRUD, 순서 변경)
+-   **`/api/v1/card-labels`** - 카드-라벨 연결 관리
+-   **`/api/v1/search`** - 카드 검색
+-   **`/api/v1/templates`** - 보드 템플릿 관리
+-   **`/api/v1/activities`** - 활동 로그 조회
+-   **`/api/v1/users`** - 사용자 검색
+-   **`/api/v1/health`** - 헬스 체크
 
 자세한 API 명세는 Swagger UI에서 확인하세요.
 
@@ -213,13 +226,15 @@ cd frontend && npm run dev
 우리의 디자인 시스템은 **글래스모피즘**과 **쿨한 파스텔 컬러**를 사용합니다. 모든 디자인 토큰과 컴포넌트는 다음 문서에 정리되어 있습니다:
 
 📖 **`frontend/DESIGN.md`** - 완전한 디자인 시스템 문서
-- 색상 팔레트 (5가지 파스텔 컬러 × 10단계)
-- 글래스모피즘 유틸리티 (`.glass`, `.glass-light`, `.glass-heavy`)
-- 타이포그래피, 간격, 그림자
-- 컴포넌트 예제
-- 접근성 가이드라인
+
+-   색상 팔레트 (5가지 파스텔 컬러 × 10단계)
+-   글래스모피즘 유틸리티 (`.glass`, `.glass-light`, `.glass-heavy`)
+-   타이포그래피, 간격, 그림자
+-   컴포넌트 예제
+-   접근성 가이드라인
 
 #### 색상 빠른 참조
+
 ```javascript
 // Tailwind에서 사용 가능한 파스텔 컬러
 pastel-blue-{50-900}    // 주요 색상
@@ -230,6 +245,7 @@ pastel-pink-{50-900}    // 경고 색상
 ```
 
 #### 글래스 효과 빠른 적용
+
 ```jsx
 <div className="glass rounded-2xl p-6 shadow-glass">
   {/* 글래스 카드 */}
@@ -245,50 +261,55 @@ pastel-pink-{50-900}    // 경고 색상
 Monorepo의 각 부분마다 고유한 코딩 표준이 있습니다:
 
 #### 📘 루트 - `./CLAUDE.md`
-- Monorepo 관리
-- 프론트엔드/백엔드 간 통신 표준
-- Git 워크플로우
-- 개발 워크플로우
-- 보안 가이드라인
+
+-   Monorepo 관리
+-   프론트엔드/백엔드 간 통신 표준
+-   Git 워크플로우
+-   개발 워크플로우
+-   보안 가이드라인
 
 #### 📗 백엔드 - `./backend/CLAUDE.md`
-- Java 17/Spring Boot 3.2 모범 사례
-- 도메인 중심 패키지 구조 (각 도메인별 entity, controller, service, repository, dto)
-- Modern Java 기능 활용 (records, var, streams, Optional, pattern matching)
-- 네이밍 규칙 및 레이어별 책임
-- 에러 처리 및 예외 전략
-- 트랜잭션 관리 및 페이지네이션
-- 테스트 표준 (Unit, Integration, Repository Tests)
-- SOLID 원칙 및 보안 가이드
+
+-   Java 17/Spring Boot 3.2 모범 사례
+-   도메인 중심 패키지 구조 (각 도메인별 entity, controller, service, repository, dto)
+-   Modern Java 기능 활용 (records, var, streams, Optional, pattern matching)
+-   네이밍 규칙 및 레이어별 책임
+-   에러 처리 및 예외 전략
+-   트랜잭션 관리 및 페이지네이션
+-   테스트 표준 (Unit, Integration, Repository Tests)
+-   SOLID 원칙 및 보안 가이드
 
 #### 📙 프론트엔드 - `./frontend/CLAUDE.md`
-- React 19/TypeScript 5.3+ 모범 사례
-- 컴포넌트 구조 (함수형 컴포넌트 + Hooks)
-- 프로젝트 구조 (components, pages, hooks, contexts, services, types, utils)
-- 커스텀 훅 패턴 및 Context API
-- API 호출을 위한 서비스 레이어
-- Tailwind CSS 스타일링 가이드
-- 에러 처리 및 타입 안정성
-- 디자인 시스템 참조 (DESIGN.md)
+
+-   React 19/TypeScript 5.3+ 모범 사례
+-   컴포넌트 구조 (함수형 컴포넌트 + Hooks)
+-   프로젝트 구조 (components, pages, hooks, contexts, services, types, utils)
+-   커스텀 훅 패턴 및 Context API
+-   API 호출을 위한 서비스 레이어
+-   Tailwind CSS 스타일링 가이드
+-   에러 처리 및 타입 안정성
+-   디자인 시스템 참조 (DESIGN.md)
 
 ### API 연동 가이드
 
 📖 **`frontend/API_INTEGRATION.md`** - 완전한 API 연동 가이드
-- Axios 설정
-- 서비스 레이어 예제
-- API 호출을 위한 커스텀 훅
-- 에러 처리 패턴
-- 인증 설정
+
+-   Axios 설정
+-   서비스 레이어 예제
+-   API 호출을 위한 커스텀 훅
+-   에러 처리 패턴
+-   인증 설정
 
 API 사용 예제:
+
 ```typescript
 import { boardService } from '@/services/boardService';
 import { authService } from '@/services/authService';
 
 // 사용자 인증
 const { accessToken, user } = await authService.login({
-  email: 'user@example.com',
-  password: 'password'
+    email: 'user@example.com',
+    password: 'password',
 });
 
 // 모든 보드 가져오기
@@ -296,15 +317,15 @@ const boards = await boardService.getAll();
 
 // 보드 생성
 const newBoard = await boardService.create({
-  name: '내 보드',
-  description: '보드 설명'
+    name: '내 보드',
+    description: '보드 설명',
 });
 
 // 카드 검색
 import { searchService } from '@/services/searchService';
 const results = await searchService.searchCards(boardId, {
-  keyword: '검색어',
-  labelIds: [1, 2]
+    keyword: '검색어',
+    labelIds: [1, 2],
 });
 ```
 
@@ -320,6 +341,7 @@ const results = await searchService.searchCards(boardId, {
 ### 새 기능 만들기
 
 #### 백엔드 API
+
 ```bash
 # 1. backend/src/main/java/com/kanban/{domain}/에 도메인별 패키지 생성
 #    예: activity/, auth/, board/, card/, column/, label/, search/, template/, user/, workspace/
@@ -332,6 +354,7 @@ const results = await searchService.searchCards(boardId, {
 ```
 
 #### 프론트엔드 컴포넌트
+
 ```bash
 # 1. frontend/src/types/에 TypeScript 타입 정의
 # 2. frontend/src/services/에 API 서비스 생성
@@ -348,6 +371,7 @@ const results = await searchService.searchCards(boardId, {
 ## 🔧 사용 가능한 스크립트
 
 ### 루트 레벨
+
 ```bash
 npm run dev                # 백엔드 & 프론트엔드 동시 실행 (hot reload 포함)
 npm run dev:backend        # 백엔드만 실행
@@ -362,6 +386,7 @@ npm run clean              # 모든 빌드 결과물 삭제
 ```
 
 ### 백엔드 (backend/ 디렉토리에서)
+
 ```bash
 ./gradlew bootRun        # Spring Boot 앱 실행
 ./gradlew build          # JAR 파일 빌드
@@ -370,6 +395,7 @@ npm run clean              # 모든 빌드 결과물 삭제
 ```
 
 ### 프론트엔드 (frontend/ 디렉토리에서)
+
 ```bash
 npm run dev              # Vite 개발 서버 시작
 npm run build            # 프로덕션용 빌드
@@ -380,29 +406,32 @@ npm run lint             # ESLint 실행
 ## 🧪 테스트
 
 ### 백엔드 테스트
+
 ```bash
 cd backend
 ./gradlew test
 ```
 
 ### 프론트엔드 테스트
+
 ```bash
 cd frontend
 npm test
 ```
 
 ### 통합 테스트
+
 완전한 통합 테스트 가이드는 `INTEGRATION_TEST.md`를 참조하세요.
 
 ## 📚 문서
 
-- **`README.md`** (이 파일) - 프로젝트 개요 및 설정
-- **`CLAUDE.md`** - Monorepo 전체 개발 표준
-- **`backend/CLAUDE.md`** - 백엔드 코딩 표준
-- **`frontend/CLAUDE.md`** - 프론트엔드 코딩 표준
-- **`frontend/DESIGN.md`** - 디자인 시스템 문서
-- **`frontend/API_INTEGRATION.md`** - API 연동 가이드
-- **`INTEGRATION_TEST.md`** - 통합 테스트 가이드
+-   **`README.md`** (이 파일) - 프로젝트 개요 및 설정
+-   **`CLAUDE.md`** - Monorepo 전체 개발 표준
+-   **`backend/CLAUDE.md`** - 백엔드 코딩 표준
+-   **`frontend/CLAUDE.md`** - 프론트엔드 코딩 표준
+-   **`frontend/DESIGN.md`** - 디자인 시스템 문서
+-   **`frontend/API_INTEGRATION.md`** - API 연동 가이드
+-   **`INTEGRATION_TEST.md`** - 통합 테스트 가이드
 
 ## 🐛 문제 해결
 
@@ -430,6 +459,7 @@ npm install
 ```
 
 ### 백엔드에 연결할 수 없을 때
+
 1. 백엔드가 실행 중인지 확인: `npm run dev:backend`
 2. 백엔드 로그에서 에러 확인
 3. 백엔드가 포트 8080에서 실행 중인지 확인: `curl http://localhost:8080/api/v1/health`
@@ -438,6 +468,7 @@ npm install
 ## 🚢 배포
 
 ### 백엔드
+
 ```bash
 cd backend
 ./gradlew build
@@ -445,6 +476,7 @@ java -jar build/libs/kanban-backend-0.0.1-SNAPSHOT.jar
 ```
 
 ### 프론트엔드
+
 ```bash
 cd frontend
 npm run build
@@ -466,26 +498,28 @@ npm run build
 ## 🎯 구현 현황 및 다음 단계
 
 ### ✅ 완료된 기능
-- [x] 보드 관리 구현 (CRUD)
-- [x] 컬럼 관리 추가
-- [x] 카드 관리 추가
-- [x] 사용자 인증 (JWT 기반)
-- [x] 보드 멤버 관리 및 권한 제어 (RBAC)
-- [x] 라벨 시스템
-- [x] 고급 검색 기능
-- [x] 보드 템플릿
-- [x] 활동 로그
-- [x] 워크스페이스 관리
+
+-   [x] 보드 관리 구현 (CRUD)
+-   [x] 컬럼 관리 추가
+-   [x] 카드 관리 추가
+-   [x] 사용자 인증 (JWT 기반)
+-   [x] 보드 멤버 관리 및 권한 제어 (RBAC)
+-   [x] 라벨 시스템
+-   [x] 고급 검색 기능
+-   [x] 보드 템플릿
+-   [x] 활동 로그
+-   [x] 워크스페이스 관리
 
 ### 🚧 진행 중 및 계획
-- [ ] 드래그 앤 드롭으로 카드 이동
-- [ ] 실시간 협업 (WebSocket)
-- [ ] 카드 코멘트 및 첨부파일
-- [ ] 알림 시스템
-- [ ] 프로덕션용 PostgreSQL
-- [ ] Docker 배포
-- [ ] CI/CD 파이프라인
-- [ ] E2E 테스트 자동화
+
+-   [ ] 드래그 앤 드롭으로 카드 이동
+-   [ ] 실시간 협업 (WebSocket)
+-   [ ] 카드 코멘트 및 첨부파일
+-   [ ] 알림 시스템
+-   [ ] 프로덕션용 PostgreSQL
+-   [ ] Docker 배포
+-   [ ] CI/CD 파이프라인
+-   [ ] E2E 테스트 자동화
 
 ---
 
