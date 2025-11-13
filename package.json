@@ -15,7 +15,10 @@
     "build": "npm run build:backend && npm run build:frontend",
     "install:frontend": "cd frontend && npm install",
     "install:backend": "cd backend && ./gradlew build --refresh-dependencies",
-    "clean": "rm -rf frontend/node_modules frontend/dist backend/build backend/.gradle"
+    "clean": "rm -rf frontend/node_modules frontend/dist backend/build backend/.gradle",
+    "sonar:backend": "cd backend && ./gradlew sonar",
+    "sonar:frontend": "cd frontend && npm run sonar",
+    "sonar": "npm run sonar:backend && npm run sonar:frontend"
   },
   "devDependencies": {
     "concurrently": "^8.2.2"

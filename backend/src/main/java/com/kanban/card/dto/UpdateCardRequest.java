@@ -1,5 +1,6 @@
 package com.kanban.card.dto;
 
+import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -18,6 +19,7 @@ public class UpdateCardRequest {
 
     private String title;
 
+    @Size(max = 50000, message = "설명은 50,000자를 초과할 수 없습니다")
     private String description;
 
     private String bgColor;

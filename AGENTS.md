@@ -1,5 +1,9 @@
 # Kanban Board – Monorepo Guidance
 
+## Notice
+
+Always answer in Korean language unless user asked to answer in English.
+
 ## Purpose
 
 Lightweight reference for how the Spring Boot backend and React frontend coexist inside this monorepo.

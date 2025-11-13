@@ -11,6 +11,7 @@ interface ModalPanelOptions {
   padding?: string;
   extra?: string;
   fullHeight?: boolean;
+  scrollable?: boolean;
 }
 
 export const modalOverlayClass = (stage?: ModalAnimationStage, extra?: string) =>
@@ -28,6 +29,7 @@ export const modalPanelClass = ({
   padding = 'p-8',
   extra,
   fullHeight,
+  scrollable,
 }: ModalPanelOptions = {}) =>
   joinClasses(
     'modal-panel',
@@ -39,6 +41,8 @@ export const modalPanelClass = ({
     'border-white/30',
     'w-full',
     fullHeight ? 'h-full' : null,
+    scrollable ? 'max-h-[90vh]' : null,
+    scrollable ? 'overflow-y-auto' : null,
     'mx-4',
     padding,
     maxWidth,

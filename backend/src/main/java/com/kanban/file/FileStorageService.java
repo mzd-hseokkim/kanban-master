@@ -11,6 +11,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.UUID;
+import java.util.stream.Stream;
 
 /**
  * 파일 저장 서비스
@@ -92,16 +93,17 @@ public class FileStorageService {
      */
     private void deleteExistingAvatarFiles(Path userDir) throws IOException {
         if (Files.exists(userDir)) {
-            Files.list(userDir)
-                    .filter(path -> path.getFileName().toString().contains("-profile."))
-                    .forEach(path -> {
-                        try {
-                            Files.delete(path);
-                            log.debug("Deleted existing avatar file: {}", path);
-                        } catch (IOException e) {
-                            log.warn("Failed to delete existing avatar file: {}", path, e);
-                        }
-                    });
+            try (Stream<Path> files = Files.list(userDir)) {
+                files.filter(path -> path.getFileName().toString().contains("-profile."))
+                        .forEach(path -> {
+                            try {
+                                Files.delete(path);
+                                log.debug("Deleted existing avatar file: {}", path);
+                            } catch (IOException e) {
+                                log.warn("Failed to delete existing avatar file: {}", path, e);
+                            }
+                        });
+            }
         }
     }
 

@@ -1,5 +1,9 @@
 # Kanban Board – Monorepo Guidance
 
+## Notice
+
+Always answer in Korean language unless user asked to answer in English.
+
 ## Global Rules
 
 -   Always answer in Korean language.
