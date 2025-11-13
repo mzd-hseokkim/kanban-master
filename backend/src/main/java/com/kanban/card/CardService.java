@@ -17,6 +17,7 @@ import com.kanban.label.dto.LabelResponse;
 import com.kanban.user.UserRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.owasp.html.PolicyFactory;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -37,6 +38,7 @@ public class CardService {
     private final BoardMemberRoleValidator roleValidator;
     private final CardLabelRepository cardLabelRepository;
     private final UserRepository userRepository;
+    private final PolicyFactory htmlSanitizerPolicy;
 
     /**
      * 특정 칼럼의 모든 카드 조회
@@ -93,7 +95,7 @@ public class CardService {
         Card card = Card.builder()
                 .column(column)
                 .title(request.getTitle())
-                .description(request.getDescription())
+                .description(sanitizeHtml(request.getDescription()))
                 .position(nextPosition)
                 .bgColor(request.getBgColor())
                 .priority(request.getPriority())
@@ -139,7 +141,7 @@ public class CardService {
             card.setTitle(request.getTitle());
         }
         if (request.getDescription() != null) {
-            card.setDescription(request.getDescription());
+            card.setDescription(sanitizeHtml(request.getDescription()));
         }
         if (request.getBgColor() != null) {
             card.setBgColor(request.getBgColor());
@@ -291,5 +293,16 @@ public class CardService {
                     .ifPresent(user -> cardResponse.setAssigneeAvatarUrl(user.getAvatarUrl()));
         }
         return cardResponse;
+    }
+
+    /**
+     * HTML Sanitization
+     * XSS 공격 방지를 위해 위험한 HTML 태그와 속성을 제거
+     */
+    private String sanitizeHtml(String html) {
+        if (html == null || html.isBlank()) {
+            return null;
+        }
+        return htmlSanitizerPolicy.sanitize(html);
     }
 }

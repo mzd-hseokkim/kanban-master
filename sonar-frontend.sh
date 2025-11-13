@@ -1,0 +1,15 @@
+sonar-scanner \
+  -Dsonar.projectKey=kanban-master-frontend \
+  -Dsonar.projectName="Kanban Frontend" \
+  -Dsonar.projectVersion=0.0.1 \
+  -Dsonar.sources=./frontend/src \
+  -Dsonar.tests=./frontend/src \
+  -Dsonar.test.inclusions=**/__tests__/**,**/*.test.ts,**/*.test.tsx \
+  -Dsonar.exclusions=**/__tests__/**,**/*.test.ts,**/*.test.tsx,**/node_modules/**,**/dist/**,**/coverage/**,**/*.config.ts,**/*.config.js \
+  -Dsonar.typescript.file.suffixes=.ts,.tsx \
+  -Dsonar.javascript.file.suffixes=.js,.jsx \
+  -Dsonar.sourceEncoding=UTF-8 \
+  -Dsonar.javascript.lcov.reportPaths=./frontend/coverage/lcov.info \
+  -Dsonar.typescript.tsconfigPath=./frontend/tsconfig.json \
+  -Dsonar.host.url=http://localhost:9000 \
+  -Dsonar.login=sqp_d6e3d72626a2b9df970a635977c53debbe134e61

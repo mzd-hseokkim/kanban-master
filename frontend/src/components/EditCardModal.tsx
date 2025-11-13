@@ -8,12 +8,13 @@ import { labelService } from '@/services/labelService';
 import type { UserSearchResult } from '@/types/user';
 import { useModalAnimation } from '@/hooks/useModalAnimation';
 import { Avatar } from '@/components/common/Avatar';
+import RichTextEditor from '@/components/RichTextEditor';
+import { CollapsibleSection } from '@/components/common/CollapsibleSection';
 import {
     modalOverlayClass,
     modalPanelClass,
     modalLabelClass,
     modalInputClass,
-    modalTextareaClass,
     modalSelectClass,
     modalSecondaryButtonClass,
     modalPrimaryButtonClass,
@@ -69,6 +70,7 @@ export const EditCardModal: React.FC<EditCardModalProps> = ({ card, workspaceId,
     const assigneeInputContainerRef = useRef<HTMLDivElement>(null);
     const assigneeDropdownRef = useRef<HTMLDivElement>(null);
     const assigneeDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const selectedColorInfo = cardColors.find((color) => color.hex === selectedColor);
 
     const performAssigneeSearch = async (keyword: string) => {
         const trimmedKeyword = keyword.trim();
@@ -213,7 +215,13 @@ export const EditCardModal: React.FC<EditCardModalProps> = ({ card, workspaceId,
                     }
                 }}
             >
-                <div className={modalPanelClass({ stage, maxWidth: 'max-w-lg' })}>
+                <div
+                    className={modalPanelClass({
+                        stage,
+                        maxWidth: 'max-w-lg',
+                        scrollable: true,
+                    })}
+                >
                     {/* 헤더 */}
                     <h2 className="text-2xl font-bold text-pastel-blue-900 mb-1">카드 수정</h2>
                     <p className="text-sm text-pastel-blue-600 mb-6">카드 정보를 수정하세요</p>
@@ -243,14 +251,13 @@ export const EditCardModal: React.FC<EditCardModalProps> = ({ card, workspaceId,
                         {/* 설명 입력 */}
                         <div className="mb-4">
                             <label className={modalLabelClass}>설명</label>
-                            <textarea
+                            <RichTextEditor
                                 value={description}
-                                onChange={(e) => setDescription(e.target.value)}
+                                onChange={setDescription}
                                 placeholder="카드에 대한 설명을 입력하세요 (선택사항)"
-                                className={modalTextareaClass}
-                                rows={3}
-                                disabled={loading || !canEdit}
                                 readOnly={!canEdit}
+                                disabled={loading || !canEdit}
+                                maxLength={50000}
                             />
                         </div>
 
@@ -358,8 +365,63 @@ export const EditCardModal: React.FC<EditCardModalProps> = ({ card, workspaceId,
                             />
                         </div>
 
+                        {/* 상세 정보 (라벨 + 색상) */}
+                        <CollapsibleSection
+                            className="mb-6"
+                            title="상세 정보"
+                            summary={
+                                <div className="flex items-center gap-2 text-xs text-pastel-blue-500">
+                                    <span>
+                                        {selectedLabelIds.length > 0
+                                            ? `라벨 ${selectedLabelIds.length}개`
+                                            : '라벨 미선택'}
+                                    </span>
+                                    <span className="text-pastel-blue-200">•</span>
+                                    <span
+                                        className="inline-flex h-4 w-4 rounded-full border border-white/70 shadow-inner"
+                                        style={{ backgroundColor: selectedColor }}
+                                    />
+                                    <span>{selectedColorInfo?.label ?? '사용자 정의 색상'}</span>
+                                </div>
+                            }
+                        >
+                            {canEdit && (
+                                <div className="mb-6">
+                                    <label className={`${modalLabelClass} !mb-3`}>라벨</label>
+                                    <div className="max-h-48 overflow-y-auto rounded-2xl border border-white/30 bg-white/30 p-3">
+                                        <LabelSelector
+                                            boardId={boardId}
+                                            cardId={card.id}
+                                            selectedLabelIds={selectedLabelIds}
+                                            onChange={setSelectedLabelIds}
+                                        />
+                                    </div>
+                                </div>
+                            )}
+
+                            <div>
+                                <label className={`${modalLabelClass} !mb-3`}>색상 선택</label>
+                                <div className="grid grid-cols-5 gap-3">
+                                    {cardColors.map((color) => (
+                                        <button
+                                            key={color.hex}
+                                            type="button"
+                                            onClick={canEdit ? () => setSelectedColor(color.hex) : undefined}
+                                            style={{ backgroundColor: color.hex }}
+                                            className={`w-full h-12 ${modalColorButtonClass(selectedColor === color.hex)}`}
+                                            title={color.label}
+                                            disabled={loading || !canEdit}
+                                        />
+                                    ))}
+                                </div>
+                            </div>
+                        </CollapsibleSection>
+
+                        {/* 에러 메시지 */}
+                        {error && <div className={`mb-4 ${modalErrorClass}`}>{error}</div>}
+
                         {/* 완료 상태 */}
-                        <div className="mb-6">
+                        <div className="mb-4">
                             <div className="flex items-center gap-3 rounded-2xl border border-white/30 bg-white/30 px-4 py-3">
                                 <input
                                     type="checkbox"
@@ -371,42 +433,6 @@ export const EditCardModal: React.FC<EditCardModalProps> = ({ card, workspaceId,
                                 <span className="text-sm font-semibold text-pastel-blue-900">카드를 완료로 표시</span>
                             </div>
                         </div>
-
-                        {/* 라벨 선택 */}
-                        {canEdit && (
-                            <div className="mb-6">
-                                <label className={`${modalLabelClass} !mb-3`}>라벨</label>
-                                <div className="max-h-48 overflow-y-auto rounded-2xl border border-white/30 bg-white/30 p-3">
-                                    <LabelSelector
-                                        boardId={boardId}
-                                        cardId={card.id}
-                                        selectedLabelIds={selectedLabelIds}
-                                        onChange={setSelectedLabelIds}
-                                    />
-                                </div>
-                            </div>
-                        )}
-
-                        {/* 색상 선택 */}
-                        <div className="mb-6">
-                            <label className={`${modalLabelClass} !mb-3`}>색상 선택</label>
-                            <div className="grid grid-cols-5 gap-3">
-                                {cardColors.map((color) => (
-                                    <button
-                                        key={color.hex}
-                                        type="button"
-                                        onClick={canEdit ? () => setSelectedColor(color.hex) : undefined}
-                                        style={{ backgroundColor: color.hex }}
-                                        className={`w-full h-12 ${modalColorButtonClass(selectedColor === color.hex)}`}
-                                        title={color.label}
-                                        disabled={loading || !canEdit}
-                                    />
-                                ))}
-                            </div>
-                        </div>
-
-                        {/* 에러 메시지 */}
-                        {error && <div className={`mb-4 ${modalErrorClass}`}>{error}</div>}
 
                         {/* 버튼 */}
                         <div className="flex gap-3">

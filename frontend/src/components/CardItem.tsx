@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Card } from '@/types/card';
 import { useCard } from '@/context/CardContext';
 import { ErrorNotification } from '@/components/ErrorNotification';
@@ -172,6 +172,32 @@ export const CardItem: React.FC<CardItemProps> = ({
   const isDueSoon = dueDateInfo && dueDateInfo.daysUntilDue <= 3 && dueDateInfo.daysUntilDue >= 0;
   const isOverdue = dueDateInfo && dueDateInfo.isOverdue;
 
+  const descriptionPreview = useMemo(() => {
+    if (!card.description) return '';
+
+    const withListBullets = card.description
+      .replace(/<\/li>\s*/gi, '\n')
+      .replace(/<li[^>]*>/gi, '• ');
+
+    const withLineBreaks = withListBullets
+      .replace(/<br\s*\/?>/gi, '\n')
+      .replace(/<\/(p|div|h[1-6]|blockquote)>/gi, '\n')
+      .replace(/<(p|div|h[1-6]|blockquote)([^>]*)>/gi, '\n');
+
+    const plainText = withLineBreaks
+      .replace(/<[^>]+>/g, ' ')
+      .replace(/\u00a0/g, ' ')
+      .replace(/\r\n/g, '\n')
+      .replace(/\r/g, '\n')
+      .replace(/\f/g, '\n')
+      .split('\n')
+      .map((line) => line.trim())
+      .filter(Boolean)
+      .join('\n');
+
+    return plainText;
+  }, [card.description]);
+
   const handleCardClick = (e: React.MouseEvent) => {
     // 메뉴 버튼이나 체크박스 클릭 시에는 모달을 열지 않음
     const target = e.target as HTMLElement;
@@ -269,8 +295,10 @@ export const CardItem: React.FC<CardItemProps> = ({
         </div>
 
         {/* Description */}
-        {card.description && (
-          <p className="text-xs text-pastel-blue-600 mb-2 line-clamp-2">{card.description}</p>
+        {descriptionPreview && (
+          <div className="text-xs text-pastel-blue-600 mb-2 line-clamp-2 whitespace-pre-line">
+            {descriptionPreview}
+          </div>
         )}
 
         {/* Labels */}
