@@ -19,7 +19,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * 검색 서비스
@@ -101,12 +100,12 @@ public class SearchService {
         if (request.getLabelIds() != null && !request.getLabelIds().isEmpty()) {
             cards = cards.stream()
                     .filter(c -> hasAnyLabel(c.getId(), request.getLabelIds()))
-                    .collect(Collectors.toList());
+                    .toList();
         }
 
         return cards.stream()
                 .map(this::toSearchResponse)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     /**
@@ -176,12 +175,12 @@ public class SearchService {
         if (request.getLabelIds() != null && !request.getLabelIds().isEmpty()) {
             cards = cards.stream()
                     .filter(c -> hasAnyLabel(c.getId(), request.getLabelIds()))
-                    .collect(Collectors.toList());
+                    .toList();
         }
 
         return cards.stream()
                 .map(this::toSearchResponse)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     /**
@@ -198,7 +197,7 @@ public class SearchService {
         List<LabelResponse> labels = cardLabelRepository.findByCardId(card.getId())
                 .stream()
                 .map(cl -> LabelResponse.from(cl.getLabel()))
-                .collect(Collectors.toList());
+                .toList();
 
         return CardSearchResponse.builder()
                 .id(card.getId())

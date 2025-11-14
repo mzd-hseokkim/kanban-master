@@ -19,7 +19,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
-import java.util.stream.Collectors;
 import java.util.List;
 
 import static org.springframework.http.HttpStatus.FORBIDDEN;
@@ -158,7 +157,7 @@ public class AuthService {
                         member.getWorkspace().getSlug(),
                         member.getRole()
                 ))
-                .collect(Collectors.toList());
+                .toList();
         return new UserProfileResponse(
                 user.getId(),
                 user.getEmail(),
