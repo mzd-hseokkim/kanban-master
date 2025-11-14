@@ -4,10 +4,6 @@
 
 Always answer in Korean language unless user asked to answer in English.
 
-## Global Rules
-
--   Always answer in Korean language.
-
 ## Purpose
 
 Lightweight reference for how the Spring Boot backend and React frontend coexist inside this monorepo.
