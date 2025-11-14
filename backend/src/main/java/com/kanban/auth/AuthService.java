@@ -6,7 +6,9 @@ import com.kanban.auth.token.JwtTokenProvider;
 import com.kanban.user.User;
 import com.kanban.user.UserRepository;
 import com.kanban.user.UserStatus;
-import com.kanban.workspace.*;
+import com.kanban.workspace.UserWorkspaceService;
+import com.kanban.workspace.WorkspaceMember;
+import com.kanban.workspace.WorkspaceMemberRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
@@ -32,7 +34,7 @@ public class AuthService {
     private final UserRepository userRepository;
     private final AuthTokenRepository authTokenRepository;
     private final WorkspaceMemberRepository workspaceMemberRepository;
-    private final WorkspaceRepository workspaceRepository;
+    private final UserWorkspaceService userWorkspaceService;
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider tokenProvider;
     private final JwtProperties jwtProperties;
@@ -52,7 +54,7 @@ public class AuthService {
         userRepository.save(user);
 
         // 사용자가 소속된 workspace가 없으면 default workspace 생성
-        ensureUserHasWorkspace(user);
+        userWorkspaceService.ensureUserHasWorkspace(user);
 
         String accessToken = tokenProvider.generateAccessToken(user);
         AuthToken refreshToken = createRefreshToken(user);
@@ -87,7 +89,7 @@ public class AuthService {
         user.setLastLoginAt(LocalDateTime.now());
 
         // 사용자가 소속된 workspace가 없으면 default workspace 생성
-        ensureUserHasWorkspace(user);
+        userWorkspaceService.ensureUserHasWorkspace(user);
 
         String accessToken = tokenProvider.generateAccessToken(user);
         AuthToken refreshToken = createRefreshToken(user);
@@ -179,44 +181,4 @@ public class AuthService {
                 .build();
     }
 
-    /**
-     * 사용자가 소속된 workspace가 없으면 default workspace를 생성하고 멤버 추가
-     */
-    private void ensureUserHasWorkspace(User user) {
-        List<WorkspaceMember> memberships = workspaceMemberRepository.findByUserId(user.getId());
-
-        if (memberships.isEmpty()) {
-            // Default workspace 생성
-            Workspace defaultWorkspace = Workspace.builder()
-                    .name(user.getName() + "'s Workspace")
-                    .slug(generateSlug(user))
-                    .owner(user)
-                    .build();
-            Workspace savedWorkspace = workspaceRepository.save(defaultWorkspace);
-
-            // 사용자를 멤버로 추가 (OWNER 역할)
-            WorkspaceMember member = WorkspaceMember.builder()
-                    .workspace(savedWorkspace)
-                    .user(user)
-                    .role(WorkspaceRole.OWNER)
-                    .build();
-            workspaceMemberRepository.save(member);
-        }
-    }
-
-    /**
-     * 워크스페이스 slug 생성 (user-email 기반)
-     */
-    private String generateSlug(User user) {
-        String baseSlug = user.getEmail().split("@")[0].toLowerCase().replaceAll("[^a-z0-9]", "-");
-        String slug = baseSlug;
-        int counter = 1;
-
-        while (workspaceRepository.findBySlug(slug).isPresent()) {
-            slug = baseSlug + "-" + counter;
-            counter++;
-        }
-
-        return slug;
-    }
 }

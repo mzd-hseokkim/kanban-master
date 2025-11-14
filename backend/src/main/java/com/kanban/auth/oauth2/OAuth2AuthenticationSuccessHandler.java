@@ -7,6 +7,7 @@ import com.kanban.auth.token.JwtTokenProvider;
 import com.kanban.user.User;
 import com.kanban.user.UserRepository;
 import com.kanban.user.UserStatus;
+import com.kanban.workspace.UserWorkspaceService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -36,6 +37,7 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
     private final UserRepository userRepository;
     private final UserIdentityRepository userIdentityRepository;
     private final JwtTokenProvider tokenProvider;
+    private final UserWorkspaceService userWorkspaceService;
 
     @Value("${app.oauth2.redirect-uri:http://localhost:3000/oauth2/callback}")
     private String redirectUri;
@@ -78,6 +80,9 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
 
             // Spec § 3: 시나리오 1, 2, 3 - UserIdentity 조회 또는 생성
             User user = processOAuth2User(oAuth2UserInfo);
+
+            // 신규 OAuth2 유저도 최소 1개의 워크스페이스를 갖도록 보장
+            userWorkspaceService.ensureUserHasWorkspace(user);
 
             // Spec § 6: JWT AccessToken 발급
             String accessToken = tokenProvider.generateAccessToken(user);
