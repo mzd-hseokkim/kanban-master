@@ -41,7 +41,14 @@ const cardColors = [
     { label: 'Purple', hex: '#f0e8ff' },
 ];
 
-export const EditCardModal: React.FC<EditCardModalProps> = ({ card, workspaceId, boardId, columnId, canEdit, onClose }) => {
+export const EditCardModal: React.FC<EditCardModalProps> = ({
+    card,
+    workspaceId,
+    boardId,
+    columnId,
+    canEdit,
+    onClose,
+}) => {
     const { updateCard, loadCards } = useCard();
     const { stage, close } = useModalAnimation(onClose);
     const [title, setTitle] = useState(card.title);
@@ -304,17 +311,19 @@ export const EditCardModal: React.FC<EditCardModalProps> = ({ card, workspaceId,
                                         </div>
                                     )}
 
-                  <input
-                    ref={assigneeInputRef}
-                    type="text"
-                    value={assigneeSearchInput}
-                    onChange={handleAssigneeInputChange}
-                    onFocus={() => canEdit && assigneeResults.length > 0 && setAssigneeDropdownOpen(true)}
-                    placeholder={selectedAssignee ? '' : '이름 또는 이메일로 검색 (선택사항)'}
-                    className="borderless-input flex-1 min-w-0 bg-transparent text-pastel-blue-900 placeholder-pastel-blue-500 focus:outline-none"
-                    disabled={loading || !canEdit}
-                    readOnly={!canEdit}
-                  />
+                                    <input
+                                        ref={assigneeInputRef}
+                                        type="text"
+                                        value={assigneeSearchInput}
+                                        onChange={handleAssigneeInputChange}
+                                        onFocus={() =>
+                                            canEdit && assigneeResults.length > 0 && setAssigneeDropdownOpen(true)
+                                        }
+                                        placeholder={selectedAssignee ? '' : '이름 또는 이메일로 검색 (선택사항)'}
+                                        className="borderless-input flex-1 min-w-0 bg-transparent text-pastel-blue-900 placeholder-pastel-blue-500 focus:outline-none"
+                                        disabled={loading || !canEdit}
+                                        readOnly={!canEdit}
+                                    />
 
                                     {assigneeSearching && (
                                         <div className="h-4 w-4 border-2 border-pastel-blue-400 border-t-transparent rounded-full animate-spin" />
@@ -333,11 +342,7 @@ export const EditCardModal: React.FC<EditCardModalProps> = ({ card, workspaceId,
                                                 onClick={() => handleSelectAssignee(user)}
                                                 className="w-full px-4 py-2 text-left hover:bg-white/70 border-b border-white/30 last:border-b-0 transition-colors flex items-center gap-3"
                                             >
-                                                <Avatar
-                                                    avatarUrl={user.avatarUrl}
-                                                    userName={user.name}
-                                                    size="sm"
-                                                />
+                                                <Avatar avatarUrl={user.avatarUrl} userName={user.name} size="sm" />
                                                 <div className="flex-1 min-w-0">
                                                     <div className="font-medium text-pastel-blue-900">{user.name}</div>
                                                     <div className="text-xs text-pastel-blue-500">{user.email}</div>
@@ -354,7 +359,7 @@ export const EditCardModal: React.FC<EditCardModalProps> = ({ card, workspaceId,
 
                         {/* 마감 날짜 입력 */}
                         <div className="mb-4">
-                            <label className={modalLabelClass}>마감 날짜</label>
+                            <label className={modalLabelClass}>마감일</label>
                             <input
                                 type="date"
                                 value={dueDate}
@@ -408,7 +413,9 @@ export const EditCardModal: React.FC<EditCardModalProps> = ({ card, workspaceId,
                                             type="button"
                                             onClick={canEdit ? () => setSelectedColor(color.hex) : undefined}
                                             style={{ backgroundColor: color.hex }}
-                                            className={`w-full h-12 ${modalColorButtonClass(selectedColor === color.hex)}`}
+                                            className={`w-full h-12 ${modalColorButtonClass(
+                                                selectedColor === color.hex
+                                            )}`}
                                             title={color.label}
                                             disabled={loading || !canEdit}
                                         />
@@ -445,7 +452,11 @@ export const EditCardModal: React.FC<EditCardModalProps> = ({ card, workspaceId,
                                 {canEdit ? '취소' : '닫기'}
                             </button>
                             {canEdit && (
-                                <button type="submit" disabled={loading} className={`flex-1 ${modalPrimaryButtonClass}`}>
+                                <button
+                                    type="submit"
+                                    disabled={loading}
+                                    className={`flex-1 ${modalPrimaryButtonClass}`}
+                                >
                                     {loading ? '수정 중...' : '수정'}
                                 </button>
                             )}

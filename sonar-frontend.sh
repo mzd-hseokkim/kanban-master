@@ -10,6 +10,6 @@ sonar-scanner \
   -Dsonar.javascript.file.suffixes=.js,.jsx \
   -Dsonar.sourceEncoding=UTF-8 \
   -Dsonar.javascript.lcov.reportPaths=./frontend/coverage/lcov.info \
-  -Dsonar.typescript.tsconfigPath=./frontend/tsconfig.json \
+  -Dsonar.typescript.tsconfigPath=./frontend/tsconfig.sonar.json \
   -Dsonar.host.url=http://localhost:9000 \
   -Dsonar.login=sqp_d6e3d72626a2b9df970a635977c53debbe134e61
