@@ -4,7 +4,6 @@ import com.kanban.common.SecurityUtil;
 import com.kanban.user.dto.AvatarUploadResponse;
 import com.kanban.user.dto.UserSearchResponse;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
