@@ -4,7 +4,6 @@ import { labelService } from '@/services/labelService';
 import type { CardSearchRequest, CardSearchResult } from '@/types/search';
 import type { Label } from '@/types/label';
 import { useModalAnimation } from '@/hooks/useModalAnimation';
-import { useAuth } from '@/context/AuthContext';
 import {
   modalOverlayClass,
   modalPanelClass,
@@ -28,14 +27,12 @@ export const SearchPanel: React.FC<SearchPanelProps> = ({ boardId, onClose, onCa
   const [selectedLabelIds, setSelectedLabelIds] = useState<number[]>([]);
   const [isCompleted, setIsCompleted] = useState<boolean | undefined>(undefined);
   const [overdue, setOverdue] = useState(false);
-  const [assignedToMe, setAssignedToMe] = useState(false);
   const [results, setResults] = useState<CardSearchResult[]>([]);
   const [labels, setLabels] = useState<Label[]>([]);
   const [searching, setSearching] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
 
   const { stage, close } = useModalAnimation(onClose);
-  const { user } = useAuth();
 
   useEffect(() => {
     loadLabels();
@@ -59,7 +56,6 @@ export const SearchPanel: React.FC<SearchPanelProps> = ({ boardId, onClose, onCa
         labelIds: selectedLabelIds.length > 0 ? selectedLabelIds : undefined,
         isCompleted,
         overdue: overdue || undefined,
-        assignees: assignedToMe && user?.name ? [user.name] : undefined,
       };
       const data = await searchService.searchCardsInBoard(boardId, request);
       setResults(data);
@@ -92,7 +88,6 @@ export const SearchPanel: React.FC<SearchPanelProps> = ({ boardId, onClose, onCa
     setSelectedLabelIds([]);
     setIsCompleted(undefined);
     setOverdue(false);
-    setAssignedToMe(false);
     setResults([]);
   };
 
@@ -282,21 +277,6 @@ export const SearchPanel: React.FC<SearchPanelProps> = ({ boardId, onClose, onCa
                 >
                   지연됨
                 </button>
-              </div>
-              <div className="flex items-center space-x-2 mt-3">
-                <input
-                  type="checkbox"
-                  id="assignedToMe"
-                  checked={assignedToMe}
-                  onChange={(e) => setAssignedToMe(e.target.checked)}
-                  className="w-[18px] h-[18px] rounded border-pastel-blue-300 text-pastel-blue-500 focus:ring-pastel-blue-500 focus:ring-offset-0 cursor-pointer"
-                />
-                <label
-                  htmlFor="assignedToMe"
-                  className="text-sm font-medium text-pastel-blue-900 cursor-pointer select-none"
-                >
-                  내게 할당된 카드
-                </label>
               </div>
             </div>
 

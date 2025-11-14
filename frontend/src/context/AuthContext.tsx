@@ -12,6 +12,7 @@ interface AuthContextValue {
   refreshProfile: () => Promise<void>;
   updateAvatar: (avatarUrl: string) => void;
   removeAvatar: () => void;
+  setToken: (token: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
@@ -114,6 +115,22 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setUser(prev => prev ? { ...prev, avatarUrl: null } : null);
   }, []);
 
+  const setToken = useCallback(async (token: string) => {
+    console.log('🔑 [AuthContext.setToken] Setting token from OAuth2 callback');
+    authStorage.setToken(token);
+    console.log('✔️ [AuthContext.setToken] Token saved. Fetching user profile...');
+    try {
+      const profile = await authService.fetchProfile();
+      console.log('✔️ [AuthContext.setToken] Profile fetched:', profile.email);
+      setUser(profile);
+      setBootstrapped(true);
+    } catch (error) {
+      console.error('❌ [AuthContext.setToken] Failed to fetch profile:', error);
+      authStorage.clearToken();
+      throw error;
+    }
+  }, []);
+
   const value = useMemo<AuthContextValue>(() => ({
     user,
     isAuthenticated: Boolean(user),
@@ -123,7 +140,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     refreshProfile,
     updateAvatar,
     removeAvatar,
-  }), [user, loading, login, logout, refreshProfile, updateAvatar, removeAvatar]);
+    setToken,
+  }), [user, loading, login, logout, refreshProfile, updateAvatar, removeAvatar, setToken]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
