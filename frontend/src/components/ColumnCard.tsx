@@ -12,12 +12,13 @@ interface ColumnCardProps {
   column: Column;
   workspaceId: number;
   boardId: number;
+  boardOwnerId: number;
   canEdit: boolean;
   autoOpenCardId?: number | null;
   onAutoOpenHandled?: () => void;
 }
 
-export const ColumnCard: React.FC<ColumnCardProps> = ({ column, workspaceId, boardId, canEdit, autoOpenCardId, onAutoOpenHandled }) => {
+export const ColumnCard: React.FC<ColumnCardProps> = ({ column, workspaceId, boardId, boardOwnerId, canEdit, autoOpenCardId, onAutoOpenHandled }) => {
   const { deleteColumn } = useColumn();
   const { cards, loadCards, updateCard } = useCard();
   const { showConfirm } = useDialog();
@@ -283,6 +284,7 @@ export const ColumnCard: React.FC<ColumnCardProps> = ({ column, workspaceId, boa
                         card={card}
                         workspaceId={workspaceId}
                         boardId={boardId}
+                        boardOwnerId={boardOwnerId}
                         columnId={column.id}
                         canEdit={canEdit}
                         autoOpen={autoOpenCardId === card.id}

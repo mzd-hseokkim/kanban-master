@@ -6,6 +6,7 @@ type ColumnsSectionProps = {
   columnsLoading: boolean;
   workspaceId: number;
   boardId: number;
+  boardOwnerId: number;
   canEdit: boolean;
   onCreateColumn: () => void;
   autoOpenCardId: number | null;
@@ -18,6 +19,7 @@ export const ColumnsSection = ({
   columnsLoading,
   workspaceId,
   boardId,
+  boardOwnerId,
   canEdit,
   onCreateColumn,
   autoOpenCardId,
@@ -69,6 +71,7 @@ export const ColumnsSection = ({
                 column={column}
                 workspaceId={workspaceId}
                 boardId={boardId}
+                boardOwnerId={boardOwnerId}
                 canEdit={canEdit}
                 autoOpenCardId={cardIdForColumn}
                 onAutoOpenHandled={onAutoOpenHandled}

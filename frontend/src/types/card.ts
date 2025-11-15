@@ -17,6 +17,7 @@ export interface Card {
   dueDate?: string;
   isCompleted: boolean;
   labels?: Label[];
+  commentCount?: number;
   createdAt: string;
   updatedAt: string;
 }

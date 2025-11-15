@@ -10,6 +10,7 @@ interface CardItemProps {
   card: Card;
   workspaceId: number;
   boardId: number;
+  boardOwnerId: number;
   columnId: number;
   canEdit: boolean;
   autoOpen?: boolean;
@@ -21,6 +22,7 @@ export const CardItem: React.FC<CardItemProps> = ({
   card,
   workspaceId,
   boardId,
+  boardOwnerId,
   columnId,
   canEdit,
   autoOpen = false,
@@ -374,6 +376,7 @@ export const CardItem: React.FC<CardItemProps> = ({
           card={card}
           workspaceId={workspaceId}
           boardId={boardId}
+          boardOwnerId={boardOwnerId}
           columnId={columnId}
           canEdit={canEdit}
           onClose={() => {
