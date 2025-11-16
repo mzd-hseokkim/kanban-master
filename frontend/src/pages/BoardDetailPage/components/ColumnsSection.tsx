@@ -48,7 +48,7 @@ export const ColumnsSection = ({
   autoOpenColumnId,
   onAutoOpenHandled,
 }: ColumnsSectionProps) => {
-  const { updateColumnPosition } = useColumn();
+  const { updateColumnPosition, setColumnsOptimistic } = useColumn();
   const [localColumns, setLocalColumns] = useState<Column[]>(columns);
   const [previousColumns, setPreviousColumns] = useState<Column[]>(columns);
 
@@ -78,33 +78,39 @@ export const ColumnsSection = ({
       return;
     }
 
-    const oldIndex = localColumns.findIndex((col) => col.id === active.id);
-    const newIndex = localColumns.findIndex((col) => col.id === over.id);
+    // 정렬된 칼럼 기준으로 인덱스 찾기
+    const sortedColumns = [...localColumns].sort((a, b) => a.position - b.position);
+    const oldIndex = sortedColumns.findIndex((col) => col.id === active.id);
+    const newIndex = sortedColumns.findIndex((col) => col.id === over.id);
 
     if (oldIndex === -1 || newIndex === -1) {
       return;
     }
 
+    // 드래그된 칼럼 정보 먼저 저장
+    const draggedColumn = sortedColumns[oldIndex];
+
     // 1. 이전 상태 저장 (롤백용)
     setPreviousColumns(localColumns);
 
     // 2. 낙관적 업데이트 (즉시 UI 변경)
-    const reorderedColumns = arrayMove(localColumns, oldIndex, newIndex).map((col, index) => ({
+    const reorderedColumns = arrayMove(sortedColumns, oldIndex, newIndex).map((col, index) => ({
       ...col,
       position: index, // position 값도 즉시 업데이트하여 재정렬 방지
     }));
     setLocalColumns(reorderedColumns);
+    setColumnsOptimistic(reorderedColumns); // Context도 함께 업데이트
 
     try {
       // 3. 백엔드에 position 업데이트
       // 드래그된 칼럼 하나만 업데이트 (백엔드가 나머지 칼럼들을 자동으로 조정)
-      const draggedColumn = localColumns[oldIndex];
       await updateColumnPosition(workspaceId, boardId, draggedColumn.id, newIndex);
       // 4. 낙관적 업데이트로 이미 UI가 변경되었으므로 추가 조회 불필요
     } catch (error) {
       // 5. 실패 시 이전 상태로 롤백
       console.error('칼럼 순서 변경 실패:', error);
       setLocalColumns(previousColumns);
+      setColumnsOptimistic(previousColumns); // Context도 함께 롤백
     }
   };
 
