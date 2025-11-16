@@ -72,6 +72,19 @@ select:not(.borderless-input):not(:focus) {
         border: 1px solid rgba(255, 255, 255, 0.1);
     }
 
+    /* Glassmorphism - Tinted (Pastel) */
+    .glass-tinted {
+        background: linear-gradient(
+            135deg,
+            rgba(255, 255, 255, 0.4) 0%,
+            rgba(255, 255, 255, 0.25) 50%,
+            rgba(255, 255, 255, 0.35) 100%
+        );
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.25);
+    }
+
     /* Hover Effects */
     .glass-hover {
         transition: all 0.3s ease;

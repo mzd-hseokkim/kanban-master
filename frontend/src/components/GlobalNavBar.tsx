@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { memberService } from '@/services/memberService';
 import { InvitationResponseModal } from './InvitationResponseModal';
@@ -7,8 +7,35 @@ import { Avatar } from './common/Avatar';
 import type { BoardMember } from '@/types/member';
 import { usePresenceTransition } from '@/hooks/usePresenceTransition';
 
+// NavButton 컴포넌트
+interface NavButtonProps {
+    icon: string;
+    label: string;
+    onClick: () => void;
+    isActive: boolean;
+}
+
+const NavButton: React.FC<NavButtonProps> = ({ icon, label, onClick, isActive }) => (
+    <button
+        onClick={onClick}
+        className={`
+            flex items-center gap-2 px-3 py-2
+            font-semibold text-sm
+            transition-all duration-200
+            ${isActive
+                ? 'text-pastel-blue-900'
+                : 'text-pastel-blue-600 hover:text-pastel-blue-900'
+            }
+        `}
+    >
+        <span className="text-base">{icon}</span>
+        <span>{label}</span>
+    </button>
+);
+
 export const GlobalNavBar: React.FC = () => {
     const navigate = useNavigate();
+    const location = useLocation();
     const { user, logout } = useAuth();
     const [showMenu, setShowMenu] = React.useState(false);
     const [showInvitations, setShowInvitations] = useState(false);
@@ -81,50 +108,60 @@ export const GlobalNavBar: React.FC = () => {
     }, [showMenu, showInvitations]);
 
     return (
-        <nav className="glass-light shadow-glass sticky top-0 z-50">
+        <nav className="glass-tinted shadow-glass-lg sticky top-0 z-50 border-b border-white/30">
             <div className="w-full max-w-[95vw] mx-auto px-4 sm:px-6 lg:px-8">
-                <div className="flex items-center justify-between h-16">
-                    {/* Logo/Home */}
-                    <div className="flex-shrink-0">
+                <div className="flex items-center justify-between h-16 gap-4">
+                    {/* 좌측: 로고 + 네비게이션 탭 */}
+                    <div className="flex items-center gap-6">
+                        {/* 로고 */}
                         <button
                             onClick={handleHome}
-                            className="text-2xl font-bold text-pastel-blue-900 hover:text-pastel-blue-700 transition"
+                            className="text-2xl font-bold bg-gradient-to-r from-pastel-blue-700 to-pastel-cyan-600 bg-clip-text text-transparent hover:from-pastel-blue-800 hover:to-pastel-cyan-700 transition-all"
                         >
                             Kanban Master
                         </button>
+
+                        {/* 세로 구분선 + 네비게이션 탭 */}
+                        {user && (
+                            <>
+                                <div className="h-8 w-px bg-white/30 hidden lg:block" />
+
+                                <div className="hidden lg:flex items-center gap-2">
+                                    <NavButton
+                                        icon="📊"
+                                        label="대시보드"
+                                        onClick={handleHome}
+                                        isActive={location.pathname === '/'}
+                                    />
+                                    <NavButton
+                                        icon="📋"
+                                        label="보드"
+                                        onClick={handleBoards}
+                                        isActive={location.pathname.startsWith('/boards')}
+                                    />
+                                </div>
+                            </>
+                        )}
                     </div>
 
-                    {/* Navigation Links */}
-                    {user && (
-                        <div className="hidden md:flex items-center gap-6">
-                            <button
-                                onClick={handleHome}
-                                className="text-pastel-blue-700 hover:text-pastel-blue-900 font-medium transition"
-                            >
-                                대시보드
-                            </button>
-                            <button
-                                onClick={handleBoards}
-                                className="text-pastel-blue-700 hover:text-pastel-blue-900 font-medium transition"
-                            >
-                                보드
-                            </button>
-                        </div>
-                    )}
+                    {/* 중앙: 통합 검색 영역 (향후 추가 예정) */}
+                    <div className="flex-1 max-w-2xl mx-4 hidden md:block">
+                        {/* 통합 검색창은 향후 추가 예정 */}
+                    </div>
 
-                    {/* User Menu */}
+                    {/* 우측: Inbox + 유저 메뉴 */}
                     {user && (
-                        <div className="flex items-center gap-4">
+                        <div className="flex items-center gap-3">
                             {/* Invitations Button */}
                             <div className="relative" ref={invitationsRef}>
                                 <button
                                     onClick={handleInvitationsClick}
-                                    className="flex items-center justify-center w-10 h-10 rounded-lg hover:bg-white/20 transition relative"
+                                    className="relative w-10 h-10 hover:opacity-80 transition-all duration-200 flex items-center justify-center"
                                     title="초대 목록"
                                 >
                                     <span className="text-xl">📬</span>
                                     {pendingInvitations.length > 0 && (
-                                        <span className="absolute top-0 right-0 flex items-center justify-center w-5 h-5 bg-pastel-pink-500 text-white text-xs font-bold rounded-full">
+                                        <span className="absolute -top-1 -right-1 flex items-center justify-center w-5 h-5 bg-pastel-pink-500 text-white text-xs font-bold rounded-full shadow-glass-sm">
                                             {pendingInvitations.length}
                                         </span>
                                     )}
@@ -176,7 +213,7 @@ export const GlobalNavBar: React.FC = () => {
                             <div className="relative z-50" ref={menuRef}>
                                 <button
                                     onClick={() => setShowMenu(!showMenu)}
-                                    className="flex items-center gap-3 px-4 py-2 rounded-lg hover:bg-white/20 transition"
+                                    className="flex items-center gap-3 px-3 py-2 hover:opacity-80 transition-all duration-200"
                                 >
                                     <Avatar
                                         avatarUrl={user.avatarUrl}
