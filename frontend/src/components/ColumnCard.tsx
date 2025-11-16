@@ -17,9 +17,10 @@ interface ColumnCardProps {
   canEdit: boolean;
   autoOpenCardId?: number | null;
   onAutoOpenHandled?: () => void;
+  dragHandleProps?: React.HTMLAttributes<HTMLDivElement>;
 }
 
-export const ColumnCard: React.FC<ColumnCardProps> = ({ column, workspaceId, boardId, boardOwnerId, canEdit, autoOpenCardId, onAutoOpenHandled }) => {
+export const ColumnCard: React.FC<ColumnCardProps> = ({ column, workspaceId, boardId, boardOwnerId, canEdit, autoOpenCardId, onAutoOpenHandled, dragHandleProps }) => {
   const { deleteColumn } = useColumn();
   const { cards, loadCards, updateCard } = useCard();
   const { showConfirm } = useDialog();
@@ -209,15 +210,45 @@ export const ColumnCard: React.FC<ColumnCardProps> = ({ column, workspaceId, boa
         style={bgStyle}
       >
         {/* 헤더 */}
-        <div className="flex items-center justify-between p-4 border-b border-white/20">
-          <div className="flex-1">
+        <div className="flex items-center gap-2 p-4 border-b border-white/20">
+          {/* 드래그 핸들 아이콘 */}
+          {dragHandleProps && (
+            <div
+              {...dragHandleProps}
+              className="flex-shrink-0 cursor-grab active:cursor-grabbing text-pastel-blue-400 hover:text-pastel-blue-600 transition px-1"
+              title="드래그하여 칼럼 순서 변경"
+            >
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 16 16"
+                fill="currentColor"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <circle cx="6" cy="3" r="1.5" />
+                <circle cx="10" cy="3" r="1.5" />
+                <circle cx="6" cy="8" r="1.5" />
+                <circle cx="10" cy="8" r="1.5" />
+                <circle cx="6" cy="13" r="1.5" />
+                <circle cx="10" cy="13" r="1.5" />
+              </svg>
+            </div>
+          )}
+
+          {/* 제목 영역 (드래그 가능) */}
+          <div
+            className={`flex-1 min-w-0 ${dragHandleProps ? 'cursor-grab active:cursor-grabbing' : ''}`}
+            {...dragHandleProps}
+          >
             <h3 className="font-bold text-pastel-blue-900">{column.name}</h3>
             {column.description && (
               <p className="text-xs text-pastel-blue-600 mt-1">{column.description}</p>
             )}
           </div>
+
+          {/* 메뉴 버튼 (드래그 불가) */}
           {canEdit && (
-            <div className="relative" ref={menuRef}>
+            <div className="relative flex-shrink-0" ref={menuRef}>
               <button
                 onClick={() => setShowMenu(!showMenu)}
                 className="menu-button p-2 hover:bg-white/20 rounded-lg transition"
