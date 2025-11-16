@@ -91,6 +91,11 @@ public class SearchService {
             predicates.add(cb.equal(card.get("isCompleted"), false));
         }
 
+        // 부모 카드가 없는 카드만 필터 (부모 카드 선택용)
+        if (request.getParentCardIdIsNull() != null && request.getParentCardIdIsNull()) {
+            predicates.add(cb.isNull(card.get("parentCard")));
+        }
+
         query.where(predicates.toArray(new Predicate[0]));
         query.orderBy(cb.desc(card.get("updatedAt")));
 
@@ -164,6 +169,11 @@ public class SearchService {
         if (request.getOverdue() != null && request.getOverdue()) {
             predicates.add(cb.lessThan(card.get("dueDate"), LocalDate.now()));
             predicates.add(cb.equal(card.get("isCompleted"), false));
+        }
+
+        // 부모 카드가 없는 카드만 필터 (부모 카드 선택용)
+        if (request.getParentCardIdIsNull() != null && request.getParentCardIdIsNull()) {
+            predicates.add(cb.isNull(card.get("parentCard")));
         }
 
         query.where(predicates.toArray(new Predicate[0]));
