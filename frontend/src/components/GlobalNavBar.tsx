@@ -19,11 +19,11 @@ const NavButton: React.FC<NavButtonProps> = ({ icon, label, onClick, isActive })
     <button
         onClick={onClick}
         className={`
-            flex items-center gap-2 px-3 py-2
+            flex items-center gap-2 px-4 py-2 rounded-lg
             font-semibold text-sm
-            transition-all duration-200
+            transition-all duration-300
             ${isActive
-                ? 'text-pastel-blue-900'
+                ? 'text-pastel-blue-900 border-b-2 border-pastel-blue-500'
                 : 'text-pastel-blue-600 hover:text-pastel-blue-900'
             }
         `}
@@ -108,7 +108,7 @@ export const GlobalNavBar: React.FC = () => {
     }, [showMenu, showInvitations]);
 
     return (
-        <nav className="glass-tinted shadow-glass-lg sticky top-0 z-50 border-b border-white/30">
+        <nav className="backdrop-blur-xl bg-white/70 shadow-[0_8px_32px_0_rgba(31,38,135,0.15)] sticky top-0 z-50 border-b border-white/40">
             <div className="w-full max-w-[95vw] mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="flex items-center justify-between h-16 gap-4">
                     {/* 좌측: 로고 + 네비게이션 탭 */}
