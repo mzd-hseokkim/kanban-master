@@ -39,10 +39,8 @@ export const BoardModals = ({
         <CreateColumnModal
           workspaceId={workspaceId}
           boardId={boardId}
-          onClose={() => {
-            onCloseCreateColumn();
-            void refreshColumns();
-          }}
+          onClose={onCloseCreateColumn}
+          onSuccess={() => void refreshColumns()}
         />
       )}
 

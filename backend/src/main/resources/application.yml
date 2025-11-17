@@ -131,6 +131,12 @@ security:
         refresh-token-validity-seconds: 1209600
         refresh-token-cookie-name: KANBAN_REFRESH_TOKEN
 
+    # Cookie 기본 설정 (프로파일별로 덮어씀)
+    cookie:
+        secure: false
+        same-site: Lax
+        domain:
+
 # File Upload Configuration
 file:
     upload:

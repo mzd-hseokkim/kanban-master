@@ -4,6 +4,7 @@ import static org.springframework.http.HttpStatus.FORBIDDEN;
 import static org.springframework.http.HttpStatus.UNAUTHORIZED;
 import java.time.LocalDateTime;
 import java.util.UUID;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
@@ -34,6 +35,15 @@ public class AuthService {
         private final PasswordEncoder passwordEncoder;
         private final JwtTokenProvider tokenProvider;
         private final JwtProperties jwtProperties;
+
+        @Value("${security.cookie.secure}")
+        private boolean cookieSecure;
+
+        @Value("${security.cookie.same-site}")
+        private String cookieSameSite;
+
+        @Value("${security.cookie.domain:#{null}}")
+        private String cookieDomain;
 
         public ResponseEntity<AuthResponse> signup(SignupRequest request) {
                 if (userRepository.findByEmail(request.email()).isPresent()) {
@@ -149,9 +159,20 @@ public class AuthService {
 
         private ResponseCookie buildRefreshCookie(String value, boolean expireNow) {
                 long maxAge = expireNow ? 0 : jwtProperties.refreshTokenValiditySeconds();
-                return ResponseCookie.from(jwtProperties.refreshTokenCookieName(), value)
-                                .httpOnly(true).secure(false).path("/").maxAge(maxAge)
-                                .sameSite("Lax").build();
+                ResponseCookie.ResponseCookieBuilder builder = ResponseCookie
+                                .from(jwtProperties.refreshTokenCookieName(), value)
+                                .httpOnly(true)
+                                .secure(cookieSecure) // 환경별 설정 (dev: false, prod: true)
+                                .path("/")
+                                .maxAge(maxAge)
+                                .sameSite(cookieSameSite); // 환경별 설정 (dev: Lax, prod: Strict)
+
+                // Domain 설정이 있을 경우에만 추가 (Cross-origin Cookie 지원)
+                if (cookieDomain != null && !cookieDomain.isEmpty()) {
+                        builder.domain(cookieDomain);
+                }
+
+                return builder.build();
         }
 
 }

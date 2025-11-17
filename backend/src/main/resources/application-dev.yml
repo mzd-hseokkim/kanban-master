@@ -24,3 +24,14 @@ logging:
     com.kanban: DEBUG
     org.springframework.web: DEBUG
     org.hibernate.SQL: DEBUG
+
+# Development-specific security settings
+security:
+  cookie:
+    # HTTP 환경 (localhost:3000, localhost:8080)
+    secure: false
+    # 개발 환경에서는 Lax로 설정하여 디버깅 용이성 확보
+    same-site: Lax
+    # 로컬 환경에서는 domain 미설정 (Vite proxy 환경)
+    # domain 없으면 응답한 서버의 도메인으로 자동 설정됨
+    domain:

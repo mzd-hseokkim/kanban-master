@@ -19,6 +19,7 @@ interface CreateColumnModalProps {
   workspaceId: number;
   boardId: number;
   onClose: () => void;
+  onSuccess?: () => void;
   editColumn?: Column; // 편집 모드: 기존 컬럼 데이터
 }
 
@@ -34,6 +35,7 @@ export const CreateColumnModal: React.FC<CreateColumnModalProps> = ({
   workspaceId,
   boardId,
   onClose,
+  onSuccess,
   editColumn,
 }) => {
   const { createColumn, updateColumn } = useColumn();
@@ -82,6 +84,7 @@ export const CreateColumnModal: React.FC<CreateColumnModalProps> = ({
         });
       }
 
+      onSuccess?.();
       close();
     } catch (err) {
       const message = err instanceof Error ? err.message : isEditMode ? '칼럼 수정에 실패했습니다' : '칼럼 생성에 실패했습니다';

@@ -1,8 +1,12 @@
 package com.kanban.auth.oauth2;
 
+import com.kanban.auth.AuthToken;
+import com.kanban.auth.AuthTokenRepository;
 import com.kanban.auth.OAuth2Provider;
+import com.kanban.auth.TokenType;
 import com.kanban.auth.UserIdentity;
 import com.kanban.auth.UserIdentityRepository;
+import com.kanban.auth.config.JwtProperties;
 import com.kanban.auth.token.JwtTokenProvider;
 import com.kanban.user.User;
 import com.kanban.user.UserRepository;
@@ -13,6 +17,8 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.ResponseCookie;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.web.authentication.SimpleUrlAuthenticationSuccessHandler;
@@ -22,6 +28,7 @@ import org.springframework.web.util.UriComponentsBuilder;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 /**
  * OAuth2 인증 성공 핸들러
@@ -36,11 +43,22 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
 
     private final UserRepository userRepository;
     private final UserIdentityRepository userIdentityRepository;
+    private final AuthTokenRepository authTokenRepository;
     private final JwtTokenProvider tokenProvider;
+    private final JwtProperties jwtProperties;
     private final UserWorkspaceService userWorkspaceService;
 
     @Value("${app.oauth2.redirect-uri:http://localhost:3000/oauth2/callback}")
     private String redirectUri;
+
+    @Value("${security.cookie.secure}")
+    private boolean cookieSecure;
+
+    @Value("${security.cookie.same-site}")
+    private String cookieSameSite;
+
+    @Value("${security.cookie.domain:#{null}}")
+    private String cookieDomain;
 
     /**
      * OAuth2 인증 성공 시 호출
@@ -87,13 +105,20 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
             // Spec § 6: JWT AccessToken 발급
             String accessToken = tokenProvider.generateAccessToken(user);
 
+            // Refresh Token 생성 및 Cookie 설정 (일반 로그인과 동일한 보안 수준 유지)
+            AuthToken refreshToken = createRefreshToken(user);
+            ResponseCookie cookie = buildRefreshCookie(refreshToken.getToken(), false);
+            response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
+
+            log.debug("OAuth2 login successful. Access token and refresh token created for user: {}", user.getEmail());
+
             // Spec § 6: 프론트엔드로 리다이렉션 (/auth/callback?token={JWT})
             String targetUrl = UriComponentsBuilder.fromUriString(redirectUri)
                 .queryParam("token", accessToken)
                 .build()
                 .toUriString();
 
-            log.debug("OAuth2 login successful. Redirecting to: {}", targetUrl);
+            log.debug("Redirecting to: {}", targetUrl);
             getRedirectStrategy().sendRedirect(request, response, targetUrl);
 
         } catch (Exception e) {
@@ -227,5 +252,42 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
             .toUriString();
 
         response.sendRedirect(targetUrl);
+    }
+
+    /**
+     * Refresh Token 생성
+     * AuthService의 createRefreshToken과 동일한 로직
+     */
+    private AuthToken createRefreshToken(User user) {
+        AuthToken token = AuthToken.builder()
+            .token(UUID.randomUUID().toString())
+            .type(TokenType.REFRESH)
+            .expiresAt(LocalDateTime.now().plusSeconds(
+                jwtProperties.refreshTokenValiditySeconds()))
+            .revoked(false)
+            .user(user)
+            .build();
+        return authTokenRepository.save(token);
+    }
+
+    /**
+     * Refresh Token Cookie 생성
+     * AuthService의 buildRefreshCookie와 동일한 로직
+     */
+    private ResponseCookie buildRefreshCookie(String value, boolean expireNow) {
+        long maxAge = expireNow ? 0 : jwtProperties.refreshTokenValiditySeconds();
+        ResponseCookie.ResponseCookieBuilder builder = ResponseCookie
+            .from(jwtProperties.refreshTokenCookieName(), value)
+            .httpOnly(true)
+            .secure(cookieSecure)
+            .path("/")
+            .maxAge(maxAge)
+            .sameSite(cookieSameSite);
+
+        if (cookieDomain != null && !cookieDomain.isEmpty()) {
+            builder.domain(cookieDomain);
+        }
+
+        return builder.build();
     }
 }

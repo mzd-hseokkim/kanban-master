@@ -32,3 +32,14 @@ logging:
     com.kanban: INFO
     org.springframework.web: WARN
     org.hibernate.SQL: WARN
+
+# Production-specific security settings
+security:
+  cookie:
+    # HTTPS 환경 필수
+    secure: true
+    # CSRF 보호를 위해 Strict 권장
+    same-site: Strict
+    # 실제 도메인으로 변경 필요 (예: yourdomain.com)
+    # 서브도메인 공유가 필요하면 .yourdomain.com 형태로 설정
+    domain: ${COOKIE_DOMAIN:localhost}
