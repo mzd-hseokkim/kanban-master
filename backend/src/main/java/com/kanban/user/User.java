@@ -46,4 +46,27 @@ public class User extends BaseEntity {
     private UserStatus status;
 
     private LocalDateTime lastLoginAt;
+
+    /**
+     * 이메일 인증 완료 여부
+     */
+    @Column(nullable = false)
+    @Builder.Default
+    private Boolean emailVerified = false;
+
+    /**
+     * 이메일 인증 토큰 (UUID)
+     */
+    @Column(length = 255)
+    private String verificationToken;
+
+    /**
+     * 인증 토큰 만료 시간
+     */
+    private LocalDateTime verificationTokenExpiry;
+
+    /**
+     * 이메일 인증 완료 시각
+     */
+    private LocalDateTime emailVerifiedAt;
 }

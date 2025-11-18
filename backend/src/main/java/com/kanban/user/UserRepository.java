@@ -13,6 +13,11 @@ public interface UserRepository extends JpaRepository<User, Long> {
     Optional<User> findByName(String name);
 
     /**
+     * 이메일 인증 토큰으로 사용자 조회
+     */
+    Optional<User> findByVerificationToken(String verificationToken);
+
+    /**
      * 이름 또는 이메일로 사용자 검색 (부분 일치)
      */
     @Query("SELECT u FROM User u WHERE " +

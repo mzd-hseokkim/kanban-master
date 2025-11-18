@@ -1,0 +1,8 @@
+# Playwright 테스트 결과
+test-results/
+playwright-report/
+playwright/.cache/
+
+# 스크린샷 및 비디오
+screenshots/
+videos/

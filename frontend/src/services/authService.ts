@@ -55,6 +55,27 @@ class AuthService {
   async unlinkIdentity(identityId: number): Promise<void> {
     await axiosInstance.delete(`/auth/oauth2/identities/${identityId}`);
   }
+
+  /**
+   * Verify email with token (no auto-login, redirect to login page)
+   * @param token verification token from email
+   * @param signal optional AbortSignal for request cancellation
+   */
+  async verifyEmail(token: string, signal?: AbortSignal): Promise<void> {
+    console.log('📧 [AuthService] Verifying email with token');
+    await axiosInstance.get(`/auth/verify-email?token=${token}`, { signal });
+    console.log('✅ [AuthService] Email verification completed successfully');
+  }
+
+  /**
+   * Resend verification email
+   * @param email user email address
+   */
+  async resendVerificationEmail(email: string): Promise<void> {
+    console.log('📧 [AuthService] Resending verification email to', email);
+    await axiosInstance.post('/auth/resend-verification', { email });
+    console.log('✅ [AuthService] Verification email resent successfully');
+  }
 }
 
 export const authService = new AuthService();

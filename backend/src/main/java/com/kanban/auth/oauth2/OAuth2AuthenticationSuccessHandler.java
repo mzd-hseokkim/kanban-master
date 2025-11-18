@@ -188,6 +188,8 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
             .password(null)  // Spec § 6: 소셜 로그인 전용 사용자는 password null
             .avatarUrl(oAuth2UserInfo.getProfileImageUrl())
             .status(UserStatus.ACTIVE)
+            .emailVerified(true)  // OAuth2 로그인은 이미 이메일이 인증된 것으로 간주
+            .emailVerifiedAt(LocalDateTime.now())
             .lastLoginAt(LocalDateTime.now())
             .build();
 

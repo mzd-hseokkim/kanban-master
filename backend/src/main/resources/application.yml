@@ -141,3 +141,16 @@ security:
 file:
     upload:
         path: ${FILE_UPLOAD_PATH:uploads/avatars}
+
+# MailerSend Configuration
+mailersend:
+    api:
+        token: ${MAILERSEND_API_TOKEN:mlsn.dd5bf465d5b3db17c65f5b5454901de5176bed74fde3c6f915beeaf7f58de7f1}
+    from:
+        email: ${MAILERSEND_FROM_EMAIL:no-reply@test-q3enl6k700742vwr.mlsender.net}
+        name: ${MAILERSEND_FROM_NAME:Kanban Board}
+
+# Application Configuration
+app:
+    frontend:
+        url: ${FRONTEND_URL:http://localhost:3000}

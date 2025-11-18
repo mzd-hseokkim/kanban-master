@@ -1,15 +1,15 @@
 import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { authService } from '@/services/authService';
-import { authStorage } from '@/utils/authStorage';
+import { EmailVerificationPendingPage } from './EmailVerificationPendingPage';
 
 export const SignupPage: React.FC = () => {
-  const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [showVerificationPending, setShowVerificationPending] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -27,9 +27,9 @@ export const SignupPage: React.FC = () => {
 
     try {
       setLoading(true);
-      const response = await authService.signup({ email, password, name });
-      authStorage.setToken(response.accessToken);
-      navigate('/');
+      await authService.signup({ email, password, name });
+      // 회원가입 성공 시 인증 대기 페이지 표시
+      setShowVerificationPending(true);
     } catch (err) {
       const message = err instanceof Error ? err.message : '회원가입에 실패했습니다';
       setError(message);
@@ -38,6 +38,11 @@ export const SignupPage: React.FC = () => {
       setLoading(false);
     }
   };
+
+  // 인증 대기 페이지 표시
+  if (showVerificationPending) {
+    return <EmailVerificationPendingPage email={email} />;
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-pastel-blue-100 to-pastel-cyan-100 flex items-center justify-center p-4">

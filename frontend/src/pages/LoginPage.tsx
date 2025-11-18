@@ -1,13 +1,16 @@
 import { FormEvent, useState } from 'react';
 import { isAxiosError } from 'axios';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 
 const LoginPage = () => {
   const { login } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   // 로그인 후 항상 대시보드로 리다이렉트 (보안: 이전 사용자의 URL 접근 방지)
   const redirectTo = '/';
+  // 이메일 인증 성공 여부 확인
+  const verified = location.state?.verified;
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -66,6 +69,12 @@ const LoginPage = () => {
           <h2 className="text-2xl font-semibold text-pastel-blue-900 mb-8">Modern Kanban Service</h2>
 
           <form className="space-y-6" onSubmit={handleSubmit}>
+            {verified && (
+              <div className="rounded-2xl px-4 py-3 text-sm border border-pastel-green-200 bg-pastel-green-50 text-pastel-green-700 shadow-glass-sm">
+                ✅ 이메일 인증이 완료되었습니다. 로그인해 주세요.
+              </div>
+            )}
+
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-pastel-blue-800 mb-1">
                 이메일

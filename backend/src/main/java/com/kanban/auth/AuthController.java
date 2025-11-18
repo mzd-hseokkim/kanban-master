@@ -3,6 +3,7 @@ package com.kanban.auth;
 import com.kanban.auth.config.JwtProperties;
 import com.kanban.auth.dto.AuthResponse;
 import com.kanban.auth.dto.LoginRequest;
+import com.kanban.auth.dto.ResendVerificationRequest;
 import com.kanban.auth.dto.SignupRequest;
 import com.kanban.auth.dto.TokenRefreshResponse;
 import com.kanban.auth.dto.UserIdentityResponse;
@@ -88,6 +89,29 @@ public class AuthController {
             throw new ResponseStatusException(UNAUTHORIZED, "인증 정보가 없습니다. 다시 로그인해주세요.");
         }
         userIdentityService.unlinkIdentity(user.getId(), identityId);
+        return ResponseEntity.noContent().build();
+    }
+
+    /**
+     * 이메일 인증 처리
+     *
+     * @param token 인증 토큰 (쿼리 파라미터)
+     * @return 인증 성공 시 200 OK (자동 로그인 없음, 프론트엔드에서 로그인 페이지로 리다이렉트)
+     */
+    @GetMapping("/verify-email")
+    public ResponseEntity<Void> verifyEmail(@RequestParam String token) {
+        return authService.verifyEmail(token);
+    }
+
+    /**
+     * 인증 메일 재발송
+     *
+     * @param request 이메일 주소를 포함한 요청
+     * @return 성공 응답
+     */
+    @PostMapping("/resend-verification")
+    public ResponseEntity<Void> resendVerificationEmail(@Valid @RequestBody ResendVerificationRequest request) {
+        authService.resendVerificationEmail(request.email());
         return ResponseEntity.noContent().build();
     }
 

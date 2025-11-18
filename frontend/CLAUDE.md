@@ -72,6 +72,16 @@
 - Mock network calls with MSW or lightweight fetch mocks, keep snapshots minimal, and focus on behavioral assertions.
 - Include tests for hooks with React Testing Library utilities, and ensure form logic, error states, and accessibility features are exercised.
 
+### E2E Testing with Playwright
+- Use Playwright for end-to-end testing of critical user journeys and cross-browser compatibility.
+- E2E tests live in the e2e/ directory and follow the *.spec.ts naming convention.
+- Run tests via npm scripts: `npm run test:e2e` (headless), `npm run test:e2e:ui` (UI mode), `npm run test:e2e:debug` (debug mode).
+- Playwright automatically starts the dev server before running tests (configured in playwright.config.ts).
+- Focus E2E tests on high-value user flows (authentication, board operations, card management) rather than implementation details.
+- Use Playwright's built-in assertions and waiting mechanisms; avoid arbitrary timeouts or brittle selectors.
+- Tests should be independent and able to run in parallel; use beforeEach for test setup and cleanup.
+- Generate test reports with `npm run test:e2e:report` to view detailed results with screenshots and traces.
+
 ## Best Practices
 ### Performance
 - Memoize expensive calculations, use useMemo/useCallback sparingly but consistently, and split bundles by route or feature to keep the initial payload small.

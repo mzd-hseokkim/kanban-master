@@ -55,6 +55,9 @@ dependencies {
     // Environment Variables
     implementation("io.github.cdimascio:dotenv-java:3.0.0")
 
+    // Email
+    implementation("com.mailersend:java-sdk:1.4.1")
+
     // Lombok
     compileOnly("org.projectlombok:lombok")
     annotationProcessor("org.projectlombok:lombok")
