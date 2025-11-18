@@ -50,8 +50,8 @@ test.describe('Authentication Flow', () => {
 
   test('should fail login with invalid credentials', async ({ page }) => {
     // 잘못된 자격 증명 입력
-    await page.getByLabel(/이메일/i).fill('test@example.com');
-    await page.getByLabel(/비밀번호/i).fill('wrongpassword123');
+    await page.locator('#email').fill('test@example.com');
+    await page.locator('#password').fill('wrongpassword123');
 
     // 네트워크 응답 감시
     const responsePromise = page.waitForResponse(
@@ -68,16 +68,12 @@ test.describe('Authentication Flow', () => {
     // 로그인 페이지에 유지됨 (리다이렉트 되지 않음)
     await expect(page).toHaveURL(/.*login/);
 
-    // 입력 필드가 여전히 표시됨
-    await expect(page.getByLabel(/이메일/i)).toBeVisible();
-    await expect(page.getByLabel(/비밀번호/i)).toBeVisible();
+    // 에러 메시지가 표시됨
+    await expect(page.getByText(/잘못된 자격 증명|로그인에 실패/i)).toBeVisible();
 
-    // 콘솔에서 에러 로그 확인
-    page.on('console', msg => {
-      if (msg.type() === 'error' && msg.text().includes('Login failed')) {
-        console.log('✅ Expected error logged:', msg.text());
-      }
-    });
+    // 입력 필드가 여전히 표시됨
+    await expect(page.locator('#email')).toBeVisible();
+    await expect(page.locator('#password')).toBeVisible();
   });
 
   // TODO: 실제 로그인 테스트는 테스트 계정이 필요합니다

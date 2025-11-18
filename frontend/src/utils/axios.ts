@@ -125,11 +125,11 @@ axiosInstance.interceptors.response.use(
       });
     }
 
-    // 401 on login/logout/signup endpoints - Force logout
+    // 401 on login/logout/signup endpoints - Clear token but don't redirect (user is already on login page)
     if (status === 401 && isLoginEndpoint) {
-      console.warn('[Axios] 401 on login/logout endpoint, clearing token and redirecting to login');
+      console.warn('[Axios] 401 on login/logout/signup endpoint, clearing token');
       authStorage.clearToken();
-      window.location.href = '/login';
+      // Don't redirect - let the login/signup page handle the error display
       return Promise.reject(error);
     }
 
