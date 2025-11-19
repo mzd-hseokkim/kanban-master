@@ -11,7 +11,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class RedisPublisher {
 
-    private final RedisTemplate<String, Object> redisTemplate;
+    private final RedisTemplate<String, BoardEvent> redisTemplate;
     private static final String TOPIC_BOARD = "board-events";
 
     public void publish(BoardEvent event) {

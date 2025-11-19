@@ -169,12 +169,14 @@ public class CardService {
         activityService.recordActivity(ActivityScopeType.CARD, savedCard.getId(),
                 ActivityEventType.CARD_CREATED, userId, activityMessage);
 
-        // Redis 이벤트 발행
+        // Redis 이벤트 발행 (라벨 포함)
+        List<LabelResponse> labels = cardLabelRepository.findByCardId(savedCard.getId()).stream()
+                .map(cardLabel -> LabelResponse.from(cardLabel.getLabel())).toList();
+        CardResponse response = enrichWithAssigneeAvatar(CardResponse.from(savedCard, labels));
         redisPublisher.publish(new com.kanban.notification.event.BoardEvent(
-                com.kanban.notification.event.BoardEvent.EventType.CARD_UPDATED.name(),
-                column.getBoard().getId(), Map.of("cardId", savedCard.getId(), "action", "updated"),
-                userId, System.currentTimeMillis()));
-        return enrichWithAssigneeAvatar(CardResponse.from(savedCard));
+                com.kanban.notification.event.BoardEvent.EventType.CARD_CREATED.name(),
+                column.getBoard().getId(), response, userId, System.currentTimeMillis()));
+        return response;
     }
 
     /**
@@ -274,18 +276,18 @@ public class CardService {
                     "\"" + updatedCard.getTitle() + "\" 카드가 업데이트되었습니다");
         }
 
-        // Redis 이벤트 발행
-        // Redis 이벤트 발행
+        // Redis 이벤트 발행 (라벨 포함)
         String eventType =
                 isMoved ? com.kanban.notification.event.BoardEvent.EventType.CARD_MOVED.name()
                         : com.kanban.notification.event.BoardEvent.EventType.CARD_UPDATED.name();
 
+        List<LabelResponse> labels = cardLabelRepository.findByCardId(updatedCard.getId()).stream()
+                .map(cardLabel -> LabelResponse.from(cardLabel.getLabel())).toList();
+        CardResponse response = enrichWithAssigneeAvatar(CardResponse.from(updatedCard, labels));
         redisPublisher.publish(new com.kanban.notification.event.BoardEvent(eventType,
-                card.getColumn().getBoard().getId(),
-                Map.of("cardId", updatedCard.getId(), "action", isMoved ? "moved" : "updated"),
-                userId, System.currentTimeMillis()));
+                card.getColumn().getBoard().getId(), response, userId, System.currentTimeMillis()));
 
-        return enrichWithAssigneeAvatar(CardResponse.from(updatedCard));
+        return response;
     }
 
     /**

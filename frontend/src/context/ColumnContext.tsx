@@ -1,6 +1,6 @@
-import React, { createContext, useContext, useState, useCallback } from 'react';
-import { Column, CreateColumnRequest, UpdateColumnRequest } from '@/types/column';
 import columnService from '@/services/columnService';
+import { Column, CreateColumnRequest, UpdateColumnRequest } from '@/types/column';
+import React, { createContext, useCallback, useContext, useState } from 'react';
 
 interface ColumnContextType {
   columns: Column[];
@@ -12,6 +12,7 @@ interface ColumnContextType {
   deleteColumn: (workspaceId: number, boardId: number, columnId: number) => Promise<void>;
   updateColumnPosition: (workspaceId: number, boardId: number, columnId: number, newPosition: number) => Promise<Column>;
   setColumnsOptimistic: (columns: Column[]) => void;
+  handleColumnEvent: (event: any) => void;
 }
 
 const ColumnContext = createContext<ColumnContextType | undefined>(undefined);
@@ -21,9 +22,9 @@ export const ColumnProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const loadColumns = useCallback(async (workspaceId: number, boardId: number) => {
+  const loadColumns = useCallback(async (workspaceId: number, boardId: number, silent = false) => {
     try {
-      setLoading(true);
+      if (!silent) setLoading(true);
       setError(null);
       const data = await columnService.listColumns(workspaceId, boardId);
       setColumns(data);
@@ -32,9 +33,40 @@ export const ColumnProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       setError(message);
       console.error('Failed to load columns:', err);
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   }, []);
+
+  // ... create/update/delete methods ...
+
+  const handleColumnEvent = useCallback((event: any) => {
+    const { type, payload } = event;
+    switch (type) {
+      case 'COLUMN_CREATED':
+        setColumns(prev => [...prev, payload]);
+        break;
+      case 'COLUMN_UPDATED':
+        setColumns(prev => prev.map(col => col.id === payload.id ? payload : col));
+        break;
+      case 'COLUMN_DELETED':
+        // payload is Map with columnId, or just check payload structure
+        // Backend sends Map for delete: {columnId: ...}
+        // But wait, I didn't change delete payload to DTO. It's still Map.
+        // I need to handle both DTO and Map.
+        const columnId = payload.columnId || payload.id;
+        setColumns(prev => prev.filter(col => col.id !== Number(columnId)));
+        break;
+      case 'COLUMN_REORDERED':
+        // For reorder, it's safer to reload to get all correct positions
+        // But we can update the specific one optimistically
+        setColumns(prev => {
+            const updated = prev.map(col => col.id === payload.id ? payload : col);
+            return updated.sort((a, b) => a.position - b.position);
+        });
+        break;
+    }
+  }, []);
+
 
   const createColumn = useCallback(
     async (workspaceId: number, boardId: number, request: CreateColumnRequest): Promise<Column> => {
@@ -121,6 +153,7 @@ export const ColumnProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         deleteColumn,
         updateColumnPosition,
         setColumnsOptimistic,
+        handleColumnEvent,
       }}
     >
       {children}

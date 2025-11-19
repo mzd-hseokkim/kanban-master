@@ -1,6 +1,6 @@
-import React, { createContext, useContext, useState, useCallback } from 'react';
-import { Card, CreateCardRequest, UpdateCardRequest } from '@/types/card';
 import cardService from '@/services/cardService';
+import { Card, CreateCardRequest, UpdateCardRequest } from '@/types/card';
+import React, { createContext, useCallback, useContext, useState } from 'react';
 
 interface CardContextType {
   cards: { [columnId: number]: Card[] };
@@ -11,6 +11,7 @@ interface CardContextType {
   updateCard: (workspaceId: number, boardId: number, columnId: number, cardId: number, request: UpdateCardRequest) => Promise<Card>;
   deleteCard: (workspaceId: number, boardId: number, columnId: number, cardId: number) => Promise<void>;
   updateCardPosition: (workspaceId: number, boardId: number, columnId: number, cardId: number, newPosition: number) => Promise<Card>;
+  handleCardEvent: (event: any) => void;
 }
 
 const CardContext = createContext<CardContextType | undefined>(undefined);
@@ -20,9 +21,9 @@ export const CardProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const loadCards = useCallback(async (workspaceId: number, boardId: number, columnId: number) => {
+  const loadCards = useCallback(async (workspaceId: number, boardId: number, columnId: number, silent = false) => {
     try {
-      setLoading(true);
+      if (!silent) setLoading(true);
       setError(null);
       const data = await cardService.listCards(workspaceId, boardId, columnId);
       setCards(prev => ({
@@ -34,9 +35,73 @@ export const CardProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setError(message);
       console.error('Failed to load cards:', err);
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   }, []);
+
+  // ... create/update/delete methods ...
+
+  const handleCardEvent = useCallback((event: any) => {
+    const { type, payload } = event;
+
+    switch (type) {
+      case 'CARD_CREATED': {
+        const newCard = payload;
+        setCards(prev => ({
+          ...prev,
+          [newCard.columnId]: [...(prev[newCard.columnId] || []), newCard]
+        }));
+        break;
+      }
+      case 'CARD_UPDATED': {
+        const updatedCard = payload;
+        setCards(prev => ({
+          ...prev,
+          [updatedCard.columnId]: (prev[updatedCard.columnId] || []).map(c => c.id === updatedCard.id ? updatedCard : c)
+        }));
+        break;
+      }
+      case 'CARD_DELETED': {
+        // Payload is Map { cardId, columnId }
+        const { cardId, columnId } = payload;
+        setCards(prev => ({
+          ...prev,
+          [columnId]: (prev[columnId] || []).filter(c => c.id !== Number(cardId))
+        }));
+        break;
+      }
+      case 'CARD_MOVED': {
+        const movedCard = payload;
+        // Find source column by looking for the card
+        setCards(prev => {
+            const nextState = { ...prev };
+
+
+            // Remove from source
+            Object.keys(nextState).forEach(colId => {
+                const cId = Number(colId);
+                if (nextState[cId].some(c => c.id === movedCard.id)) {
+                    nextState[cId] = nextState[cId].filter(c => c.id !== movedCard.id);
+                }
+            });
+
+            // Add to target
+            const targetColId = movedCard.columnId;
+            const targetList = [...(nextState[targetColId] || [])];
+
+            // Insert at position (simple sort)
+            targetList.push(movedCard);
+            targetList.sort((a, b) => a.position - b.position);
+
+            nextState[targetColId] = targetList;
+            return nextState;
+        });
+        break;
+      }
+    }
+  }, []);
+
+
 
   const createCard = useCallback(
     async (workspaceId: number, boardId: number, columnId: number, request: CreateCardRequest): Promise<Card> => {
@@ -128,6 +193,7 @@ export const CardProvider: React.FC<{ children: React.ReactNode }> = ({ children
         updateCard,
         deleteCard,
         updateCardPosition,
+        handleCardEvent,
       }}
     >
       {children}

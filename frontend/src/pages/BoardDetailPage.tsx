@@ -67,9 +67,18 @@ const BoardDetailPage = () => {
     await loadColumns(workspaceNumericId, boardNumericId);
   }, [hasValidNumericIds, loadColumns, workspaceNumericId, boardNumericId]);
 
+  const { handleColumnEvent } = useColumn();
+  const { handleCardEvent } = useCard();
+
   useBoardSubscription(boardNumericId, (event) => {
     console.log('Board event received:', event);
-    refreshColumns();
+    if (event.type.startsWith('COLUMN_')) {
+        handleColumnEvent(event);
+    } else if (event.type.startsWith('CARD_')) {
+        handleCardEvent(event);
+    } else {
+        refreshColumns(); // Fallback for other events (e.g. BOARD_UPDATED)
+    }
   });
 
   const handleNavigateBack = () => navigate("/boards");

@@ -79,11 +79,12 @@ public class ColumnService {
                 ActivityEventType.COLUMN_CREATED, userId, "\"" + name + "\" 칼럼이 생성되었습니다");
 
         // Redis 이벤트 발행
+        // Redis 이벤트 발행
+        ColumnResponse response = ColumnResponse.from(savedColumn);
         redisPublisher.publish(new com.kanban.notification.event.BoardEvent(
                 com.kanban.notification.event.BoardEvent.EventType.COLUMN_CREATED.name(), boardId,
-                java.util.Map.of("columnId", savedColumn.getId(), "action", "created"), userId,
-                System.currentTimeMillis()));
-        return ColumnResponse.from(savedColumn);
+                response, userId, System.currentTimeMillis()));
+        return response;
     }
 
     /**
@@ -120,12 +121,14 @@ public class ColumnService {
         // Redis 이벤트 발행 (userId가 없으므로 0L 또는 시스템 ID 사용, 여기서는 null 처리 주의 필요하지만 편의상 0L)
         // updateColumn 메서드는 내부 호출용이라 userId가 파라미터에 없음.
         // 하지만 실시간 업데이트를 위해 이벤트는 필요함.
+        // Redis 이벤트 발행 (userId가 없으므로 0L 또는 시스템 ID 사용, 여기서는 null 처리 주의 필요하지만 편의상 0L)
+        // updateColumn 메서드는 내부 호출용이라 userId가 파라미터에 없음.
+        // 하지만 실시간 업데이트를 위해 이벤트는 필요함.
+        ColumnResponse response = ColumnResponse.from(savedColumn);
         redisPublisher.publish(new com.kanban.notification.event.BoardEvent(
                 com.kanban.notification.event.BoardEvent.EventType.COLUMN_UPDATED.name(),
-                column.getBoard().getId(),
-                java.util.Map.of("columnId", savedColumn.getId(), "action", "updated"), 0L,
-                System.currentTimeMillis()));
-        return ColumnResponse.from(savedColumn);
+                column.getBoard().getId(), response, 0L, System.currentTimeMillis()));
+        return response;
     }
 
     /**
@@ -168,11 +171,12 @@ public class ColumnService {
         }
 
         // Redis 이벤트 발행
+        // Redis 이벤트 발행
+        ColumnResponse response = ColumnResponse.from(updatedColumn);
         redisPublisher.publish(new com.kanban.notification.event.BoardEvent(
                 com.kanban.notification.event.BoardEvent.EventType.COLUMN_REORDERED.name(), boardId,
-                java.util.Map.of("columnId", updatedColumn.getId(), "action", "moved"), userId,
-                System.currentTimeMillis()));
-        return ColumnResponse.from(updatedColumn);
+                response, userId, System.currentTimeMillis()));
+        return response;
     }
 
     /**
