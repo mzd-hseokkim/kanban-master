@@ -1,21 +1,23 @@
-import { Fragment, useEffect, useState } from 'react';
-import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
+import { ConnectionStatusScanner } from '@/components/ConnectionStatusScanner';
+import { Footer } from '@/components/Footer';
+import { GlobalNavBar } from '@/components/GlobalNavBar';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
+import { useAuth } from '@/context/AuthContext';
 import { BoardProvider } from '@/context/BoardContext';
-import { ColumnProvider } from '@/context/ColumnContext';
 import { CardProvider } from '@/context/CardContext';
+import { ColumnProvider } from '@/context/ColumnContext';
+import { WebSocketProvider } from '@/context/WebSocketContext';
+import { DialogProvider } from '@/hooks/useDialog';
+import BoardDetailPage from '@/pages/BoardDetailPage';
+import BoardsPage from '@/pages/BoardsPage';
 import DashboardPage from '@/pages/DashboardPage';
 import LoginPage from '@/pages/LoginPage';
+import OAuth2CallbackHandler from '@/pages/OAuth2CallbackHandler';
+import ProfilePage from '@/pages/ProfilePage';
 import { SignupPage } from '@/pages/SignupPage';
 import { VerifyEmailPage } from '@/pages/VerifyEmailPage';
-import OAuth2CallbackHandler from '@/pages/OAuth2CallbackHandler';
-import BoardsPage from '@/pages/BoardsPage';
-import BoardDetailPage from '@/pages/BoardDetailPage';
-import ProfilePage from '@/pages/ProfilePage';
-import { GlobalNavBar } from '@/components/GlobalNavBar';
-import { Footer } from '@/components/Footer';
-import { useAuth } from '@/context/AuthContext';
-import { DialogProvider } from '@/hooks/useDialog';
+import { Fragment, useEffect, useState } from 'react';
+import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
 
 const AUTH_CHROME_EXCLUDED_PATHS = ['/login', '/signup', '/verify-email', '/oauth2/callback'];
 
@@ -92,10 +94,12 @@ const App = () => {
 
   return (
     <DialogProvider>
-      <BoardProvider>
+      <WebSocketProvider>
+        <BoardProvider>
         <ColumnProvider>
           <CardProvider>
             <div className="min-h-screen bg-gradient-pastel flex flex-col">
+              <ConnectionStatusScanner />
               {shouldShowAppChrome && <GlobalNavBar />}
               <div className="flex-1 relative min-h-0 overflow-hidden">
                 {isAnimating && prevLocation && (
@@ -115,7 +119,8 @@ const App = () => {
             </div>
           </CardProvider>
         </ColumnProvider>
-      </BoardProvider>
+        </BoardProvider>
+      </WebSocketProvider>
     </DialogProvider>
   );
 };

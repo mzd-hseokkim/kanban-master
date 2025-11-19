@@ -1,15 +1,18 @@
 package com.kanban.card;
 
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+import org.owasp.html.PolicyFactory;
+import org.springframework.http.HttpStatus;
+import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 import com.kanban.activity.ActivityEventType;
-import com.kanban.activity.ActivityService;
 import com.kanban.activity.ActivityScopeType;
+import com.kanban.activity.ActivityService;
 import com.kanban.board.member.BoardMemberRole;
 import com.kanban.board.member.BoardMemberRoleValidator;
-import com.kanban.card.dto.CardResponse;
-import com.kanban.card.dto.ChildCardSummaryDTO;
-import com.kanban.card.dto.CreateCardRequest;
-import com.kanban.card.dto.ParentCardSummaryDTO;
-import com.kanban.card.dto.UpdateCardRequest;
+import com.kanban.card.dto.*;
 import com.kanban.column.BoardColumn;
 import com.kanban.column.ColumnRepository;
 import com.kanban.exception.CardHasChildrenException;
@@ -20,14 +23,6 @@ import com.kanban.label.dto.LabelResponse;
 import com.kanban.user.UserRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
-import org.owasp.html.PolicyFactory;
-import org.springframework.http.HttpStatus;
-import org.springframework.stereotype.Service;
-import org.springframework.web.server.ResponseStatusException;
-
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 
 /**
  * 카드 비즈니스 로직 서비스
@@ -44,10 +39,10 @@ public class CardService {
     private final CardLabelRepository cardLabelRepository;
     private final UserRepository userRepository;
     private final PolicyFactory htmlSanitizerPolicy;
+    private final com.kanban.notification.service.RedisPublisher redisPublisher;
 
     /**
-     * 특정 칼럼의 모든 카드 조회
-     * Spec § 5. 기능 요구사항 - FR-06g: 자식 개수 표시
+     * 특정 칼럼의 모든 카드 조회 Spec § 5. 기능 요구사항 - FR-06g: 자식 개수 표시
      */
     public List<CardResponse> getCardsByColumn(Long columnId) {
         List<Card> cards = cardRepository.findByColumnIdOrderByPosition(columnId);
@@ -55,26 +50,23 @@ public class CardService {
             return List.of();
         }
 
-        Map<Long, List<LabelResponse>> labelsByCardId = getLabelsByCardIds(cards.stream()
-                .map(Card::getId)
-                .toList());
+        Map<Long, List<LabelResponse>> labelsByCardId =
+                getLabelsByCardIds(cards.stream().map(Card::getId).toList());
 
         // 자식 카드 개수 조회 (FR-06g)
-        Map<Long, Integer> childCountByCardId = getChildCountByCardIds(cards.stream()
-                .map(Card::getId)
-                .toList());
+        Map<Long, Integer> childCountByCardId =
+                getChildCountByCardIds(cards.stream().map(Card::getId).toList());
 
-        return cards.stream()
-                .map(card -> {
-                    CardResponse response = CardResponse.from(card, labelsByCardId.getOrDefault(card.getId(), List.of()));
-                    // 자식 카드가 있으면 빈 리스트 설정 (개수만 필요)
-                    int childCount = childCountByCardId.getOrDefault(card.getId(), 0);
-                    if (childCount > 0) {
-                        response.setChildCards(List.of());  // 프론트엔드에서 childCards != null로 자식 존재 여부 판단
-                    }
-                    return enrichWithAssigneeAvatar(response);
-                })
-                .toList();
+        return cards.stream().map(card -> {
+            CardResponse response =
+                    CardResponse.from(card, labelsByCardId.getOrDefault(card.getId(), List.of()));
+            // 자식 카드가 있으면 빈 리스트 설정 (개수만 필요)
+            int childCount = childCountByCardId.getOrDefault(card.getId(), 0);
+            if (childCount > 0) {
+                response.setChildCards(List.of()); // 프론트엔드에서 childCards != null로 자식 존재 여부 판단
+            }
+            return enrichWithAssigneeAvatar(response);
+        }).toList();
     }
 
     /**
@@ -83,19 +75,15 @@ public class CardService {
     public CardResponse getCard(Long columnId, Long cardId) {
         Card card = cardRepository.findByIdAndColumnId(cardId, columnId)
                 .orElseThrow(() -> new ResourceNotFoundException("Card not found"));
-        List<LabelResponse> labels = cardLabelRepository.findByCardId(cardId)
-                .stream()
-                .map(cardLabel -> LabelResponse.from(cardLabel.getLabel()))
-                .toList();
+        List<LabelResponse> labels = cardLabelRepository.findByCardId(cardId).stream()
+                .map(cardLabel -> LabelResponse.from(cardLabel.getLabel())).toList();
 
         return enrichWithAssigneeAvatar(CardResponse.from(card, labels));
     }
 
     /**
-     * 특정 카드 조회 (계층 정보 포함)
-     * Spec § 6. 백엔드 규격 - FR-06b, FR-06d: 부모/자식 카드 정보 조회
-     * 결정 사항 1: 자식 카드는 생성일 오름차순 정렬
-     * 결정 사항 4: 초기 20개 자식 카드만 로드, 더보기 버튼으로 추가 로드
+     * 특정 카드 조회 (계층 정보 포함) Spec § 6. 백엔드 규격 - FR-06b, FR-06d: 부모/자식 카드 정보 조회 결정 사항 1: 자식 카드는 생성일
+     * 오름차순 정렬 결정 사항 4: 초기 20개 자식 카드만 로드, 더보기 버튼으로 추가 로드
      */
     public CardResponse getCardWithHierarchy(Long columnId, Long cardId) {
         // 카드 조회 (부모 정보 포함)
@@ -108,10 +96,8 @@ public class CardService {
         }
 
         // 라벨 조회
-        List<LabelResponse> labels = cardLabelRepository.findByCardId(cardId)
-                .stream()
-                .map(cardLabel -> LabelResponse.from(cardLabel.getLabel()))
-                .toList();
+        List<LabelResponse> labels = cardLabelRepository.findByCardId(cardId).stream()
+                .map(cardLabel -> LabelResponse.from(cardLabel.getLabel())).toList();
 
         // 부모 카드 정보 (있는 경우)
         ParentCardSummaryDTO parentCard = null;
@@ -121,20 +107,17 @@ public class CardService {
 
         // 자식 카드 목록 (최대 20개, 생성일 오름차순)
         List<Card> childCardEntities = cardRepository.findByParentCardIdOrderByCreatedAt(cardId);
-        List<ChildCardSummaryDTO> childCards = childCardEntities.stream()
-                .limit(20)  // 초기 20개만 로드
-                .map(ChildCardSummaryDTO::from)
-                .toList();
+        List<ChildCardSummaryDTO> childCards = childCardEntities.stream().limit(20) // 초기 20개만 로드
+                .map(ChildCardSummaryDTO::from).toList();
 
-        return enrichWithAssigneeAvatar(
-                CardResponse.from(card, labels, parentCard, childCards)
-        );
+        return enrichWithAssigneeAvatar(CardResponse.from(card, labels, parentCard, childCards));
     }
 
     /**
      * 카드 생성 (권한 검증 포함)
      */
-    public CardResponse createCardWithValidation(Long boardId, Long columnId, CreateCardRequest request, Long userId) {
+    public CardResponse createCardWithValidation(Long boardId, Long columnId,
+            CreateCardRequest request, Long userId) {
         // EDITOR 이상 권한 필요
         roleValidator.validateRole(boardId, BoardMemberRole.EDITOR);
 
@@ -142,8 +125,7 @@ public class CardService {
     }
 
     /**
-     * 카드 생성 (권한 검증 없음 - 내부 사용)
-     * Spec § 5. 기능 요구사항 - FR-06j: 계층 제한 검증
+     * 카드 생성 (권한 검증 없음 - 내부 사용) Spec § 5. 기능 요구사항 - FR-06j: 계층 제한 검증
      */
     public CardResponse createCard(Long columnId, CreateCardRequest request, Long userId) {
         BoardColumn column = columnRepository.findById(columnId)
@@ -157,35 +139,25 @@ public class CardService {
 
             // 부모 카드가 이미 자식 카드인 경우 (손자 카드 생성 방지)
             if (parentCard.getParentCard() != null) {
-                throw new ResponseStatusException(
-                        HttpStatus.BAD_REQUEST,
-                        "1단계 계층 구조만 지원합니다. 손자 카드는 생성할 수 없습니다."
-                );
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                        "1단계 계층 구조만 지원합니다. 손자 카드는 생성할 수 없습니다.");
             }
 
             // 부모 카드와 자식 카드가 같은 보드에 속하는지 검증
             if (!parentCard.getColumn().getBoard().getId().equals(column.getBoard().getId())) {
-                throw new ResponseStatusException(
-                        HttpStatus.BAD_REQUEST,
-                        "부모 카드와 자식 카드는 같은 보드에 속해야 합니다."
-                );
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                        "부모 카드와 자식 카드는 같은 보드에 속해야 합니다.");
             }
         }
 
         // 현재 칼럼의 카드 개수를 조회하여 position 설정
         int nextPosition = cardRepository.countByColumnId(columnId);
 
-        Card card = Card.builder()
-                .column(column)
-                .title(request.getTitle())
-                .description(sanitizeHtml(request.getDescription()))
-                .position(nextPosition)
-                .bgColor(request.getBgColor())
-                .priority(request.getPriority())
-                .assignee(request.getAssignee())
-                .dueDate(request.getDueDate())
-                .parentCard(parentCard)
-                .build();
+        Card card = Card.builder().column(column).title(request.getTitle())
+                .description(sanitizeHtml(request.getDescription())).position(nextPosition)
+                .bgColor(request.getBgColor()).priority(request.getPriority())
+                .assignee(request.getAssignee()).dueDate(request.getDueDate())
+                .parentCard(parentCard).build();
 
         Card savedCard = cardRepository.save(card);
 
@@ -194,21 +166,22 @@ public class CardService {
         if (parentCard != null) {
             activityMessage += " (부모: \"" + parentCard.getTitle() + "\")";
         }
-        activityService.recordActivity(
-            ActivityScopeType.CARD,
-            savedCard.getId(),
-            ActivityEventType.CARD_CREATED,
-            userId,
-            activityMessage
-        );
+        activityService.recordActivity(ActivityScopeType.CARD, savedCard.getId(),
+                ActivityEventType.CARD_CREATED, userId, activityMessage);
 
+        // Redis 이벤트 발행
+        redisPublisher.publish(new com.kanban.notification.event.BoardEvent(
+                com.kanban.notification.event.BoardEvent.EventType.CARD_UPDATED.name(),
+                column.getBoard().getId(), Map.of("cardId", savedCard.getId(), "action", "updated"),
+                userId, System.currentTimeMillis()));
         return enrichWithAssigneeAvatar(CardResponse.from(savedCard));
     }
 
     /**
      * 카드 수정 (권한 검증 포함)
      */
-    public CardResponse updateCardWithValidation(Long boardId, Long columnId, Long cardId, UpdateCardRequest request, Long userId) {
+    public CardResponse updateCardWithValidation(Long boardId, Long columnId, Long cardId,
+            UpdateCardRequest request, Long userId) {
         // EDITOR 이상 권한 필요
         roleValidator.validateRole(boardId, BoardMemberRole.EDITOR);
 
@@ -216,10 +189,10 @@ public class CardService {
     }
 
     /**
-     * 카드 수정 (활동 기록 포함, 권한 검증 없음 - 내부 사용)
-     * Spec § 5. 기능 요구사항 - FR-06i: 컬럼 이동 시 부모 관계 해제
+     * 카드 수정 (활동 기록 포함, 권한 검증 없음 - 내부 사용) Spec § 5. 기능 요구사항 - FR-06i: 컬럼 이동 시 부모 관계 해제
      */
-    public CardResponse updateCard(Long columnId, Long cardId, UpdateCardRequest request, Long userId) {
+    public CardResponse updateCard(Long columnId, Long cardId, UpdateCardRequest request,
+            Long userId) {
         Card card = cardRepository.findByIdAndColumnId(cardId, columnId)
                 .orElseThrow(() -> new ResourceNotFoundException("Card not found"));
 
@@ -279,7 +252,8 @@ public class CardService {
             }
         } else {
             // 같은 컬럼 내 위치 변경 처리
-            if (request.getPosition() != null && !request.getPosition().equals(card.getPosition())) {
+            if (request.getPosition() != null
+                    && !request.getPosition().equals(card.getPosition())) {
                 handleCardPositionChange(columnId, card, request.getPosition());
             }
         }
@@ -292,22 +266,24 @@ public class CardService {
             if (parentRelationRemoved) {
                 moveMessage += " (부모 관계 해제됨)";
             }
-            activityService.recordActivity(
-                ActivityScopeType.CARD,
-                cardId,
-                ActivityEventType.CARD_MOVED,
-                userId,
-                moveMessage
-            );
+            activityService.recordActivity(ActivityScopeType.CARD, cardId,
+                    ActivityEventType.CARD_MOVED, userId, moveMessage);
         } else {
-            activityService.recordActivity(
-                ActivityScopeType.CARD,
-                cardId,
-                ActivityEventType.CARD_UPDATED,
-                userId,
-                "\"" + updatedCard.getTitle() + "\" 카드가 업데이트되었습니다"
-            );
+            activityService.recordActivity(ActivityScopeType.CARD, cardId,
+                    ActivityEventType.CARD_UPDATED, userId,
+                    "\"" + updatedCard.getTitle() + "\" 카드가 업데이트되었습니다");
         }
+
+        // Redis 이벤트 발행
+        // Redis 이벤트 발행
+        String eventType =
+                isMoved ? com.kanban.notification.event.BoardEvent.EventType.CARD_MOVED.name()
+                        : com.kanban.notification.event.BoardEvent.EventType.CARD_UPDATED.name();
+
+        redisPublisher.publish(new com.kanban.notification.event.BoardEvent(eventType,
+                card.getColumn().getBoard().getId(),
+                Map.of("cardId", updatedCard.getId(), "action", isMoved ? "moved" : "updated"),
+                userId, System.currentTimeMillis()));
 
         return enrichWithAssigneeAvatar(CardResponse.from(updatedCard));
     }
@@ -323,10 +299,8 @@ public class CardService {
     }
 
     /**
-     * 카드 삭제 (권한 검증 없음 - 내부 사용)
-     * Spec § 7. 보안 처리 - 데이터 무결성
-     * FR-06h 변경: 부모 카드 삭제 차단
-     * 결정 사항 2: 자식이 있으면 부모 삭제 차단
+     * 카드 삭제 (권한 검증 없음 - 내부 사용) Spec § 7. 보안 처리 - 데이터 무결성 FR-06h 변경: 부모 카드 삭제 차단 결정 사항 2: 자식이 있으면 부모
+     * 삭제 차단
      */
     public void deleteCard(Long columnId, Long cardId, Long userId) {
         Card card = cardRepository.findByIdAndColumnId(cardId, columnId)
@@ -351,13 +325,14 @@ public class CardService {
         cardRepository.updatePositionsFrom(columnId, deletedPosition + 1, -1);
 
         // 활동 기록
-        activityService.recordActivity(
-            ActivityScopeType.CARD,
-            cardId,
-            ActivityEventType.CARD_DELETED,
-            userId,
-            "\"" + cardTitle + "\" 카드가 삭제되었습니다"
-        );
+        activityService.recordActivity(ActivityScopeType.CARD, cardId,
+                ActivityEventType.CARD_DELETED, userId, "\"" + cardTitle + "\" 카드가 삭제되었습니다");
+
+        // Redis 이벤트 발행
+        redisPublisher.publish(new com.kanban.notification.event.BoardEvent(
+                com.kanban.notification.event.BoardEvent.EventType.CARD_DELETED.name(),
+                card.getColumn().getBoard().getId(), Map.of("cardId", cardId, "action", "deleted"),
+                userId, System.currentTimeMillis()));
     }
 
     /**
@@ -387,26 +362,21 @@ public class CardService {
         List<CardLabel> cardLabels = cardLabelRepository.findByCardIdIn(cardIds);
 
         return cardLabels.stream()
-                .collect(Collectors.groupingBy(
-                        cardLabel -> cardLabel.getCard().getId(),
-                        Collectors.mapping(cardLabel -> LabelResponse.from(cardLabel.getLabel()), Collectors.toList())
-                ));
+                .collect(Collectors.groupingBy(cardLabel -> cardLabel.getCard().getId(),
+                        Collectors.mapping(cardLabel -> LabelResponse.from(cardLabel.getLabel()),
+                                Collectors.toList())));
     }
 
     /**
-     * 여러 카드의 자식 개수 조회
-     * FR-06g: 자식 개수 표시를 위한 헬퍼 메서드
+     * 여러 카드의 자식 개수 조회 FR-06g: 자식 개수 표시를 위한 헬퍼 메서드
      */
     private Map<Long, Integer> getChildCountByCardIds(List<Long> cardIds) {
         if (cardIds.isEmpty()) {
             return Map.of();
         }
 
-        return cardIds.stream()
-                .collect(Collectors.toMap(
-                        cardId -> cardId,
-                        cardId -> cardRepository.countByParentCardId(cardId)
-                ));
+        return cardIds.stream().collect(Collectors.toMap(cardId -> cardId,
+                cardId -> cardRepository.countByParentCardId(cardId)));
     }
 
     /**
@@ -421,8 +391,7 @@ public class CardService {
     }
 
     /**
-     * HTML Sanitization
-     * XSS 공격 방지를 위해 위험한 HTML 태그와 속성을 제거
+     * HTML Sanitization XSS 공격 방지를 위해 위험한 HTML 태그와 속성을 제거
      */
     private String sanitizeHtml(String html) {
         if (html == null || html.isBlank()) {

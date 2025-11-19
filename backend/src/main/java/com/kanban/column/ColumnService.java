@@ -1,19 +1,18 @@
 package com.kanban.column;
 
+import java.util.List;
+import java.util.NoSuchElementException;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import com.kanban.activity.ActivityEventType;
-import com.kanban.activity.ActivityService;
 import com.kanban.activity.ActivityScopeType;
+import com.kanban.activity.ActivityService;
 import com.kanban.board.Board;
 import com.kanban.board.BoardRepository;
 import com.kanban.board.member.BoardMemberRole;
 import com.kanban.board.member.BoardMemberRoleValidator;
 import com.kanban.column.dto.ColumnResponse;
 import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
-import java.util.List;
-import java.util.NoSuchElementException;
 
 /**
  * 칼럼(BoardColumn) 비즈니스 로직 서비스
@@ -27,6 +26,7 @@ public class ColumnService {
     private final BoardRepository boardRepository;
     private final ActivityService activityService;
     private final BoardMemberRoleValidator roleValidator;
+    private final com.kanban.notification.service.RedisPublisher redisPublisher;
 
     /**
      * 특정 보드의 모든 칼럼 조회
@@ -34,8 +34,7 @@ public class ColumnService {
     @Transactional(readOnly = true)
     public List<ColumnResponse> getColumnsByBoard(Long boardId) {
         return columnRepository.findByBoardIdOrderByPosition(boardId).stream()
-                .map(ColumnResponse::from)
-                .toList();
+                .map(ColumnResponse::from).toList();
     }
 
     /**
@@ -44,14 +43,15 @@ public class ColumnService {
     @Transactional(readOnly = true)
     public ColumnResponse getColumn(Long columnId) {
         BoardColumn column = columnRepository.findById(columnId)
-            .orElseThrow(() -> new NoSuchElementException("칼럼을 찾을 수 없습니다: " + columnId));
+                .orElseThrow(() -> new NoSuchElementException("칼럼을 찾을 수 없습니다: " + columnId));
         return ColumnResponse.from(column);
     }
 
     /**
      * 칼럼 생성 (권한 검증 포함)
      */
-    public ColumnResponse createColumnWithValidation(Long boardId, String name, String description, String bgColor, Long userId) {
+    public ColumnResponse createColumnWithValidation(Long boardId, String name, String description,
+            String bgColor, Long userId) {
         // EDITOR 이상 권한 필요
         roleValidator.validateRole(boardId, BoardMemberRole.EDITOR);
 
@@ -61,39 +61,36 @@ public class ColumnService {
     /**
      * 칼럼 생성 (권한 검증 없음 - 내부 사용)
      */
-    public ColumnResponse createColumn(Long boardId, String name, String description, String bgColor, Long userId) {
+    public ColumnResponse createColumn(Long boardId, String name, String description,
+            String bgColor, Long userId) {
         Board board = boardRepository.findById(boardId)
-            .orElseThrow(() -> new NoSuchElementException("보드를 찾을 수 없습니다: " + boardId));
+                .orElseThrow(() -> new NoSuchElementException("보드를 찾을 수 없습니다: " + boardId));
 
         // 현재 칼럼 개수를 position으로 설정 (마지막에 추가)
         int position = columnRepository.countByBoardId(boardId);
 
-        BoardColumn column = BoardColumn.builder()
-            .board(board)
-            .name(name)
-            .description(description)
-            .bgColor(bgColor)
-            .position(position)
-            .build();
+        BoardColumn column = BoardColumn.builder().board(board).name(name).description(description)
+                .bgColor(bgColor).position(position).build();
 
         BoardColumn savedColumn = columnRepository.save(column);
 
         // 활동 기록
-        activityService.recordActivity(
-            ActivityScopeType.BOARD,
-            boardId,
-            ActivityEventType.COLUMN_CREATED,
-            userId,
-            "\"" + name + "\" 칼럼이 생성되었습니다"
-        );
+        activityService.recordActivity(ActivityScopeType.BOARD, boardId,
+                ActivityEventType.COLUMN_CREATED, userId, "\"" + name + "\" 칼럼이 생성되었습니다");
 
+        // Redis 이벤트 발행
+        redisPublisher.publish(new com.kanban.notification.event.BoardEvent(
+                com.kanban.notification.event.BoardEvent.EventType.COLUMN_CREATED.name(), boardId,
+                java.util.Map.of("columnId", savedColumn.getId(), "action", "created"), userId,
+                System.currentTimeMillis()));
         return ColumnResponse.from(savedColumn);
     }
 
     /**
      * 칼럼 업데이트 (권한 검증 포함)
      */
-    public ColumnResponse updateColumnWithValidation(Long boardId, Long columnId, String name, String description, String bgColor) {
+    public ColumnResponse updateColumnWithValidation(Long boardId, Long columnId, String name,
+            String description, String bgColor) {
         // EDITOR 이상 권한 필요
         roleValidator.validateRole(boardId, BoardMemberRole.EDITOR);
 
@@ -103,9 +100,10 @@ public class ColumnService {
     /**
      * 칼럼 업데이트 (권한 검증 없음 - 내부 사용)
      */
-    public ColumnResponse updateColumn(Long columnId, String name, String description, String bgColor) {
+    public ColumnResponse updateColumn(Long columnId, String name, String description,
+            String bgColor) {
         BoardColumn column = columnRepository.findById(columnId)
-            .orElseThrow(() -> new NoSuchElementException("칼럼을 찾을 수 없습니다: " + columnId));
+                .orElseThrow(() -> new NoSuchElementException("칼럼을 찾을 수 없습니다: " + columnId));
 
         if (name != null && !name.isBlank()) {
             column.setName(name);
@@ -118,13 +116,23 @@ public class ColumnService {
         }
 
         BoardColumn savedColumn = columnRepository.save(column);
+
+        // Redis 이벤트 발행 (userId가 없으므로 0L 또는 시스템 ID 사용, 여기서는 null 처리 주의 필요하지만 편의상 0L)
+        // updateColumn 메서드는 내부 호출용이라 userId가 파라미터에 없음.
+        // 하지만 실시간 업데이트를 위해 이벤트는 필요함.
+        redisPublisher.publish(new com.kanban.notification.event.BoardEvent(
+                com.kanban.notification.event.BoardEvent.EventType.COLUMN_UPDATED.name(),
+                column.getBoard().getId(),
+                java.util.Map.of("columnId", savedColumn.getId(), "action", "updated"), 0L,
+                System.currentTimeMillis()));
         return ColumnResponse.from(savedColumn);
     }
 
     /**
      * 칼럼 위치 업데이트 (권한 검증 포함)
      */
-    public ColumnResponse updateColumnPositionWithValidation(Long boardId, Long columnId, Integer newPosition, Long userId) {
+    public ColumnResponse updateColumnPositionWithValidation(Long boardId, Long columnId,
+            Integer newPosition, Long userId) {
         // EDITOR 이상 권한 필요
         roleValidator.validateRole(boardId, BoardMemberRole.EDITOR);
 
@@ -134,9 +142,10 @@ public class ColumnService {
     /**
      * 칼럼 위치 업데이트 (드래그 앤 드롭, 권한 검증 없음 - 내부 사용)
      */
-    public ColumnResponse updateColumnPosition(Long boardId, Long columnId, Integer newPosition, Long userId) {
+    public ColumnResponse updateColumnPosition(Long boardId, Long columnId, Integer newPosition,
+            Long userId) {
         BoardColumn column = columnRepository.findByIdAndBoardId(columnId, boardId)
-            .orElseThrow(() -> new NoSuchElementException("칼럼을 찾을 수 없습니다: " + columnId));
+                .orElseThrow(() -> new NoSuchElementException("칼럼을 찾을 수 없습니다: " + columnId));
 
         int currentPosition = column.getPosition();
 
@@ -153,15 +162,16 @@ public class ColumnService {
 
         // 활동 기록
         if (currentPosition != newPosition) {
-            activityService.recordActivity(
-                ActivityScopeType.BOARD,
-                boardId,
-                ActivityEventType.COLUMN_REORDERED,
-                userId,
-                "\"" + column.getName() + "\" 칼럼이 이동되었습니다"
-            );
+            activityService.recordActivity(ActivityScopeType.BOARD, boardId,
+                    ActivityEventType.COLUMN_REORDERED, userId,
+                    "\"" + column.getName() + "\" 칼럼이 이동되었습니다");
         }
 
+        // Redis 이벤트 발행
+        redisPublisher.publish(new com.kanban.notification.event.BoardEvent(
+                com.kanban.notification.event.BoardEvent.EventType.COLUMN_REORDERED.name(), boardId,
+                java.util.Map.of("columnId", updatedColumn.getId(), "action", "moved"), userId,
+                System.currentTimeMillis()));
         return ColumnResponse.from(updatedColumn);
     }
 
@@ -180,7 +190,7 @@ public class ColumnService {
      */
     public void deleteColumn(Long boardId, Long columnId, Long userId) {
         BoardColumn column = columnRepository.findByIdAndBoardId(columnId, boardId)
-            .orElseThrow(() -> new NoSuchElementException("칼럼을 찾을 수 없습니다: " + columnId));
+                .orElseThrow(() -> new NoSuchElementException("칼럼을 찾을 수 없습니다: " + columnId));
 
         String columnName = column.getName();
         int deletedPosition = column.getPosition();
@@ -192,12 +202,13 @@ public class ColumnService {
         columnRepository.updatePositionsFrom(boardId, deletedPosition, -1);
 
         // 활동 기록
-        activityService.recordActivity(
-            ActivityScopeType.BOARD,
-            boardId,
-            ActivityEventType.COLUMN_DELETED,
-            userId,
-            "\"" + columnName + "\" 칼럼이 삭제되었습니다"
-        );
+        activityService.recordActivity(ActivityScopeType.BOARD, boardId,
+                ActivityEventType.COLUMN_DELETED, userId, "\"" + columnName + "\" 칼럼이 삭제되었습니다");
+
+        // Redis 이벤트 발행
+        redisPublisher.publish(new com.kanban.notification.event.BoardEvent(
+                com.kanban.notification.event.BoardEvent.EventType.COLUMN_DELETED.name(), boardId,
+                java.util.Map.of("columnId", columnId, "action", "deleted"), userId,
+                System.currentTimeMillis()));
     }
 }

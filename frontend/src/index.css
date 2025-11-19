@@ -417,3 +417,19 @@ select:not(.borderless-input):not(:focus) {
 .animate-fadeIn {
     animation: dialogFadeIn 0.2s ease-out;
 }
+
+@keyframes scanner {
+    0% {
+        left: -20%;
+    }
+    50% {
+        left: 100%;
+    }
+    100% {
+        left: -20%;
+    }
+}
+
+.animate-scanner {
+    animation: scanner 2s linear infinite;
+}

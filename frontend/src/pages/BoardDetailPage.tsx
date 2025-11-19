@@ -1,23 +1,24 @@
-import { useState, useCallback } from "react";
-import { useNavigate, useParams, useSearchParams } from "react-router-dom";
-import { useColumn } from "@/context/ColumnContext";
 import { useCard } from "@/context/CardContext";
-import { usePresenceTransition } from "@/hooks/usePresenceTransition";
+import { useColumn } from "@/context/ColumnContext";
+import { useBoardSubscription } from "@/hooks/useBoardSubscription";
 import { usePermissions } from "@/hooks/usePermissions";
+import { usePresenceTransition } from "@/hooks/usePresenceTransition";
 import type { CardSearchResult } from "@/types/search";
-import { BoardHeader } from "./BoardDetailPage/components/BoardHeader";
-import { ColumnsSection } from "./BoardDetailPage/components/ColumnsSection";
-import { MembersPanel } from "./BoardDetailPage/components/MembersPanel";
+import { useCallback, useState } from "react";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { ActivityPanel } from "./BoardDetailPage/components/ActivityPanel";
-import {
-  BoardLoadingState,
-  BoardErrorState,
-} from "./BoardDetailPage/components/BoardStateFallbacks";
+import { BoardHeader } from "./BoardDetailPage/components/BoardHeader";
 import { BoardModals } from "./BoardDetailPage/components/BoardModals";
 import {
-  useAutoOpenTargets,
-  useBoardData,
-  useOverdueCardCount,
+    BoardErrorState,
+    BoardLoadingState,
+} from "./BoardDetailPage/components/BoardStateFallbacks";
+import { ColumnsSection } from "./BoardDetailPage/components/ColumnsSection";
+import { MembersPanel } from "./BoardDetailPage/components/MembersPanel";
+import {
+    useAutoOpenTargets,
+    useBoardData,
+    useOverdueCardCount,
 } from "./BoardDetailPage/hooks";
 
 const BoardDetailPage = () => {
@@ -65,6 +66,11 @@ const BoardDetailPage = () => {
     }
     await loadColumns(workspaceNumericId, boardNumericId);
   }, [hasValidNumericIds, loadColumns, workspaceNumericId, boardNumericId]);
+
+  useBoardSubscription(boardNumericId, (event) => {
+    console.log('Board event received:', event);
+    refreshColumns();
+  });
 
   const handleNavigateBack = () => navigate("/boards");
 
