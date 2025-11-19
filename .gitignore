@@ -73,3 +73,8 @@ uploads/
 # Claude Code - Local MCP configurations
 .mcp.local.json
 .claude/mcp-configs/*.local.json
+
+# Test & scan reports
+.scannerwork/
+playwright-report/
+frontend/test-results/

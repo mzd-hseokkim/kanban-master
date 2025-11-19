@@ -16,6 +16,7 @@
     "install:frontend": "cd frontend && npm install",
     "install:backend": "cd backend && ./gradlew build --refresh-dependencies",
     "clean": "rm -rf frontend/node_modules frontend/dist backend/build backend/.gradle",
+    "docker:build": "scripts/docker-build.sh",
     "sonar:backend": "cd backend && ./gradlew sonar",
     "sonar:frontend": "cd frontend && npm run sonar",
     "sonar": "npm run sonar:backend && npm run sonar:frontend"

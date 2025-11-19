@@ -1,0 +1,72 @@
+# Production override for docker-compose.yml
+# Usage: docker-compose -f docker-compose.yml -f docker-compose.prod.yml up
+
+services:
+  # PostgreSQL database for production
+  postgres:
+    image: postgres:16-alpine
+    container_name: kanban-postgres
+    environment:
+      POSTGRES_DB: kanban
+      POSTGRES_USER: kanban_user
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - kanban-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U kanban_user -d kanban"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+
+  # Backend configuration override for production
+  backend:
+    environment:
+      # Use production profile with PostgreSQL
+      SPRING_PROFILES_ACTIVE: prod
+
+      # Database connection
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/kanban
+      SPRING_DATASOURCE_USERNAME: kanban_user
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD}
+
+      # JWT secret (must be strong in production)
+      JWT_SECRET: ${JWT_SECRET}
+
+      # Google OAuth
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
+
+      # MailerSend configuration
+      MAILERSEND_API_TOKEN: ${MAILERSEND_API_TOKEN}
+      MAILERSEND_FROM_EMAIL: ${MAILERSEND_FROM_EMAIL}
+
+      # Frontend URL for CORS
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost}
+
+      # Cookie domain (set to your domain in production)
+      COOKIE_DOMAIN: ${COOKIE_DOMAIN:-localhost}
+    volumes:
+      # Remove H2 data mount, only keep uploads
+      - upload_data:/app/uploads
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # Frontend configuration stays the same
+  frontend:
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+    driver: local
+
+networks:
+  kanban-network:
+    driver: bridge

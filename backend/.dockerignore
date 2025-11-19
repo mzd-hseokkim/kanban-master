@@ -1,0 +1,27 @@
+# Gradle build output
+build/
+.gradle/
+
+# H2 database files
+data/
+
+# Uploaded files
+uploads/
+
+# IDE files
+.idea/
+.vscode/
+*.iml
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Logs
+*.log
+logs/
+
+# OS files
+.DS_Store
+Thumbs.db

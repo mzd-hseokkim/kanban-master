@@ -1,0 +1,64 @@
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    image: kanban-backend:${KANBAN_VERSION:-latest}
+    container_name: kanban-backend
+    ports:
+      - "8080:8080"
+    environment:
+      # Use dev profile with H2 database
+      SPRING_PROFILES_ACTIVE: dev
+
+      # JWT configuration
+      JWT_SECRET: ${JWT_SECRET:-ZGV2X2p3dF9zZWNyZXRfbWluaW11bV8zMl9jaGFyYWN0ZXJzX2xvbmdfZm9yX3Rlc3Rpbmc=}
+
+      # Google OAuth (optional for local dev)
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+
+      # MailerSend configuration (optional for local dev)
+      MAILERSEND_API_TOKEN: ${MAILERSEND_API_TOKEN:-}
+      MAILERSEND_FROM_EMAIL: ${MAILERSEND_FROM_EMAIL:-noreply@localhost}
+
+      # CORS configuration
+      FRONTEND_URL: http://localhost
+
+      # Cookie domain
+      COOKIE_DOMAIN: localhost
+    volumes:
+      # Mount H2 database file for persistence
+      - ./backend/data:/app/data
+      # Mount uploads directory for file storage
+      - upload_data:/app/uploads
+    networks:
+      - kanban-network
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8080/actuator/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    image: kanban-frontend:${KANBAN_VERSION:-latest}
+    container_name: kanban-frontend
+    ports:
+      - "80:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - kanban-network
+
+volumes:
+  upload_data:
+    driver: local
+
+networks:
+  kanban-network:
+    driver: bridge
