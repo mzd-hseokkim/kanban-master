@@ -14,7 +14,7 @@ interface ModalPanelOptions {
 }
 
 export const modalOverlayClass = (stage?: ModalAnimationStage, extra?: string) =>
-    joinClasses('modal-overlay', stage && `modal-overlay-${stage}`, 'bg-gradient-pastel/90', 'backdrop-blur-sm', extra);
+    joinClasses('modal-overlay', stage && `modal-overlay-${stage}`, 'bg-black/25', 'backdrop-blur-sm', extra);
 
 export const modalPanelClass = ({
     stage,
@@ -27,7 +27,7 @@ export const modalPanelClass = ({
     joinClasses(
         'modal-panel',
         stage && `modal-panel-${stage}`,
-        'glass-light',
+        'glass-modal',
         'rounded-3xl',
         'shadow-glass-lg',
         'border',

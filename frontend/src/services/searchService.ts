@@ -2,8 +2,8 @@
  * 검색 서비스
  */
 
-import axiosInstance from '@/utils/axios';
 import type { CardSearchRequest, CardSearchResult } from '@/types/search';
+import axiosInstance from '@/utils/axios';
 
 export const searchService = {
   /**
@@ -70,6 +70,34 @@ export const searchService = {
 
     const response = await axiosInstance.get<CardSearchResult[]>(
       `/search/workspaces/${workspaceId}/cards?${params.toString()}`
+    );
+    return response.data;
+  },
+
+  /**
+   * 워크스페이스 내 보드 검색
+   */
+  async searchBoards(
+    workspaceId: number,
+    keyword: string
+  ): Promise<import('@/types/search').BoardSearchResult[]> {
+    const response = await axiosInstance.get<import('@/types/search').BoardSearchResult[]>(
+      `/search/workspaces/${workspaceId}/boards`,
+      { params: { keyword } }
+    );
+    return response.data;
+  },
+
+  /**
+   * 워크스페이스 내 칼럼 검색
+   */
+  async searchColumns(
+    workspaceId: number,
+    keyword: string
+  ): Promise<import('@/types/search').ColumnSearchResult[]> {
+    const response = await axiosInstance.get<import('@/types/search').ColumnSearchResult[]>(
+      `/search/workspaces/${workspaceId}/columns`,
+      { params: { keyword } }
     );
     return response.data;
   },

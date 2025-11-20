@@ -19,6 +19,7 @@ import lombok.NoArgsConstructor;
 public class CardSearchResponse {
 
     private Long id;
+    private Long workspaceId;
     private Long columnId;
     private String columnName;
     private Long boardId;

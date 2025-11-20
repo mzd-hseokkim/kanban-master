@@ -1,11 +1,11 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { Card } from '@/types/card';
-import { useCard } from '@/context/CardContext';
-import { ErrorNotification } from '@/components/ErrorNotification';
-import { EditCardModal } from '@/components/EditCardModal';
-import { useDialog } from '@/hooks/useDialog';
 import { Avatar } from '@/components/common/Avatar';
+import { EditCardModal } from '@/components/EditCardModal';
+import { ErrorNotification } from '@/components/ErrorNotification';
+import { useCard } from '@/context/CardContext';
+import { useDialog } from '@/hooks/useDialog';
 import cardService from '@/services/cardService';
+import { Card } from '@/types/card';
+import React, { useEffect, useMemo, useState } from 'react';
 
 interface CardItemProps {
   card: Card;
@@ -258,7 +258,7 @@ export const CardItem: React.FC<CardItemProps> = ({
   return (
     <div className="relative w-full" data-card-id={card.id}>
       <div
-        className={`bg-white rounded-lg shadow-sm border border-pastel-blue-200 p-3 hover:shadow-md transition w-full ${
+        className={`bg-white rounded-lg shadow-sm border border-pastel-blue-200 p-3 hover:shadow-[0_35px_60px_-15px_rgba(0,0,0,0.3)] hover:-translate-y-4 hover:scale-105 hover:z-10 transition-all duration-200 w-full ${
           isDragging ? 'opacity-50' : ''
         } ${animateOnMount ? 'card-enter' : ''} ${isLoadingRelations ? 'opacity-70 cursor-wait' : !canEdit ? 'cursor-default' : 'cursor-pointer'} ${
           isRecentlyCreated ? 'card-new-glow' : ''

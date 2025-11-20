@@ -80,7 +80,7 @@ export const CardProvider: React.FC<{ children: React.ReactNode }> = ({ children
             // Remove from source
             Object.keys(nextState).forEach(colId => {
                 const cId = Number(colId);
-                if (nextState[cId].some(c => c.id === movedCard.id)) {
+                if (nextState[cId]?.some(c => c.id === movedCard.id)) {
                     nextState[cId] = nextState[cId].filter(c => c.id !== movedCard.id);
                 }
             });

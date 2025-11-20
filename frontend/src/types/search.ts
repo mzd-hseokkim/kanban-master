@@ -23,6 +23,7 @@ export interface CardSearchRequest {
  */
 export interface CardSearchResult {
   id: number;
+  workspaceId: number;
   columnId: number;
   columnName: string;
   boardId: number;
@@ -36,6 +37,37 @@ export interface CardSearchResult {
   dueDate?: string;
   isCompleted: boolean;
   labels?: Label[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+/**
+ * 보드 검색 결과
+ */
+export interface BoardSearchResult {
+  id: number;
+  workspaceId: number;
+  ownerId: number;
+  ownerName: string;
+  name: string;
+  description: string;
+  themeColor: string;
+  icon: string;
+  status: 'ACTIVE' | 'DELETED';
+  createdAt: string;
+  updatedAt: string;
+}
+
+/**
+ * 칼럼 검색 결과
+ */
+export interface ColumnSearchResult {
+  id: number;
+  boardId: number;
+  name: string;
+  description: string;
+  position: number;
+  bgColor: string;
   createdAt: string;
   updatedAt: string;
 }

@@ -14,6 +14,7 @@ import DashboardPage from '@/pages/DashboardPage';
 import LoginPage from '@/pages/LoginPage';
 import OAuth2CallbackHandler from '@/pages/OAuth2CallbackHandler';
 import ProfilePage from '@/pages/ProfilePage';
+import SearchPage from '@/pages/SearchPage';
 import { SignupPage } from '@/pages/SignupPage';
 import { VerifyEmailPage } from '@/pages/VerifyEmailPage';
 import { Fragment, useEffect, useState } from 'react';
@@ -85,6 +86,14 @@ const App = () => {
         element={(
           <ProtectedRoute>
             <ProfilePage />
+          </ProtectedRoute>
+        )}
+      />
+      <Route
+        path="/search"
+        element={(
+          <ProtectedRoute>
+            <SearchPage />
           </ProtectedRoute>
         )}
       />

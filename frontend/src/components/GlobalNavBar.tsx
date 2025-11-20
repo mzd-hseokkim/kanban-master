@@ -284,9 +284,29 @@ export const GlobalNavBar: React.FC = () => {
                         )}
                     </div>
 
-                    {/* 중앙: 통합 검색 영역 (향후 추가 예정) */}
+                    {/* 중앙: 통합 검색 영역 */}
                     <div className="flex-1 max-w-2xl mx-4 hidden md:block">
-                        {/* 통합 검색창은 향후 추가 예정 */}
+                        <div className="relative group">
+                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <svg className="h-5 w-5 text-pastel-blue-400 group-focus-within:text-pastel-blue-600 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                                </svg>
+                            </div>
+                            <input
+                                type="text"
+                                placeholder="검색"
+                                className="block w-full pl-10 pr-3 py-2.5 border-none rounded-lg bg-pastel-blue-50/50 text-pastel-blue-900 placeholder-pastel-blue-400 focus:outline-none focus:ring-2 focus:ring-pastel-blue-200 focus:bg-white shadow-inner-sm transition-all duration-200"
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter' && !e.nativeEvent.isComposing) {
+                                        const target = e.target as HTMLInputElement;
+                                        if (target.value.trim()) {
+                                            navigate(`/search?q=${encodeURIComponent(target.value.trim())}`);
+                                            target.blur();
+                                        }
+                                    }
+                                }}
+                            />
+                        </div>
                     </div>
 
                     {/* 우측: Inbox + Watch List + 유저 메뉴 */}

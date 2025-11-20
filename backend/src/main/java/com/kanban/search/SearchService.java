@@ -26,6 +26,8 @@ public class SearchService {
 
     private final EntityManager entityManager;
     private final CardLabelRepository cardLabelRepository;
+    private final com.kanban.board.BoardRepository boardRepository;
+    private final com.kanban.column.ColumnRepository columnRepository;
 
     /**
      * 보드 내 카드 검색
@@ -183,6 +185,32 @@ public class SearchService {
     }
 
     /**
+     * 워크스페이스 내 보드 검색
+     */
+    public List<com.kanban.board.dto.BoardResponse> searchBoards(Long workspaceId, String keyword) {
+        if (keyword == null || keyword.trim().isEmpty()) {
+            return List.of();
+        }
+        return boardRepository
+                .findByWorkspaceIdAndNameContainingIgnoreCaseAndStatus(workspaceId, keyword.trim(),
+                        com.kanban.board.BoardStatus.ACTIVE)
+                .stream().map(com.kanban.board.dto.BoardResponse::from).toList();
+    }
+
+    /**
+     * 워크스페이스 내 칼럼 검색
+     */
+    public List<com.kanban.column.dto.ColumnResponse> searchColumns(Long workspaceId,
+            String keyword) {
+        if (keyword == null || keyword.trim().isEmpty()) {
+            return List.of();
+        }
+        return columnRepository
+                .findByBoardWorkspaceIdAndNameContainingIgnoreCase(workspaceId, keyword.trim())
+                .stream().map(com.kanban.column.dto.ColumnResponse::from).toList();
+    }
+
+    /**
      * 카드가 특정 라벨 중 하나라도 가지고 있는지 확인
      */
     private boolean hasAnyLabel(Long cardId, List<Long> labelIds) {
@@ -196,8 +224,10 @@ public class SearchService {
         List<LabelResponse> labels = cardLabelRepository.findByCardId(card.getId()).stream()
                 .map(cl -> LabelResponse.from(cl.getLabel())).toList();
 
-        return CardSearchResponse.builder().id(card.getId()).columnId(card.getColumn().getId())
-                .columnName(card.getColumn().getName()).boardId(card.getColumn().getBoard().getId())
+        return CardSearchResponse.builder().id(card.getId())
+                .workspaceId(card.getColumn().getBoard().getWorkspace().getId())
+                .columnId(card.getColumn().getId()).columnName(card.getColumn().getName())
+                .boardId(card.getColumn().getBoard().getId())
                 .boardName(card.getColumn().getBoard().getName()).title(card.getTitle())
                 .description(card.getDescription()).position(card.getPosition())
                 .bgColor(card.getBgColor()).priority(card.getPriority())
