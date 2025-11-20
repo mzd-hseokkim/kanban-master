@@ -12,6 +12,7 @@ import { useModalAnimation } from '@/hooks/useModalAnimation';
 import cardService from '@/services/cardService';
 import { labelService } from '@/services/labelService';
 import { userService } from '@/services/userService';
+import { watchService } from '@/services/watchService';
 import {
     modalColorButtonClass,
     modalErrorClass,
@@ -26,6 +27,7 @@ import {
 import { Card } from '@/types/card';
 import type { UserSearchResult } from '@/types/user';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { HiEye, HiOutlineEye } from 'react-icons/hi';
 
 interface EditCardModalProps {
     card: Card;
@@ -90,6 +92,8 @@ export const EditCardModal: React.FC<EditCardModalProps> = ({
     const [assigneeSearching, setAssigneeSearching] = useState(false);
     const [assigneeDropdownOpen, setAssigneeDropdownOpen] = useState(false);
     const [descriptionSaving, setDescriptionSaving] = useState(false);
+    const [isWatching, setIsWatching] = useState(false);
+    const [watchLoading, setWatchLoading] = useState(false);
     const titleInputRef = useRef<HTMLInputElement>(null);
     const assigneeInputRef = useRef<HTMLInputElement>(null);
     const assigneeInputContainerRef = useRef<HTMLDivElement>(null);
@@ -277,6 +281,42 @@ export const EditCardModal: React.FC<EditCardModalProps> = ({
         }
     }, [currentCard.assigneeId, currentCard.assignee]);
 
+    // Watch 상태 로드
+    useEffect(() => {
+        const loadWatchStatus = async () => {
+            if (currentCard && user) {
+                try {
+                    const status = await watchService.getWatchStatus(currentCard.id);
+                    console.log('Watch Status Response:', status); // 디버깅용 로그
+                    setIsWatching(status.isWatching);
+                } catch (error) {
+                    console.error('Failed to load watch status:', error);
+                }
+            }
+        };
+        loadWatchStatus();
+    }, [currentCard, user]);
+
+    // Watch 토글 핸들러
+    const handleToggleWatch = async () => {
+        if (!currentCard) return;
+
+        try {
+            setWatchLoading(true);
+            const response = await watchService.toggleWatch(currentCard.id);
+            console.log('Toggle Watch Response:', response); // 디버깅용 로그
+            setIsWatching(response.isWatching);
+
+            // GNB 업데이트를 위한 이벤트 발송
+            window.dispatchEvent(new CustomEvent('watch-updated'));
+        } catch (error) {
+            console.error('Failed to toggle watch:', error);
+            // 에러 시 상태 롤백 (낙관적 업데이트를 했다면)
+        } finally {
+            setWatchLoading(false);
+        }
+    };
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
@@ -343,8 +383,8 @@ export const EditCardModal: React.FC<EditCardModalProps> = ({
                         {/* 왼쪽 컬럼: 카드 메타데이터 */}
                         <div className="overflow-y-auto pr-4 flex flex-col" style={{ maxHeight: '80vh' }}>
                             {/* 헤더 */}
-                            <h2 className="text-2xl font-bold text-pastel-blue-900 mb-1">카드 수정</h2>
-                            <p className="text-sm text-pastel-blue-600 mb-6">카드 정보를 수정하세요</p>
+                        <h2 className="text-2xl font-bold text-pastel-blue-900 mb-1">카드 수정</h2>
+                        <p className="text-sm text-pastel-blue-600 mb-6">카드 정보를 수정하세요</p>
 
                             {/* 부모 카드 링크 (있는 경우에만 표시) */}
                             {currentCard.parentCard && (
@@ -366,22 +406,43 @@ export const EditCardModal: React.FC<EditCardModalProps> = ({
                         {/* 제목 입력 */}
                         <div className="mb-4">
                             <label className={modalLabelClass}>카드 제목 *</label>
-                            <input
-                                ref={titleInputRef}
-                                type="text"
-                                value={title}
-                                onChange={(e) => setTitle(e.target.value)}
-                                onKeyDown={(e) => {
-                                    if (e.key === 'Enter' && !e.shiftKey && canEdit) {
-                                        e.preventDefault();
-                                        handleSubmit(e as unknown as React.FormEvent);
-                                    }
-                                }}
-                                placeholder="예: 로그인 기능 구현"
-                                className={modalInputClass}
-                                disabled={loading || !canEdit}
-                                readOnly={!canEdit}
-                            />
+                            <div className="relative">
+                                <input
+                                    ref={titleInputRef}
+                                    type="text"
+                                    value={title}
+                                    onChange={(e) => setTitle(e.target.value)}
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'Enter' && !e.shiftKey && canEdit) {
+                                            e.preventDefault();
+                                            handleSubmit(e as unknown as React.FormEvent);
+                                        }
+                                    }}
+                                    placeholder="예: 로그인 기능 구현"
+                                    className={`${modalInputClass} pr-12`}
+                                    disabled={loading || !canEdit}
+                                    readOnly={!canEdit}
+                                />
+                                <button
+                                    type="button"
+                                    onClick={handleToggleWatch}
+                                    disabled={watchLoading}
+                                    className={`absolute right-2 top-1/2 -translate-y-1/2 p-2 rounded-lg transition-all ${
+                                        isWatching
+                                            ? 'text-pastel-blue-600 hover:bg-pastel-blue-100'
+                                            : 'text-gray-400 hover:text-pastel-blue-600 hover:bg-gray-100'
+                                    } disabled:opacity-50`}
+                                    title={isWatching ? '관심 카드 해제' : '관심 카드 등록'}
+                                >
+                                    {watchLoading ? (
+                                        <span className="animate-spin text-lg">⏳</span>
+                                    ) : isWatching ? (
+                                        <HiEye className="text-xl" />
+                                    ) : (
+                                        <HiOutlineEye className="text-xl" />
+                                    )}
+                                </button>
+                            </div>
                         </div>
 
                         {/* 우선순위 + 마감일 (2열 그리드) */}

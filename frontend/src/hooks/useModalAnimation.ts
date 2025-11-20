@@ -27,11 +27,22 @@ export const useModalAnimation = (onClose: () => void, duration = MODAL_TRANSITI
     }, duration);
   }, [onClose, prefersReducedMotion, duration]);
 
-  useEffect(() => () => {
-    if (timeoutRef.current) {
-      window.clearTimeout(timeoutRef.current);
-    }
-  }, []);
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        close();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      if (timeoutRef.current) {
+        window.clearTimeout(timeoutRef.current);
+      }
+    };
+  }, [close]);
 
   return {
     stage,

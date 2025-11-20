@@ -41,6 +41,7 @@ public class CardService {
     private final PolicyFactory htmlSanitizerPolicy;
     private final com.kanban.notification.service.RedisPublisher redisPublisher;
     private final com.kanban.notification.service.NotificationService notificationService;
+    private final com.kanban.watch.CardWatchService cardWatchService;
 
     /**
      * 특정 칼럼의 모든 카드 조회 Spec § 5. 기능 요구사항 - FR-06g: 자식 개수 표시
@@ -347,6 +348,10 @@ public class CardService {
                     + ", newId=" + newAssigneeId + ", oldId=" + oldAssigneeId);
         }
 
+        // Watch 중인 사용자들에게 알림
+        String changeMessage = buildChangeMessage(request, originalTitle, isMoved);
+        cardWatchService.notifyWatchers(cardId, changeMessage, userId);
+
         return response;
     }
 
@@ -462,5 +467,38 @@ public class CardService {
             return null;
         }
         return htmlSanitizerPolicy.sanitize(html);
+    }
+
+    /**
+     * 카드 변경 내용을 메시지로 생성
+     */
+    private String buildChangeMessage(UpdateCardRequest request, String originalTitle,
+            boolean isMoved) {
+        if (isMoved) {
+            return "카드가 다른 컬럼으로 이동됨";
+        }
+
+        java.util.List<String> changes = new java.util.ArrayList<>();
+
+        if (request.getTitle() != null && !request.getTitle().equals(originalTitle)) {
+            changes.add("제목 변경");
+        }
+        if (request.getDescription() != null) {
+            changes.add("설명 변경");
+        }
+        if (request.getPriority() != null) {
+            changes.add("우선순위 변경");
+        }
+        if (request.getAssigneeId() != null) {
+            changes.add("담당자 변경");
+        }
+        if (request.getDueDate() != null) {
+            changes.add("마감일 변경");
+        }
+        if (request.getIsCompleted() != null) {
+            changes.add("완료 상태 변경");
+        }
+
+        return changes.isEmpty() ? "카드 업데이트" : String.join(", ", changes);
     }
 }
