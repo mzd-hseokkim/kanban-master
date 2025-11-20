@@ -7,9 +7,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 /**
- * 부모 카드 요약 정보 DTO
- * Spec § 6. 백엔드 규격 - DTO 확장
- * FR-06b: 부모 카드 정보 표시
+ * 부모 카드 요약 정보 DTO Spec § 6. 백엔드 규격 - DTO 확장 FR-06b: 부모 카드 정보 표시
  */
 @Data
 @Builder
@@ -40,7 +38,7 @@ public class ParentCardSummaryDTO {
     /**
      * 부모 카드 담당자
      */
-    private String assignee;
+    private Long assigneeId;
 
     /**
      * Card 엔티티를 ParentCardSummaryDTO로 변환
@@ -50,12 +48,8 @@ public class ParentCardSummaryDTO {
             return null;
         }
 
-        return ParentCardSummaryDTO.builder()
-                .id(card.getId())
-                .title(card.getTitle())
-                .bgColor(card.getBgColor())
-                .priority(card.getPriority())
-                .assignee(card.getAssignee())
-                .build();
+        return ParentCardSummaryDTO.builder().id(card.getId()).title(card.getTitle())
+                .bgColor(card.getBgColor()).priority(card.getPriority())
+                .assigneeId(card.getAssigneeId()).build();
     }
 }

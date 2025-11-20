@@ -5,6 +5,7 @@ import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.kanban.notification.event.BoardEvent;
+import com.kanban.notification.event.NotificationEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -21,14 +22,20 @@ public class RedisSubscriber implements MessageListener {
             byte[] pattern) {
         try {
             String body = new String(message.getBody());
-            BoardEvent event = objectMapper.readValue(body, BoardEvent.class);
+            String channel = new String(message.getChannel());
 
-            log.debug("Received message from Redis: {}", event);
-
-            // Forward to WebSocket subscribers
-            // Topic structure: /topic/board/{boardId}
-            String destination = "/topic/board/" + event.getBoardId();
-            messagingTemplate.convertAndSend(destination, event);
+            if (channel.endsWith("board-events")) {
+                BoardEvent event = objectMapper.readValue(body, BoardEvent.class);
+                log.debug("Received board event from Redis: {}", event);
+                String destination = "/topic/board/" + event.getBoardId();
+                messagingTemplate.convertAndSend(destination, event);
+            } else if (channel.endsWith("notification-events")) {
+                NotificationEvent event = objectMapper.readValue(body, NotificationEvent.class);
+                log.debug("Received notification event from Redis: {}", event);
+                // Send to specific user
+                messagingTemplate.convertAndSendToUser(String.valueOf(event.getRecipientId()),
+                        "/queue/notifications", event);
+            }
 
         } catch (Exception e) {
             log.error("Error processing Redis message", e);

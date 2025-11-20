@@ -40,6 +40,7 @@ public class CardService {
     private final UserRepository userRepository;
     private final PolicyFactory htmlSanitizerPolicy;
     private final com.kanban.notification.service.RedisPublisher redisPublisher;
+    private final com.kanban.notification.service.NotificationService notificationService;
 
     /**
      * 특정 칼럼의 모든 카드 조회 Spec § 5. 기능 요구사항 - FR-06g: 자식 개수 표시
@@ -65,7 +66,7 @@ public class CardService {
             if (childCount > 0) {
                 response.setChildCards(List.of()); // 프론트엔드에서 childCards != null로 자식 존재 여부 판단
             }
-            return enrichWithAssigneeAvatar(response);
+            return enrichWithAssigneeInfo(response);
         }).toList();
     }
 
@@ -78,7 +79,7 @@ public class CardService {
         List<LabelResponse> labels = cardLabelRepository.findByCardId(cardId).stream()
                 .map(cardLabel -> LabelResponse.from(cardLabel.getLabel())).toList();
 
-        return enrichWithAssigneeAvatar(CardResponse.from(card, labels));
+        return enrichWithAssigneeInfo(CardResponse.from(card, labels));
     }
 
     /**
@@ -110,7 +111,7 @@ public class CardService {
         List<ChildCardSummaryDTO> childCards = childCardEntities.stream().limit(20) // 초기 20개만 로드
                 .map(ChildCardSummaryDTO::from).toList();
 
-        return enrichWithAssigneeAvatar(CardResponse.from(card, labels, parentCard, childCards));
+        return enrichWithAssigneeInfo(CardResponse.from(card, labels, parentCard, childCards));
     }
 
     /**
@@ -156,7 +157,7 @@ public class CardService {
         Card card = Card.builder().column(column).title(request.getTitle())
                 .description(sanitizeHtml(request.getDescription())).position(nextPosition)
                 .bgColor(request.getBgColor()).priority(request.getPriority())
-                .assignee(request.getAssignee()).dueDate(request.getDueDate())
+                .assigneeId(request.getAssigneeId()).dueDate(request.getDueDate())
                 .parentCard(parentCard).build();
 
         Card savedCard = cardRepository.save(card);
@@ -172,10 +173,29 @@ public class CardService {
         // Redis 이벤트 발행 (라벨 포함)
         List<LabelResponse> labels = cardLabelRepository.findByCardId(savedCard.getId()).stream()
                 .map(cardLabel -> LabelResponse.from(cardLabel.getLabel())).toList();
-        CardResponse response = enrichWithAssigneeAvatar(CardResponse.from(savedCard, labels));
+        CardResponse response = enrichWithAssigneeInfo(CardResponse.from(savedCard, labels));
         redisPublisher.publish(new com.kanban.notification.event.BoardEvent(
                 com.kanban.notification.event.BoardEvent.EventType.CARD_CREATED.name(),
                 column.getBoard().getId(), response, userId, System.currentTimeMillis()));
+
+        // 알림 생성 (담당자가 지정된 경우)
+        if (savedCard.getAssigneeId() != null) {
+            // 본인이 본인을 할당한 경우는 알림 제외
+            if (!savedCard.getAssigneeId().equals(userId)) {
+                System.out.println("Creating notification for user (createCard): "
+                        + savedCard.getAssigneeId());
+                Long workspaceId = column.getBoard().getWorkspace().getId();
+                notificationService.createNotification(savedCard.getAssigneeId(),
+                        com.kanban.notification.domain.NotificationType.CARD_ASSIGNMENT,
+                        "새 카드 \"" + savedCard.getTitle() + "\"에 할당되었습니다.",
+                        "/boards/" + workspaceId + "/" + column.getBoard().getId() + "?cardId="
+                                + savedCard.getId() + "&columnId=" + column.getId());
+            } else {
+                System.out.println(
+                        "Skipping notification (createCard): Self-assignment by user " + userId);
+            }
+        }
+
         return response;
     }
 
@@ -202,6 +222,9 @@ public class CardService {
         boolean isMoved = false;
         boolean parentRelationRemoved = false;
 
+        // 담당자 변경 감지 및 알림을 위한 기존 담당자 ID 저장
+        Long oldAssigneeId = card.getAssigneeId();
+
         if (request.getTitle() != null) {
             card.setTitle(request.getTitle());
         }
@@ -214,8 +237,13 @@ public class CardService {
         if (request.getPriority() != null) {
             card.setPriority(request.getPriority());
         }
-        if (request.getAssignee() != null) {
-            card.setAssignee(request.getAssignee());
+        if (request.getAssigneeId() != null) {
+            // -1 means unassign
+            if (request.getAssigneeId() == -1) {
+                card.setAssigneeId(null);
+            } else {
+                card.setAssigneeId(request.getAssigneeId());
+            }
         }
         if (request.getDueDate() != null) {
             card.setDueDate(request.getDueDate());
@@ -223,6 +251,18 @@ public class CardService {
         if (request.getIsCompleted() != null) {
             card.setIsCompleted(request.getIsCompleted());
         }
+
+        Long newAssigneeId = request.getAssigneeId();
+        // Check if assignee changed (considering nulls and -1 for unassign)
+        boolean assigneeChanged = false;
+        if (newAssigneeId != null) {
+            if (newAssigneeId == -1) {
+                assigneeChanged = oldAssigneeId != null;
+            } else {
+                assigneeChanged = !newAssigneeId.equals(oldAssigneeId);
+            }
+        }
+
 
         // 다른 컬럼으로 이동하는 경우
         if (request.getColumnId() != null && !request.getColumnId().equals(columnId)) {
@@ -283,9 +323,29 @@ public class CardService {
 
         List<LabelResponse> labels = cardLabelRepository.findByCardId(updatedCard.getId()).stream()
                 .map(cardLabel -> LabelResponse.from(cardLabel.getLabel())).toList();
-        CardResponse response = enrichWithAssigneeAvatar(CardResponse.from(updatedCard, labels));
+        CardResponse response = enrichWithAssigneeInfo(CardResponse.from(updatedCard, labels));
         redisPublisher.publish(new com.kanban.notification.event.BoardEvent(eventType,
                 card.getColumn().getBoard().getId(), response, userId, System.currentTimeMillis()));
+
+        // 담당자 변경 알림
+        if (assigneeChanged && newAssigneeId != null && newAssigneeId != -1) {
+            // 본인이 본인을 할당한 경우는 알림 제외
+            if (!newAssigneeId.equals(userId)) {
+                System.out.println("Creating notification for user: " + newAssigneeId);
+                Long workspaceId = card.getColumn().getBoard().getWorkspace().getId();
+                notificationService.createNotification(newAssigneeId,
+                        com.kanban.notification.domain.NotificationType.CARD_ASSIGNMENT,
+                        "카드 \"" + updatedCard.getTitle() + "\"에 할당되었습니다.",
+                        "/boards/" + workspaceId + "/" + card.getColumn().getBoard().getId()
+                                + "?cardId=" + updatedCard.getId() + "&columnId="
+                                + card.getColumn().getId());
+            } else {
+                System.out.println("Skipping notification: Self-assignment by user " + userId);
+            }
+        } else {
+            System.out.println("Notification condition failed: changed=" + assigneeChanged
+                    + ", newId=" + newAssigneeId + ", oldId=" + oldAssigneeId);
+        }
 
         return response;
     }
@@ -382,12 +442,14 @@ public class CardService {
     }
 
     /**
-     * CardResponse에 담당자의 아바타 URL 추가
+     * CardResponse에 담당자 정보(이름, 아바타) 추가
      */
-    private CardResponse enrichWithAssigneeAvatar(CardResponse cardResponse) {
-        if (cardResponse.getAssignee() != null && !cardResponse.getAssignee().isEmpty()) {
-            userRepository.findByName(cardResponse.getAssignee())
-                    .ifPresent(user -> cardResponse.setAssigneeAvatarUrl(user.getAvatarUrl()));
+    private CardResponse enrichWithAssigneeInfo(CardResponse cardResponse) {
+        if (cardResponse.getAssigneeId() != null) {
+            userRepository.findById(cardResponse.getAssigneeId()).ifPresent(user -> {
+                cardResponse.setAssignee(user.getName());
+                cardResponse.setAssigneeAvatarUrl(user.getAvatarUrl());
+            });
         }
         return cardResponse;
     }

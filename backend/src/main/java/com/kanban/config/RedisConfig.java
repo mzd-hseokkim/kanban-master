@@ -11,6 +11,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.kanban.notification.event.BoardEvent;
+import com.kanban.notification.event.NotificationEvent;
 
 /**
  * Redis 설정 클래스
@@ -45,6 +46,23 @@ public class RedisConfig {
     }
 
     @Bean
+    public RedisTemplate<String, NotificationEvent> notificationRedisTemplate(
+            RedisConnectionFactory connectionFactory, ObjectMapper redisObjectMapper) {
+        RedisTemplate<String, NotificationEvent> template = new RedisTemplate<>();
+        template.setConnectionFactory(connectionFactory);
+
+        Jackson2JsonRedisSerializer<NotificationEvent> serializer =
+                new Jackson2JsonRedisSerializer<>(redisObjectMapper, NotificationEvent.class);
+
+        template.setKeySerializer(new StringRedisSerializer());
+        template.setValueSerializer(serializer);
+        template.setHashKeySerializer(new StringRedisSerializer());
+        template.setHashValueSerializer(serializer);
+
+        return template;
+    }
+
+    @Bean
     public RedisMessageListenerContainer redisMessageListenerContainer(
             RedisConnectionFactory connectionFactory,
             com.kanban.notification.service.RedisSubscriber redisSubscriber) {
@@ -53,6 +71,8 @@ public class RedisConfig {
         container.setConnectionFactory(connectionFactory);
         container.addMessageListener(redisSubscriber,
                 new org.springframework.data.redis.listener.ChannelTopic("board-events"));
+        container.addMessageListener(redisSubscriber,
+                new org.springframework.data.redis.listener.ChannelTopic("notification-events"));
         return container;
     }
 }

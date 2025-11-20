@@ -1,31 +1,31 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Card } from '@/types/card';
-import { useCard } from '@/context/CardContext';
-import { useAuth } from '@/context/AuthContext';
+import ChildCardList from '@/components/ChildCardList';
+import { CommentSection } from '@/components/CommentSection';
+import { Avatar } from '@/components/common/Avatar';
+import { CreateCardModal } from '@/components/CreateCardModal';
 import { ErrorNotification } from '@/components/ErrorNotification';
 import { LabelSelector } from '@/components/label/LabelSelector';
-import { userService } from '@/services/userService';
-import { labelService } from '@/services/labelService';
-import cardService from '@/services/cardService';
-import type { UserSearchResult } from '@/types/user';
-import { useModalAnimation } from '@/hooks/useModalAnimation';
-import { Avatar } from '@/components/common/Avatar';
-import RichTextEditor from '@/components/RichTextEditor';
-import { CommentSection } from '@/components/CommentSection';
 import ParentCardLink from '@/components/ParentCardLink';
-import ChildCardList from '@/components/ChildCardList';
-import { CreateCardModal } from '@/components/CreateCardModal';
+import RichTextEditor from '@/components/RichTextEditor';
+import { useAuth } from '@/context/AuthContext';
+import { useCard } from '@/context/CardContext';
+import { useModalAnimation } from '@/hooks/useModalAnimation';
+import cardService from '@/services/cardService';
+import { labelService } from '@/services/labelService';
+import { userService } from '@/services/userService';
 import {
+    modalColorButtonClass,
+    modalErrorClass,
+    modalInputClass,
+    modalLabelClass,
     modalOverlayClass,
     modalPanelClass,
-    modalLabelClass,
-    modalInputClass,
-    modalSelectClass,
-    modalSecondaryButtonClass,
     modalPrimaryButtonClass,
-    modalErrorClass,
-    modalColorButtonClass,
+    modalSecondaryButtonClass,
+    modalSelectClass,
 } from '@/styles/modalStyles';
+import { Card } from '@/types/card';
+import type { UserSearchResult } from '@/types/user';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 
 interface EditCardModalProps {
     card: Card;
@@ -79,9 +79,9 @@ export const EditCardModal: React.FC<EditCardModalProps> = ({
     const [assigneeSearchInput, setAssigneeSearchInput] = useState('');
     const [assigneeResults, setAssigneeResults] = useState<UserSearchResult[]>([]);
     const [selectedAssignee, setSelectedAssignee] = useState<UserSearchResult | null>(
-        card.assignee
+        card.assigneeId && card.assignee
             ? {
-                  id: -1,
+                  id: card.assigneeId,
                   name: card.assignee,
                   email: '',
               }
@@ -173,9 +173,9 @@ export const EditCardModal: React.FC<EditCardModalProps> = ({
             setIsCompleted(targetCard.isCompleted);
             setSelectedLabelIds(targetCard.labels?.map((l) => l.id) || []);
             setSelectedAssignee(
-                targetCard.assignee
+                targetCard.assigneeId && targetCard.assignee
                     ? {
-                          id: -1,
+                          id: targetCard.assigneeId,
                           name: targetCard.assignee,
                           email: '',
                       }
@@ -266,16 +266,16 @@ export const EditCardModal: React.FC<EditCardModalProps> = ({
     }, []);
 
     useEffect(() => {
-        if (currentCard.assignee) {
+        if (currentCard.assigneeId && currentCard.assignee) {
             setSelectedAssignee({
-                id: -1,
+                id: currentCard.assigneeId,
                 name: currentCard.assignee,
                 email: '',
             });
         } else {
             setSelectedAssignee(null);
         }
-    }, [currentCard.assignee]);
+    }, [currentCard.assigneeId, currentCard.assignee]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -302,7 +302,7 @@ export const EditCardModal: React.FC<EditCardModalProps> = ({
                 description: description.trim() || undefined,
                 bgColor: selectedColor || undefined,
                 priority: priority || undefined,
-                assignee: selectedAssignee?.name,
+                assigneeId: selectedAssignee ? selectedAssignee.id : -1, // -1 to unassign
                 dueDate: dueDate || undefined,
                 isCompleted,
             });

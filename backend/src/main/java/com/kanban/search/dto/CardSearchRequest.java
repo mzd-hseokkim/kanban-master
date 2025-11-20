@@ -1,12 +1,11 @@
 package com.kanban.search.dto;
 
+import java.time.LocalDate;
+import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-
-import java.time.LocalDate;
-import java.util.List;
 
 /**
  * 카드 검색 요청 DTO
@@ -30,7 +29,7 @@ public class CardSearchRequest {
     /**
      * 담당자 필터
      */
-    private List<String> assignees;
+    private List<Long> assigneeIds;
 
     /**
      * 라벨 ID 필터

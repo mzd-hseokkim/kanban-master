@@ -60,6 +60,8 @@ temp/
 
 # Ignore H2 database files
 backend/data/*.db
+backend/data/*
+data/backups/
 
 # Local history
 .lh/

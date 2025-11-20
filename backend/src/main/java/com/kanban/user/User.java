@@ -48,7 +48,7 @@ public class User extends BaseEntity {
      */
     @Column(nullable = false, columnDefinition = "boolean default false")
     @Builder.Default
-    private Boolean emailVerified = false;
+    private Boolean emailVerified = true;
 
     /**
      * 이메일 인증 토큰 (UUID)

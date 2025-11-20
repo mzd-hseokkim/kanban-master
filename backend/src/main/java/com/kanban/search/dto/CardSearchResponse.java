@@ -1,14 +1,13 @@
 package com.kanban.search.dto;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.List;
 import com.kanban.label.dto.LabelResponse;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.util.List;
 
 /**
  * 카드 검색 결과 DTO
@@ -29,7 +28,7 @@ public class CardSearchResponse {
     private Integer position;
     private String bgColor;
     private String priority;
-    private String assignee;
+    private Long assigneeId;
     private LocalDate dueDate;
     private Boolean isCompleted;
     private List<LabelResponse> labels;

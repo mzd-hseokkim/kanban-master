@@ -2,7 +2,7 @@
 
 ## Notice
 
-Always answer in Korean language unless user asked to answer in English.
+Always answer in polite Korean language (정중한 한국어/존댓말) unless user asked to answer in English.
 
 ## Purpose
 

@@ -1,17 +1,15 @@
 package com.kanban.card;
 
-import com.kanban.entity.BaseEntity;
-import com.kanban.column.BoardColumn;
-import jakarta.persistence.*;
-import lombok.*;
-
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import com.kanban.column.BoardColumn;
+import com.kanban.entity.BaseEntity;
+import jakarta.persistence.*;
+import lombok.*;
 
 /**
- * 카드(Card) 엔티티
- * 칼럼에 속하는 개별 카드 항목
+ * 카드(Card) 엔티티 칼럼에 속하는 개별 카드 항목
  */
 @Entity
 @Table(name = "card")
@@ -66,9 +64,10 @@ public class Card extends BaseEntity {
     private String priority;
 
     /**
-     * 담당자 (추후 User 관계 추가 가능)
+     * 담당자 ID (User 엔티티의 ID)
      */
-    private String assignee;
+    @Column(name = "assignee_id")
+    private Long assigneeId;
 
     /**
      * 마감 날짜
@@ -86,17 +85,14 @@ public class Card extends BaseEntity {
     // FR-06a: 부모-자식 관계 데이터 모델
 
     /**
-     * 부모 카드 (Self-Referential ManyToOne)
-     * 1단계 계층 구조만 지원 (부모 → 자식, 손자 불가)
+     * 부모 카드 (Self-Referential ManyToOne) 1단계 계층 구조만 지원 (부모 → 자식, 손자 불가)
      */
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "parent_card_id")
     private Card parentCard;
 
     /**
-     * 자식 카드 목록 (OneToMany)
-     * mappedBy로 양방향 관계 설정
-     * Cascade 없음: 부모 삭제 시 자식 삭제 안 함 (서비스 레벨에서 차단)
+     * 자식 카드 목록 (OneToMany) mappedBy로 양방향 관계 설정 Cascade 없음: 부모 삭제 시 자식 삭제 안 함 (서비스 레벨에서 차단)
      */
     @OneToMany(mappedBy = "parentCard")
     @Builder.Default

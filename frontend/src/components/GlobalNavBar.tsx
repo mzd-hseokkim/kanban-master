@@ -1,11 +1,13 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
-import { memberService } from '@/services/memberService';
+import { useWebSocket } from '@/context/WebSocketContext';
+import { usePresenceTransition } from '@/hooks/usePresenceTransition';
+import { notificationService } from '@/services/notificationService';
+import type { BoardMember } from '@/types/member';
+import type { InboxItem } from '@/types/notification';
+import React, { useEffect, useRef, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { InvitationResponseModal } from './InvitationResponseModal';
 import { Avatar } from './common/Avatar';
-import type { BoardMember } from '@/types/member';
-import { usePresenceTransition } from '@/hooks/usePresenceTransition';
 
 // NavButton 컴포넌트
 interface NavButtonProps {
@@ -38,15 +40,16 @@ export const GlobalNavBar: React.FC = () => {
     const location = useLocation();
     const { user, logout } = useAuth();
     const [showMenu, setShowMenu] = React.useState(false);
-    const [showInvitations, setShowInvitations] = useState(false);
-    const [pendingInvitations, setPendingInvitations] = useState<BoardMember[]>([]);
-    const [loadingInvitations, setLoadingInvitations] = useState(false);
+    const [showInbox, setShowInbox] = useState(false);
+    const [inboxItems, setInboxItems] = useState<InboxItem[]>([]);
+    const [loadingInbox, setLoadingInbox] = useState(false);
     const [selectedInvitation, setSelectedInvitation] = useState<BoardMember | null>(null);
     const [showInvitationModal, setShowInvitationModal] = useState(false);
     const menuRef = useRef<HTMLDivElement>(null);
-    const invitationsRef = useRef<HTMLDivElement>(null);
+    const inboxRef = useRef<HTMLDivElement>(null);
     const menuTransition = usePresenceTransition(showMenu, 220);
-    const invitationsTransition = usePresenceTransition(showInvitations, 220);
+    const inboxTransition = usePresenceTransition(showInbox, 220);
+    const { client, isConnected } = useWebSocket();
 
     const handleLogout = async () => {
         try {
@@ -65,47 +68,112 @@ export const GlobalNavBar: React.FC = () => {
         navigate('/boards');
     };
 
-    const loadPendingInvitations = async () => {
+    const loadInbox = async () => {
         try {
-            setLoadingInvitations(true);
-            const invitations = await memberService.getPendingInvitations();
-            setPendingInvitations(invitations);
+            setLoadingInbox(true);
+            const items = await notificationService.getInbox();
+            console.log('Loaded inbox items:', items.map(i => ({ id: i.id, isRead: i.isRead, type: i.type })));
+            setInboxItems(items);
         } catch (error) {
-            console.error('Failed to load pending invitations:', error);
+            console.error('Failed to load inbox:', error);
         } finally {
-            setLoadingInvitations(false);
+            setLoadingInbox(false);
         }
     };
 
-    const handleInvitationsClick = async () => {
-        if (!showInvitations) {
-            await loadPendingInvitations();
+    const handleInboxClick = async () => {
+        if (!showInbox) {
+            await loadInbox();
         }
-        setShowInvitations(!showInvitations);
+        setShowInbox(!showInbox);
     };
 
-    // 화면 로드 시 초대 개수 조회
+    const handleNotificationClick = async (item: InboxItem) => {
+        if (item.type === 'INVITATION') {
+            // Convert InboxItem to BoardMember for modal
+            const invitation: BoardMember = {
+                boardId: 0, // Not needed for modal display if payload has info
+                userId: 0,
+                userEmail: '',
+                userName: '',
+                role: 'MEMBER', // Default
+                invitationStatus: 'PENDING',
+                invitedAt: item.createdAt,
+                boardName: item.payload?.boardName || '',
+                invitationToken: item.payload?.invitationToken || '',
+                invitedByName: item.payload?.invitedByName || '',
+                ...item.payload
+            } as any; // Type assertion for simplified conversion
+            setSelectedInvitation(invitation);
+            setShowInvitationModal(true);
+        } else if (item.type === 'NOTIFICATION') {
+            if (!item.isRead) {
+                await notificationService.markAsRead(item.id);
+                // Update local state to mark as read
+                setInboxItems(prev => prev.map(i => i.id === item.id ? { ...i, isRead: true } : i));
+            }
+            if (item.actionUrl) {
+                navigate(item.actionUrl);
+                setShowInbox(false);
+            }
+        }
+    };
+
+    // 화면 로드 시 인박스 조회
     useEffect(() => {
-        loadPendingInvitations();
+        loadInbox();
     }, []);
+
+    useEffect(() => {
+        if (!client || !isConnected || !user) return;
+
+        const subscription = client.subscribe('/user/queue/notifications', (message) => {
+            try {
+                const event = JSON.parse(message.body);
+                console.log('Received notification:', event);
+
+                // Create new InboxItem from event
+                const newItem: InboxItem = {
+                    id: `notif-${event.id}`,
+                    type: 'NOTIFICATION', // Currently only handling notifications via WS
+                    title: '알림', // You might want to make this dynamic based on event type
+                    message: event.message,
+                    actionUrl: event.actionUrl,
+                    createdAt: event.createdAt, // Ensure this matches format
+                    isRead: false,
+                    payload: { type: event.type }
+                };
+
+                setInboxItems(prev => [newItem, ...prev]);
+
+                // Optional: Show toast or visual cue
+            } catch (error) {
+                console.error('Failed to process notification:', error);
+            }
+        });
+
+        return () => {
+            subscription.unsubscribe();
+        };
+    }, [client, isConnected, user]);
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
             if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
                 setShowMenu(false);
             }
-            if (invitationsRef.current && !invitationsRef.current.contains(event.target as Node)) {
-                setShowInvitations(false);
+            if (inboxRef.current && !inboxRef.current.contains(event.target as Node)) {
+                setShowInbox(false);
             }
         };
 
-        if (showMenu || showInvitations) {
+        if (showMenu || showInbox) {
             document.addEventListener('mousedown', handleClickOutside);
             return () => {
                 document.removeEventListener('mousedown', handleClickOutside);
             };
         }
-    }, [showMenu, showInvitations]);
+    }, [showMenu, showInbox]);
 
     return (
         <nav className="backdrop-blur-xl bg-white/70 shadow-[0_8px_32px_0_rgba(31,38,135,0.15)] sticky top-0 z-50 border-b border-white/40">
@@ -152,55 +220,65 @@ export const GlobalNavBar: React.FC = () => {
                     {/* 우측: Inbox + 유저 메뉴 */}
                     {user && (
                         <div className="flex items-center gap-3">
-                            {/* Invitations Button */}
-                            <div className="relative" ref={invitationsRef}>
+                            {/* Inbox Button */}
+                            <div className="relative" ref={inboxRef}>
                                 <button
-                                    onClick={handleInvitationsClick}
+                                    onClick={handleInboxClick}
                                     className="relative w-10 h-10 hover:opacity-80 transition-all duration-200 flex items-center justify-center"
-                                    title="초대 목록"
+                                    title="알림함"
                                 >
                                     <span className="text-xl">📬</span>
-                                    {pendingInvitations.length > 0 && (
+                                    {inboxItems.filter(i => !i.isRead).length > 0 && (
                                         <span className="absolute -top-1 -right-1 flex items-center justify-center w-5 h-5 bg-pastel-pink-500 text-white text-xs font-bold rounded-full shadow-glass-sm">
-                                            {pendingInvitations.length}
+                                            {inboxItems.filter(i => !i.isRead).length}
                                         </span>
                                     )}
                                 </button>
 
-                                {/* Invitations Dropdown */}
-                                {invitationsTransition.shouldRender && (
+                                {/* Inbox Dropdown */}
+                                {inboxTransition.shouldRender && (
                                     <div
-                                        className={`dropdown-panel dropdown-panel-${invitationsTransition.stage} absolute right-0 mt-2 w-96 bg-white rounded-lg shadow-lg border border-pastel-blue-200`}
+                                        className={`dropdown-panel dropdown-panel-${inboxTransition.stage} absolute right-0 mt-2 w-96 bg-white rounded-lg shadow-lg border border-pastel-blue-200`}
                                     >
-                                        <div className="px-4 py-3 border-b border-pastel-blue-100">
-                                            <p className="text-sm font-semibold text-pastel-blue-900">초대 목록</p>
+                                        <div className="px-4 py-3 border-b border-pastel-blue-100 flex justify-between items-center">
+                                            <p className="text-sm font-semibold text-pastel-blue-900">알림함</p>
                                         </div>
 
-                                        {loadingInvitations ? (
+                                        {loadingInbox ? (
                                             <div className="px-4 py-8 flex items-center justify-center">
                                                 <div className="animate-spin h-5 w-5 border-2 border-pastel-blue-500 border-t-transparent rounded-full" />
                                             </div>
-                                        ) : pendingInvitations.length === 0 ? (
+                                        ) : inboxItems.length === 0 ? (
                                             <div className="px-4 py-8 text-center text-pastel-blue-500 text-sm">
-                                                받은 초대가 없습니다
+                                                새로운 알림이 없습니다
                                             </div>
                                         ) : (
                                             <div className="max-h-80 overflow-y-auto">
-                                                {pendingInvitations.map((invitation) => (
+                                                {inboxItems.map((item) => (
                                                     <div
-                                                        key={`${invitation.boardId}-${invitation.userId}`}
-                                                        className="px-4 py-3 border-b border-pastel-blue-50 hover:bg-pastel-blue-50 transition cursor-pointer"
-                                                        onClick={() => {
-                                                            setSelectedInvitation(invitation);
-                                                            setShowInvitationModal(true);
-                                                        }}
+                                                        key={item.id}
+                                                        className={`px-4 py-3 border-b border-pastel-blue-50 hover:bg-pastel-blue-50 transition cursor-pointer \${!item.isRead ? 'bg-pastel-blue-50/50' : ''}`}
+                                                        onClick={() => handleNotificationClick(item)}
                                                     >
-                                                        <p className="text-sm font-semibold text-pastel-blue-900">
-                                                            {invitation.boardName}
-                                                        </p>
-                                                        <p className="text-xs text-pastel-blue-600 mt-1">
-                                                            {invitation.invitedByName}님으로부터 초대
-                                                        </p>
+                                                        <div className="flex items-start gap-3">
+                                                            <div className="flex-shrink-0 mt-1">
+                                                                {item.type === 'INVITATION' ? '💌' : '🔔'}
+                                                            </div>
+                                                            <div className="flex-1 min-w-0">
+                                                                <p className="text-sm font-semibold text-pastel-blue-900 truncate">
+                                                                    {item.title}
+                                                                </p>
+                                                                <p className="text-xs text-pastel-blue-600 mt-1 line-clamp-2">
+                                                                    {item.message}
+                                                                </p>
+                                                                <p className="text-[10px] text-pastel-blue-400 mt-1">
+                                                                    {new Date(item.createdAt).toLocaleString()}
+                                                                </p>
+                                                            </div>
+                                                            {!item.isRead && (
+                                                                <div className="w-2 h-2 rounded-full bg-pastel-pink-500 flex-shrink-0 mt-2" />
+                                                            )}
+                                                        </div>
                                                     </div>
                                                 ))}
                                             </div>
@@ -287,10 +365,10 @@ export const GlobalNavBar: React.FC = () => {
                 onClose={() => {
                     setShowInvitationModal(false);
                     setSelectedInvitation(null);
-                    setShowInvitations(false);
+                    setShowInbox(false);
                 }}
                 onSuccess={() => {
-                    loadPendingInvitations();
+                    loadInbox();
                 }}
             />
         </nav>

@@ -1,27 +1,27 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { useCard } from '@/context/CardContext';
+import { Avatar } from '@/components/common/Avatar';
+import { CollapsibleSection } from '@/components/common/CollapsibleSection';
 import { ErrorNotification } from '@/components/ErrorNotification';
 import { LabelSelector } from '@/components/label/LabelSelector';
+import RichTextEditor from '@/components/RichTextEditor';
+import { useCard } from '@/context/CardContext';
+import { useModalAnimation } from '@/hooks/useModalAnimation';
+import cardService from '@/services/cardService';
 import { labelService } from '@/services/labelService';
 import { userService } from '@/services/userService';
-import cardService from '@/services/cardService';
-import type { UserSearchResult } from '@/types/user';
-import { useModalAnimation } from '@/hooks/useModalAnimation';
-import { Avatar } from '@/components/common/Avatar';
-import RichTextEditor from '@/components/RichTextEditor';
-import { CollapsibleSection } from '@/components/common/CollapsibleSection';
-import type { Card } from '@/types/card';
 import {
+    modalColorButtonClass,
+    modalErrorClass,
+    modalInputClass,
+    modalLabelClass,
     modalOverlayClass,
     modalPanelClass,
-    modalLabelClass,
-    modalInputClass,
-    modalSelectClass,
-    modalSecondaryButtonClass,
     modalPrimaryButtonClass,
-    modalErrorClass,
-    modalColorButtonClass,
+    modalSecondaryButtonClass,
+    modalSelectClass,
 } from '@/styles/modalStyles';
+import type { Card } from '@/types/card';
+import type { UserSearchResult } from '@/types/user';
+import React, { useEffect, useRef, useState } from 'react';
 
 interface CreateCardModalProps {
     workspaceId: number;
@@ -266,7 +266,7 @@ export const CreateCardModal: React.FC<CreateCardModalProps> = ({
                 description: description.trim() || undefined,
                 bgColor: selectedColor,
                 priority: priority || undefined,
-                assignee: selectedAssignee?.name,
+                assigneeId: selectedAssignee?.id,
                 dueDate: dueDate || undefined,
                 parentCardId: finalParentCardId, // 부모 카드 ID 포함 (있을 경우)
             });

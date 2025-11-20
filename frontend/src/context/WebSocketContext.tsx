@@ -45,6 +45,11 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({ children }
             onStompError: (frame) => {
                 console.error('Broker reported error: ' + frame.headers['message']);
                 console.error('Additional details: ' + frame.body);
+                setIsConnected(false);
+            },
+            onWebSocketClose: () => {
+                console.log('WebSocket closed');
+                setIsConnected(false);
             },
         });
 

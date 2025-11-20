@@ -1,28 +1,22 @@
 package com.kanban.search;
 
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import com.kanban.card.Card;
 import com.kanban.label.CardLabelRepository;
 import com.kanban.label.dto.LabelResponse;
 import com.kanban.search.dto.CardSearchRequest;
 import com.kanban.search.dto.CardSearchResponse;
 import jakarta.persistence.EntityManager;
-import jakarta.persistence.criteria.CriteriaBuilder;
-import jakarta.persistence.criteria.CriteriaQuery;
-import jakarta.persistence.criteria.Join;
-import jakarta.persistence.criteria.Predicate;
-import jakarta.persistence.criteria.Root;
+import jakarta.persistence.criteria.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
-import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.List;
 
 /**
- * 검색 서비스
- * 카드 검색 및 필터링 기능 제공
+ * 검색 서비스 카드 검색 및 필터링 기능 제공
  */
 @Service
 @RequiredArgsConstructor
@@ -68,8 +62,8 @@ public class SearchService {
         }
 
         // 담당자 필터
-        if (request.getAssignees() != null && !request.getAssignees().isEmpty()) {
-            predicates.add(card.get("assignee").in(request.getAssignees()));
+        if (request.getAssigneeIds() != null && !request.getAssigneeIds().isEmpty()) {
+            predicates.add(card.get("assigneeId").in(request.getAssigneeIds()));
         }
 
         // 완료 상태 필터
@@ -103,24 +97,22 @@ public class SearchService {
 
         // 라벨 필터 적용 (라벨은 별도 테이블이므로 후처리)
         if (request.getLabelIds() != null && !request.getLabelIds().isEmpty()) {
-            cards = cards.stream()
-                    .filter(c -> hasAnyLabel(c.getId(), request.getLabelIds()))
+            cards = cards.stream().filter(c -> hasAnyLabel(c.getId(), request.getLabelIds()))
                     .toList();
         }
 
-        return cards.stream()
-                .map(this::toSearchResponse)
-                .toList();
+        return cards.stream().map(this::toSearchResponse).toList();
     }
 
     /**
      * 워크스페이스 내 카드 검색
      *
      * @param workspaceId 워크스페이스 ID
-     * @param request     검색 조건
+     * @param request 검색 조건
      * @return 검색 결과 목록
      */
-    public List<CardSearchResponse> searchCardsInWorkspace(Long workspaceId, CardSearchRequest request) {
+    public List<CardSearchResponse> searchCardsInWorkspace(Long workspaceId,
+            CardSearchRequest request) {
         CriteriaBuilder cb = entityManager.getCriteriaBuilder();
         CriteriaQuery<Card> query = cb.createQuery(Card.class);
         Root<Card> card = query.from(Card.class);
@@ -148,8 +140,8 @@ public class SearchService {
         }
 
         // 담당자 필터
-        if (request.getAssignees() != null && !request.getAssignees().isEmpty()) {
-            predicates.add(card.get("assignee").in(request.getAssignees()));
+        if (request.getAssigneeIds() != null && !request.getAssigneeIds().isEmpty()) {
+            predicates.add(card.get("assigneeId").in(request.getAssigneeIds()));
         }
 
         // 완료 상태 필터
@@ -183,14 +175,11 @@ public class SearchService {
 
         // 라벨 필터
         if (request.getLabelIds() != null && !request.getLabelIds().isEmpty()) {
-            cards = cards.stream()
-                    .filter(c -> hasAnyLabel(c.getId(), request.getLabelIds()))
+            cards = cards.stream().filter(c -> hasAnyLabel(c.getId(), request.getLabelIds()))
                     .toList();
         }
 
-        return cards.stream()
-                .map(this::toSearchResponse)
-                .toList();
+        return cards.stream().map(this::toSearchResponse).toList();
     }
 
     /**
@@ -204,28 +193,16 @@ public class SearchService {
      * Card 엔티티를 CardSearchResponse로 변환
      */
     private CardSearchResponse toSearchResponse(Card card) {
-        List<LabelResponse> labels = cardLabelRepository.findByCardId(card.getId())
-                .stream()
-                .map(cl -> LabelResponse.from(cl.getLabel()))
-                .toList();
+        List<LabelResponse> labels = cardLabelRepository.findByCardId(card.getId()).stream()
+                .map(cl -> LabelResponse.from(cl.getLabel())).toList();
 
-        return CardSearchResponse.builder()
-                .id(card.getId())
-                .columnId(card.getColumn().getId())
-                .columnName(card.getColumn().getName())
-                .boardId(card.getColumn().getBoard().getId())
-                .boardName(card.getColumn().getBoard().getName())
-                .title(card.getTitle())
-                .description(card.getDescription())
-                .position(card.getPosition())
-                .bgColor(card.getBgColor())
-                .priority(card.getPriority())
-                .assignee(card.getAssignee())
-                .dueDate(card.getDueDate())
-                .isCompleted(card.getIsCompleted())
-                .labels(labels)
-                .createdAt(card.getCreatedAt())
-                .updatedAt(card.getUpdatedAt())
-                .build();
+        return CardSearchResponse.builder().id(card.getId()).columnId(card.getColumn().getId())
+                .columnName(card.getColumn().getName()).boardId(card.getColumn().getBoard().getId())
+                .boardName(card.getColumn().getBoard().getName()).title(card.getTitle())
+                .description(card.getDescription()).position(card.getPosition())
+                .bgColor(card.getBgColor()).priority(card.getPriority())
+                .assigneeId(card.getAssigneeId()).dueDate(card.getDueDate())
+                .isCompleted(card.getIsCompleted()).labels(labels).createdAt(card.getCreatedAt())
+                .updatedAt(card.getUpdatedAt()).build();
     }
 }

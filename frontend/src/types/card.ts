@@ -36,6 +36,7 @@ export interface Card {
   position: number;
   bgColor?: string;
   priority?: string;
+  assigneeId?: number;
   assignee?: string;
   assigneeAvatarUrl?: string;
   dueDate?: string;
@@ -59,6 +60,7 @@ export interface CreateCardRequest {
   description?: string;
   bgColor?: string;
   priority?: string;
+  assigneeId?: number;
   assignee?: string;
   dueDate?: string;
 
@@ -71,6 +73,7 @@ export interface UpdateCardRequest {
   description?: string;
   bgColor?: string;
   priority?: string;
+  assigneeId?: number;
   assignee?: string;
   position?: number;
   dueDate?: string;
