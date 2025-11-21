@@ -247,36 +247,51 @@ export const ColumnCard: React.FC<ColumnCardProps> = ({ column, workspaceId, boa
             )}
           </div>
 
-          {/* 메뉴 버튼 (드래그 불가) */}
+          {/* 액션 버튼들 (드래그 불가) */}
           {canEdit && (
-            <div className="relative flex-shrink-0" ref={menuRef}>
+            <div className="flex items-center gap-1 flex-shrink-0">
+              {/* 카드 추가 버튼 */}
               <button
-                onClick={() => setShowMenu(!showMenu)}
-                className="menu-button p-2 hover:bg-white/20 rounded-lg transition text-pastel-blue-900 font-bold text-xl"
-                disabled={isDeleting}
+                onClick={() => {
+                  setModalKey(prev => prev + 1);
+                  setShowCreateCardModal(true);
+                }}
+                className="p-2 hover:bg-white/20 rounded-lg transition text-pastel-blue-900 font-bold text-xl"
+                title="카드 추가"
               >
-                ⋮
+                +
               </button>
-              {showMenu && (
-                <div className="absolute right-0 top-full mt-2 w-40 glass-light rounded-lg shadow-lg z-50 border border-white/30 py-1">
-                  <button
-                    onClick={() => {
-                      setShowEditColumnModal(true);
-                      setShowMenu(false);
-                    }}
-                    className="w-full text-left px-4 py-2 text-sm text-pastel-blue-700 hover:bg-white/30 transition"
-                  >
-                    ✏️ 수정
-                  </button>
-                  <button
-                    onClick={handleDelete}
-                    disabled={isDeleting}
-                    className="w-full text-left px-4 py-2 text-sm text-pastel-pink-600 hover:bg-white/30 transition disabled:opacity-50"
-                  >
-                    {isDeleting ? '삭제 중...' : '🗑️ 삭제'}
-                  </button>
-                </div>
-              )}
+
+              {/* 메뉴 버튼 */}
+              <div className="relative" ref={menuRef}>
+                <button
+                  onClick={() => setShowMenu(!showMenu)}
+                  className="menu-button p-2 hover:bg-white/20 rounded-lg transition text-pastel-blue-900 font-bold text-xl"
+                  disabled={isDeleting}
+                >
+                  ⋮
+                </button>
+                {showMenu && (
+                  <div className="absolute right-0 top-full mt-2 w-40 glass-light rounded-lg shadow-lg z-50 border border-white/30 py-1">
+                    <button
+                      onClick={() => {
+                        setShowEditColumnModal(true);
+                        setShowMenu(false);
+                      }}
+                      className="w-full text-left px-4 py-2 text-sm text-pastel-blue-700 hover:bg-white/30 transition"
+                    >
+                      ✏️ 수정
+                    </button>
+                    <button
+                      onClick={handleDelete}
+                      disabled={isDeleting}
+                      className="w-full text-left px-4 py-2 text-sm text-pastel-pink-600 hover:bg-white/30 transition disabled:opacity-50"
+                    >
+                      {isDeleting ? '삭제 중...' : '🗑️ 삭제'}
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
           )}
         </div>
