@@ -20,6 +20,9 @@ public enum ActivityEventType {
     CARD_UPDATED,
     CARD_DELETED,
     CARD_MOVED,
+    CARD_STARTED,
+    CARD_COMPLETED,
+    CARD_REOPENED,
 
     // 멤버 이벤트
     MEMBER_INVITED,

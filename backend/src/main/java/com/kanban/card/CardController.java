@@ -97,4 +97,18 @@ public class CardController {
         cardService.deleteCardWithValidation(boardId, columnId, cardId, userId);
         return ResponseEntity.noContent().build();
     }
+
+    /**
+     * 카드 시작 처리 (startedAt 설정)
+     */
+    @PostMapping("/{cardId}/start")
+    public ResponseEntity<CardResponse> startCard(
+            @PathVariable Long workspaceId,
+            @PathVariable Long boardId,
+            @PathVariable Long columnId,
+            @PathVariable Long cardId) {
+        Long userId = SecurityUtil.getCurrentUserId();
+        CardResponse card = cardService.startCardWithValidation(boardId, columnId, cardId, userId);
+        return ResponseEntity.ok(card);
+    }
 }

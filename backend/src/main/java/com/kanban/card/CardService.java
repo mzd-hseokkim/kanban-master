@@ -1,5 +1,6 @@
 package com.kanban.card;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -222,9 +223,12 @@ public class CardService {
         String originalTitle = card.getTitle();
         boolean isMoved = false;
         boolean parentRelationRemoved = false;
+        boolean completionStatusChanged = false;
+        boolean markedCompleted = false;
 
         // 담당자 변경 감지 및 알림을 위한 기존 담당자 ID 저장
         Long oldAssigneeId = card.getAssigneeId();
+        boolean wasCompleted = card.getIsCompleted();
 
         if (request.getTitle() != null) {
             card.setTitle(request.getTitle());
@@ -251,6 +255,14 @@ public class CardService {
         }
         if (request.getIsCompleted() != null) {
             card.setIsCompleted(request.getIsCompleted());
+            completionStatusChanged = !request.getIsCompleted().equals(wasCompleted);
+            markedCompleted = Boolean.TRUE.equals(request.getIsCompleted());
+            if (markedCompleted && card.getCompletedAt() == null) {
+                card.setCompletedAt(LocalDateTime.now());
+            }
+            if (!markedCompleted) {
+                card.setCompletedAt(null);
+            }
         }
 
         Long newAssigneeId = request.getAssigneeId();
@@ -304,7 +316,17 @@ public class CardService {
         Card updatedCard = cardRepository.save(card);
 
         // 활동 기록
-        if (isMoved) {
+        if (completionStatusChanged) {
+            if (markedCompleted) {
+                activityService.recordActivity(ActivityScopeType.CARD, cardId,
+                        ActivityEventType.CARD_COMPLETED, userId,
+                        "\"" + updatedCard.getTitle() + "\" 카드가 완료되었습니다");
+            } else {
+                activityService.recordActivity(ActivityScopeType.CARD, cardId,
+                        ActivityEventType.CARD_REOPENED, userId,
+                        "\"" + updatedCard.getTitle() + "\" 카드가 다시 진행 중으로 전환되었습니다");
+            }
+        } else if (isMoved) {
             String moveMessage = "\"" + originalTitle + "\" 카드가 이동되었습니다";
             if (parentRelationRemoved) {
                 moveMessage += " (부모 관계 해제됨)";
@@ -400,6 +422,56 @@ public class CardService {
                 com.kanban.notification.event.BoardEvent.EventType.CARD_DELETED.name(),
                 card.getColumn().getBoard().getId(), Map.of("cardId", cardId, "action", "deleted"),
                 userId, System.currentTimeMillis()));
+    }
+
+    /**
+     * 카드 시작 처리 (startedAt 설정, 진행 상태로 전환)
+     */
+    public CardResponse startCardWithValidation(Long boardId, Long columnId, Long cardId,
+            Long userId) {
+        roleValidator.validateRole(boardId, BoardMemberRole.EDITOR);
+        return startCard(columnId, cardId, userId);
+    }
+
+    /**
+     * 카드 시작 처리 (권한 검증 없음 - 내부 사용)
+     */
+    public CardResponse startCard(Long columnId, Long cardId, Long userId) {
+        Card card = cardRepository.findByIdAndColumnId(cardId, columnId)
+                .orElseThrow(() -> new ResourceNotFoundException("Card not found"));
+
+        boolean wasCompleted = Boolean.TRUE.equals(card.getIsCompleted());
+        boolean hadStart = card.getStartedAt() != null;
+
+        // startedAt은 최초 한 번만 설정
+        if (!hadStart) {
+            card.setStartedAt(LocalDateTime.now());
+        }
+
+        if (wasCompleted) {
+            card.setIsCompleted(false);
+            card.setCompletedAt(null);
+        }
+
+        Card updated = cardRepository.save(card);
+
+        // 활동 기록: 상태가 변했을 때만 기록
+        if (!hadStart || wasCompleted) {
+            activityService.recordActivity(ActivityScopeType.CARD, cardId,
+                    ActivityEventType.CARD_STARTED, userId,
+                    "\"" + updated.getTitle() + "\" 카드가 시작되었습니다");
+        }
+
+        // Redis 이벤트 발행 (카드 갱신 알림)
+        List<LabelResponse> labels = cardLabelRepository.findByCardId(updated.getId()).stream()
+                .map(cardLabel -> LabelResponse.from(cardLabel.getLabel())).toList();
+        CardResponse response = enrichWithAssigneeInfo(CardResponse.from(updated, labels));
+        redisPublisher.publish(new com.kanban.notification.event.BoardEvent(
+                com.kanban.notification.event.BoardEvent.EventType.CARD_UPDATED.name(),
+                card.getColumn().getBoard().getId(), response, userId,
+                System.currentTimeMillis()));
+
+        return response;
     }
 
     /**

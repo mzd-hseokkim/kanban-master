@@ -6,7 +6,7 @@ import { useDialog } from '@/hooks/useDialog';
 import cardService from '@/services/cardService';
 import { Card } from '@/types/card';
 import React, { useEffect, useMemo, useState } from 'react';
-import { HiCalendar } from 'react-icons/hi2';
+import { HiCalendar, HiPlay, HiCheckCircle } from 'react-icons/hi2';
 
 interface CardItemProps {
   card: Card;
@@ -200,6 +200,14 @@ export const CardItem: React.FC<CardItemProps> = ({
   const dueDateInfo = formatDueDate(card.dueDate);
   const isDueSoon = dueDateInfo && dueDateInfo.daysUntilDue <= 3 && dueDateInfo.daysUntilDue >= 0;
   const isOverdue = dueDateInfo && dueDateInfo.isOverdue;
+  const completedLabel = useMemo(() => {
+    if (!card.completedAt) return null;
+    return new Date(card.completedAt).toLocaleDateString('ko-KR', { month: 'numeric', day: 'numeric' });
+  }, [card.completedAt]);
+  const startedLabel = useMemo(() => {
+    if (!card.startedAt) return null;
+    return new Date(card.startedAt).toLocaleDateString('ko-KR', { month: 'numeric', day: 'numeric' });
+  }, [card.startedAt]);
 
   const descriptionPreview = useMemo(() => {
     if (!card.description) return '';
@@ -401,23 +409,63 @@ export const CardItem: React.FC<CardItemProps> = ({
           </div>
         )}
 
-        {/* Due Date - 완료된 카드는 평범한 스타일로만 표시 */}
-        {dueDateInfo && (
-          <div className={`text-xs flex items-center gap-1 ${
-            card.isCompleted
-              ? 'text-pastel-blue-500'
-              : isOverdue
-              ? 'bg-pastel-pink-100 text-pastel-pink-700 font-semibold border-2 border-pastel-pink-500 px-2 py-1 rounded'
-              : isDueSoon
-              ? 'bg-pastel-yellow-100 text-pastel-yellow-700 font-semibold border-2 border-pastel-yellow-500 px-2 py-1 rounded'
-              : 'text-pastel-blue-600'
-          }`}>
-            <HiCalendar className="w-3.5 h-3.5" />
-            <span>{dueDateInfo.dateStr}</span>
-            {!card.isCompleted && isOverdue && ' (지남)'}
-            {!card.isCompleted && isDueSoon && !isOverdue && ` (${dueDateInfo.daysUntilDue}일)`}
-          </div>
-        )}
+        {/* 일정/시작/완료 정보 */}
+        {(dueDateInfo || startedLabel || completedLabel) && (() => {
+          const showAllThree = !!(dueDateInfo && startedLabel && completedLabel);
+          const badges: React.ReactNode[] = [];
+
+          if (!showAllThree && dueDateInfo) {
+            badges.push(
+              <div
+                key="due"
+                className={`flex flex-1 min-w-0 items-center justify-center gap-1 text-xs font-semibold px-3 py-1 rounded border ${
+                  card.isCompleted
+                    ? 'border-pastel-blue-200 bg-white text-pastel-blue-500'
+                    : isOverdue
+                    ? 'border-pastel-pink-500 bg-pastel-pink-50 text-pastel-pink-700'
+                    : isDueSoon
+                    ? 'border-pastel-yellow-500 bg-pastel-yellow-50 text-pastel-yellow-700'
+                    : 'border-pastel-blue-200 bg-white text-pastel-blue-600'
+                }`}
+              >
+                <HiCalendar className="w-3.5 h-3.5" />
+                <span className="truncate">{dueDateInfo.dateStr}</span>
+                {!card.isCompleted && isOverdue && ' (지남)'}
+                {!card.isCompleted && isDueSoon && !isOverdue && ` (${dueDateInfo.daysUntilDue}일)`}
+              </div>
+            );
+          }
+
+          if (startedLabel) {
+            badges.push(
+              <div
+                key="started"
+                className="flex flex-1 min-w-0 items-center justify-center gap-1 text-[11px] font-semibold px-3 py-1 rounded border border-pastel-blue-200 bg-pastel-blue-50 text-pastel-blue-700"
+              >
+                <HiPlay className="w-3.5 h-3.5" />
+                <span className="truncate">시작 {startedLabel}</span>
+              </div>
+            );
+          }
+
+          if (completedLabel) {
+            badges.push(
+              <div
+                key="completed"
+                className="flex flex-1 min-w-0 items-center justify-center gap-1 text-[11px] font-semibold px-3 py-1 rounded border border-pastel-green-200 bg-pastel-green-50 text-pastel-green-700"
+              >
+                <HiCheckCircle className="w-3.5 h-3.5" />
+                <span className="truncate">완료 {completedLabel}</span>
+              </div>
+            );
+          }
+
+          return (
+            <div className="flex items-stretch gap-2 mt-1">
+              {badges}
+            </div>
+          );
+        })()}
 
         {/* 자식 카드 개수 배지 (있는 경우에만 표시) */}
         {card.childCount !== undefined && card.childCount > 0 && (

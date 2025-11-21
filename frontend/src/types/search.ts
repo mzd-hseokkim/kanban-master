@@ -36,6 +36,8 @@ export interface CardSearchResult {
   assignee?: string;
   dueDate?: string;
   isCompleted: boolean;
+  startedAt?: string;
+  completedAt?: string;
   labels?: Label[];
   createdAt: string;
   updatedAt: string;

@@ -232,7 +232,8 @@ public class SearchService {
                 .description(card.getDescription()).position(card.getPosition())
                 .bgColor(card.getBgColor()).priority(card.getPriority())
                 .assigneeId(card.getAssigneeId()).dueDate(card.getDueDate())
-                .isCompleted(card.getIsCompleted()).labels(labels).createdAt(card.getCreatedAt())
-                .updatedAt(card.getUpdatedAt()).build();
+                .isCompleted(card.getIsCompleted()).startedAt(card.getStartedAt())
+                .completedAt(card.getCompletedAt()).labels(labels)
+                .createdAt(card.getCreatedAt()).updatedAt(card.getUpdatedAt()).build();
     }
 }

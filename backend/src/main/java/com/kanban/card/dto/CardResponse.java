@@ -31,6 +31,8 @@ public class CardResponse {
     private String assigneeAvatarUrl;
     private LocalDate dueDate;
     private Boolean isCompleted;
+    private LocalDateTime startedAt;
+    private LocalDateTime completedAt;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private List<LabelResponse> labels;
@@ -66,6 +68,7 @@ public class CardResponse {
                 .position(card.getPosition()).bgColor(card.getBgColor())
                 .priority(card.getPriority()).assigneeId(card.getAssigneeId())
                 .dueDate(card.getDueDate()).isCompleted(card.getIsCompleted())
+                .startedAt(card.getStartedAt()).completedAt(card.getCompletedAt())
                 .createdAt(card.getCreatedAt()).updatedAt(card.getUpdatedAt()).labels(labels)
                 .parentCardId(card.getParentCard() != null ? card.getParentCard().getId() : null)
                 .build();
@@ -81,6 +84,7 @@ public class CardResponse {
                 .position(card.getPosition()).bgColor(card.getBgColor())
                 .priority(card.getPriority()).assigneeId(card.getAssigneeId())
                 .dueDate(card.getDueDate()).isCompleted(card.getIsCompleted())
+                .startedAt(card.getStartedAt()).completedAt(card.getCompletedAt())
                 .createdAt(card.getCreatedAt()).updatedAt(card.getUpdatedAt()).labels(labels)
                 .parentCardId(card.getParentCard() != null ? card.getParentCard().getId() : null)
                 .parentCard(parentCard).childCards(childCards).build();

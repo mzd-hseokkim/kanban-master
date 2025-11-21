@@ -27,7 +27,7 @@ import {
 import { Card } from '@/types/card';
 import type { UserSearchResult } from '@/types/user';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { HiEye, HiOutlineEye } from 'react-icons/hi';
+import { HiEye, HiOutlineEye, HiPlay } from 'react-icons/hi';
 
 interface EditCardModalProps {
     card: Card;
@@ -77,6 +77,7 @@ export const EditCardModal: React.FC<EditCardModalProps> = ({
     const [isCompleted, setIsCompleted] = useState(card.isCompleted);
     const [selectedLabelIds, setSelectedLabelIds] = useState<number[]>(card.labels?.map((l) => l.id) || []);
     const [loading, setLoading] = useState(false);
+    const [startLoading, setStartLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [assigneeSearchInput, setAssigneeSearchInput] = useState('');
     const [assigneeResults, setAssigneeResults] = useState<UserSearchResult[]>([]);
@@ -197,6 +198,33 @@ export const EditCardModal: React.FC<EditCardModalProps> = ({
             setIsNavigating(false);
         }
     };
+
+    const formatDateTime = (isoString?: string) => {
+        if (!isoString) return null;
+        return new Date(isoString).toLocaleString('ko-KR', {
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit',
+        });
+    };
+
+    const handleStartCard = useCallback(async () => {
+        if (!canEdit || startLoading) return;
+        try {
+            setStartLoading(true);
+            setError(null);
+            const startedCard = await cardService.startCard(workspaceId, boardId, columnId, currentCard.id);
+            setCurrentCard(startedCard);
+            setIsCompleted(startedCard.isCompleted);
+            await loadCards(workspaceId, boardId, columnId);
+        } catch (err) {
+            console.error('Failed to start card:', err);
+            setError(err instanceof Error ? err.message : '카드를 시작할 수 없습니다');
+        } finally {
+            setStartLoading(false);
+        }
+    }, [canEdit, startLoading, workspaceId, boardId, columnId, currentCard.id, loadCards]);
 
     // 설명 자동 저장 (debounced)
     const saveDescriptionOnly = useCallback(async (newDescription: string) => {
@@ -598,6 +626,46 @@ export const EditCardModal: React.FC<EditCardModalProps> = ({
                             onCreateChild={() => setShowCreateChildModal(true)}
                             disabled={isNavigating || !canEdit}
                         />
+
+                        {/* 작업 시작 */}
+                        <div className="mb-3">
+                            <div className="flex items-center justify-between rounded-2xl border border-white/30 bg-white/40 px-4 py-3">
+                                <div>
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-sm font-semibold text-pastel-blue-900">작업 시작</span>
+                                        {currentCard.startedAt && (
+                                            <span className="text-xs text-pastel-blue-600">
+                                                시작 {formatDateTime(currentCard.startedAt)}
+                                            </span>
+                                        )}
+                                    </div>
+                                    {!currentCard.startedAt && (
+                                        <p className="text-xs text-pastel-blue-600 mt-1">아직 시작되지 않은 카드입니다.</p>
+                                    )}
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={handleStartCard}
+                                    disabled={
+                                        !canEdit ||
+                                        startLoading ||
+                                        (!isCompleted && Boolean(currentCard.startedAt))
+                                    }
+                                    className={`inline-flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-semibold transition ${
+                                        !canEdit || (!isCompleted && currentCard.startedAt)
+                                            ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
+                                            : 'bg-pastel-blue-600 text-white hover:bg-pastel-blue-500 shadow-sm'
+                                    }`}
+                                >
+                                    <HiPlay className="text-base" />
+                                    {startLoading
+                                        ? '시작 중...'
+                                        : currentCard.startedAt && !isCompleted
+                                            ? '진행 중'
+                                            : '작업 시작'}
+                                </button>
+                            </div>
+                        </div>
 
                         {/* 완료 상태 */}
                         <div className="mb-4">

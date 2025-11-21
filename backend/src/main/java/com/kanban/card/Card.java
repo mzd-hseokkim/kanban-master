@@ -1,6 +1,7 @@
 package com.kanban.card;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import com.kanban.column.BoardColumn;
@@ -80,6 +81,16 @@ public class Card extends BaseEntity {
     @Column(name = "is_completed", nullable = false)
     @Builder.Default
     private Boolean isCompleted = false;
+
+    /**
+     * 작업 시작 시각 (명시적 시작 이벤트가 있을 때 설정)
+     */
+    private LocalDateTime startedAt;
+
+    /**
+     * 완료 시각 (isCompleted가 true가 될 때 기록)
+     */
+    private LocalDateTime completedAt;
 
     // Spec § 6. 백엔드 규격 - 데이터베이스 스키마 확장
     // FR-06a: 부모-자식 관계 데이터 모델

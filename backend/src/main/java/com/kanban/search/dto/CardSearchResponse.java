@@ -32,6 +32,8 @@ public class CardSearchResponse {
     private Long assigneeId;
     private LocalDate dueDate;
     private Boolean isCompleted;
+    private LocalDateTime startedAt;
+    private LocalDateTime completedAt;
     private List<LabelResponse> labels;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;

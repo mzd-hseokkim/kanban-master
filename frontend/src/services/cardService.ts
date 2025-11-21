@@ -111,6 +111,21 @@ class CardService {
   }
 
   /**
+   * 카드 시작 처리 (startedAt 설정 및 진행 상태로 전환)
+   */
+  async startCard(
+    workspaceId: number,
+    boardId: number,
+    columnId: number,
+    cardId: number
+  ): Promise<Card> {
+    const response = await axiosInstance.post<Card>(
+      `/workspaces/${workspaceId}/boards/${boardId}/columns/${columnId}/cards/${cardId}/start`
+    );
+    return response.data;
+  }
+
+  /**
    * 부모 카드 후보 조회 (부모 카드가 없는 카드만 반환)
    * 1-레벨 계층 유지를 위해 이미 부모 카드인 카드는 제외
    */

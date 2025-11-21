@@ -41,6 +41,8 @@ export interface Card {
   assigneeAvatarUrl?: string;
   dueDate?: string;
   isCompleted: boolean;
+  startedAt?: string;
+  completedAt?: string;
   labels?: Label[];
   commentCount?: number;
   createdAt: string;
