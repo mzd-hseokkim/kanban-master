@@ -1,13 +1,13 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Column } from '@/types/column';
-import { useColumn } from '@/context/ColumnContext';
-import { useCard } from '@/context/CardContext';
-import { ErrorNotification } from '@/components/ErrorNotification';
 import { CardItem } from '@/components/CardItem';
 import { CreateCardModal } from '@/components/CreateCardModal';
 import { CreateColumnModal } from '@/components/CreateColumnModal';
+import { ErrorNotification } from '@/components/ErrorNotification';
+import { useCard } from '@/context/CardContext';
+import { useColumn } from '@/context/ColumnContext';
 import { useDialog } from '@/hooks/useDialog';
 import type { Card } from '@/types/card';
+import { Column } from '@/types/column';
+import React, { useEffect, useRef, useState } from 'react';
 
 interface ColumnCardProps {
   column: Column;
@@ -28,6 +28,7 @@ export const ColumnCard: React.FC<ColumnCardProps> = ({ column, workspaceId, boa
   const [isDeleting, setIsDeleting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [showCreateCardModal, setShowCreateCardModal] = useState(false);
+  const [modalKey, setModalKey] = useState(0); // Key to force modal remount
   const [showEditColumnModal, setShowEditColumnModal] = useState(false);
   const [cardsLoading, setCardsLoading] = useState(true);
   const [dragOverEmpty, setDragOverEmpty] = useState(false);
@@ -251,7 +252,7 @@ export const ColumnCard: React.FC<ColumnCardProps> = ({ column, workspaceId, boa
             <div className="relative flex-shrink-0" ref={menuRef}>
               <button
                 onClick={() => setShowMenu(!showMenu)}
-                className="menu-button p-2 hover:bg-white/20 rounded-lg transition"
+                className="menu-button p-2 hover:bg-white/20 rounded-lg transition text-pastel-blue-900 font-bold text-xl"
                 disabled={isDeleting}
               >
                 ⋮
@@ -329,7 +330,10 @@ export const ColumnCard: React.FC<ColumnCardProps> = ({ column, workspaceId, boa
 
               {canEdit && (
                 <button
-                  onClick={() => setShowCreateCardModal(true)}
+                  onClick={() => {
+                    setModalKey(prev => prev + 1); // Generate new key for fresh modal instance
+                    setShowCreateCardModal(true);
+                  }}
                   className="w-full rounded-2xl border-4 border-dashed border-white/70 bg-white/10 text-pastel-blue-800 font-semibold text-base min-h-28 flex items-center justify-center hover:bg-white/20 hover:border-black transition"
                 >
                   + 카드 추가
@@ -343,6 +347,7 @@ export const ColumnCard: React.FC<ColumnCardProps> = ({ column, workspaceId, boa
       {/* Create Card Modal */}
       {showCreateCardModal && (
         <CreateCardModal
+          key={modalKey} // Force remount on each open
           workspaceId={workspaceId}
           boardId={boardId}
           columnId={column.id}

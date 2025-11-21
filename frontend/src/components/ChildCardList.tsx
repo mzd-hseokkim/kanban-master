@@ -1,5 +1,5 @@
-import React from 'react';
 import type { ChildCardSummary } from '@/types/card';
+import { HiCheckCircle, HiPlay } from 'react-icons/hi2';
 
 /**
  * ChildCardList 컴포넌트
@@ -98,8 +98,11 @@ const ChildCardList: React.FC<ChildCardListProps> = ({
                   >
                     {child.title}
                   </h4>
-                  {child.isCompleted && <span className="text-green-500 text-lg flex-shrink-0">✅</span>}
-                  {!child.isCompleted && <span className="text-blue-500 text-lg flex-shrink-0">🔄</span>}
+                  {child.isCompleted ? (
+                    <HiCheckCircle className="text-green-500 text-lg flex-shrink-0" />
+                  ) : (
+                    <HiPlay className="text-blue-500 text-lg flex-shrink-0" />
+                  )}
                 </div>
 
                 <div className="flex items-center gap-2 flex-shrink-0 ml-2">

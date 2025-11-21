@@ -1,9 +1,10 @@
-import { useCallback, useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useBoard } from '@/context/BoardContext';
-import { useAuth } from '@/context/AuthContext';
-import { CreateBoardModal } from '@/components/CreateBoardModal';
 import { BoardCard } from '@/components/BoardCard';
+import { CreateBoardModal } from '@/components/CreateBoardModal';
+import { useAuth } from '@/context/AuthContext';
+import { useBoard } from '@/context/BoardContext';
+import { useCallback, useEffect, useState } from 'react';
+import { HiClipboardList, HiPlus, HiViewGrid } from 'react-icons/hi';
+import { useNavigate } from 'react-router-dom';
 import { CardHighlightSection } from './DashboardPage/components/CardHighlightSection';
 import { DashboardEmptyState } from './DashboardPage/components/DashboardEmptyState';
 import { DashboardLoadingBanner } from './DashboardPage/components/DashboardLoadingBanner';
@@ -41,12 +42,32 @@ const DashboardPage = () => {
 
   return (
     <div className="h-full bg-gradient-pastel flex flex-col overflow-hidden">
+      <header className="bg-white/90 backdrop-blur-md border-b border-slate-200/50 flex-shrink-0 transition-colors duration-300">
+        <div className="w-full max-w-[95vw] mx-auto py-4 px-4 sm:px-6 lg:px-8 flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
+              <HiViewGrid className="text-blue-600" />
+              대시보드
+            </h1>
+            <p className="text-sm text-slate-500 mt-1 ml-8">환영합니다, {user?.name}님!</p>
+          </div>
+          <button
+            onClick={() => setShowCreateBoardModal(true)}
+            className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-600 text-white text-sm font-bold hover:from-blue-500 hover:to-cyan-500 transition-all duration-300 shadow-lg shadow-blue-500/20 hover:shadow-blue-500/40 transform hover:-translate-y-0.5"
+            type="button"
+          >
+            <HiPlus className="text-lg" />
+            새 보드
+          </button>
+        </div>
+      </header>
+
       <main className="flex-1 overflow-hidden flex flex-col relative">
         <DashboardLoadingBanner isVisible={cardsLoading} />
-        <div className="w-full max-w-[95vw] mx-auto px-4 sm:px-6 lg:px-8 flex-1 overflow-hidden flex flex-col py-4">
+        <div className="w-full max-w-[95vw] mx-auto px-4 sm:px-6 lg:px-8 flex-1 overflow-hidden flex flex-col py-6">
           {boardsLoading && (
             <div className="flex-1 flex items-center justify-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-pastel-blue-600" />
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600" />
             </div>
           )}
 
@@ -55,27 +76,23 @@ const DashboardPage = () => {
           )}
 
           {!boardsLoading && !shouldShowEmptyState && (
-            <div className="flex-1 overflow-auto flex flex-col gap-6">
+            <div className="flex-1 overflow-auto flex flex-col gap-8">
               <CardHighlightSection variant="overdue" cards={overdueCards} onCardClick={handleCardNavigate} />
               <CardHighlightSection variant="inProgress" cards={inProgressCards} onCardClick={handleCardNavigate} />
               <CardHighlightSection variant="upcoming" cards={upcomingCards} onCardClick={handleCardNavigate} />
 
               {boards.length > 0 && (
-                <section className="flex-1 overflow-auto">
-                  <div className="flex items-center justify-between mb-4 flex-shrink-0">
-                    <div>
-                      <h2 className="text-xl font-bold text-pastel-blue-900">내 보드</h2>
-                      <p className="text-xs text-pastel-blue-500 mt-1">{boards.length}개의 보드</p>
+                <section className="flex-1 overflow-auto pb-8">
+                  <div className="flex items-center gap-3 mb-6">
+                    <div className="p-2 rounded-lg bg-white shadow-sm border border-slate-100">
+                      <HiClipboardList className="text-xl text-blue-600" />
                     </div>
-                    <button
-                      onClick={() => setShowCreateBoardModal(true)}
-                      className="px-3 py-1.5 rounded-lg bg-pastel-blue-500 text-white text-sm font-semibold hover:bg-pastel-blue-600 transition flex-shrink-0"
-                      type="button"
-                    >
-                      + 새 보드
-                    </button>
+                    <h2 className="text-xl font-bold text-slate-900">내 보드</h2>
+                    <span className="px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-600 text-xs font-bold border border-slate-200">
+                      {boards.length}
+                    </span>
                   </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 pb-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                     {boards.map((board) => (
                       <BoardCard
                         key={board.id}

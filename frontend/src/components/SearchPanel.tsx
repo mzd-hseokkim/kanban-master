@@ -1,17 +1,17 @@
-import { useState, useEffect } from 'react';
-import { searchService } from '@/services/searchService';
-import { labelService } from '@/services/labelService';
-import type { CardSearchRequest, CardSearchResult } from '@/types/search';
-import type { Label } from '@/types/label';
 import { useModalAnimation } from '@/hooks/useModalAnimation';
+import { labelService } from '@/services/labelService';
+import { searchService } from '@/services/searchService';
 import {
-  modalOverlayClass,
-  modalPanelClass,
-  modalLabelClass,
-  modalInputClass,
-  modalSecondaryButtonClass,
-  modalPrimaryButtonClass,
+    modalInputClass,
+    modalLabelClass,
+    modalOverlayClass,
+    modalPanelClass,
+    modalPrimaryButtonClass,
+    modalSecondaryButtonClass,
 } from '@/styles/modalStyles';
+import type { Label } from '@/types/label';
+import type { CardSearchRequest, CardSearchResult } from '@/types/search';
+import { useEffect, useState } from 'react';
 
 interface SearchPanelProps {
   boardId: number;
@@ -133,7 +133,7 @@ export const SearchPanel: React.FC<SearchPanelProps> = ({ boardId, onClose, onCa
           stage,
           maxWidth: 'max-w-4xl',
           padding: 'p-0',
-          extra: 'max-h-[85vh] flex flex-col overflow-hidden bg-gradient-to-b from-pastel-blue-50 via-white to-pastel-blue-100/60',
+          extra: 'max-h-[85vh] flex flex-col overflow-hidden',
         })}
       >
         {/* Header */}
@@ -164,6 +164,7 @@ export const SearchPanel: React.FC<SearchPanelProps> = ({ boardId, onClose, onCa
               onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
               placeholder="카드 제목이나 설명으로 검색..."
               className={`${modalInputClass} flex-1`}
+              autoFocus
             />
             <button
               onClick={() => setShowFilters(!showFilters)}

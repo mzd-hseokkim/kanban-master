@@ -6,6 +6,7 @@ import { useDialog } from '@/hooks/useDialog';
 import cardService from '@/services/cardService';
 import { Card } from '@/types/card';
 import React, { useEffect, useMemo, useState } from 'react';
+import { HiCalendar } from 'react-icons/hi2';
 
 interface CardItemProps {
   card: Card;
@@ -286,7 +287,7 @@ export const CardItem: React.FC<CardItemProps> = ({
                 canEdit ? 'cursor-pointer' : 'cursor-default'
               } ${
               card.isCompleted
-                ? 'bg-pastel-green-500 border-pastel-green-500'
+                ? 'bg-white border-pastel-green-500'
                 : canEdit
                   ? 'border-pastel-blue-300 hover:border-pastel-green-500 bg-white'
                   : 'border-pastel-blue-300 bg-white'
@@ -402,7 +403,7 @@ export const CardItem: React.FC<CardItemProps> = ({
 
         {/* Due Date - 완료된 카드는 평범한 스타일로만 표시 */}
         {dueDateInfo && (
-          <div className={`text-xs ${
+          <div className={`text-xs flex items-center gap-1 ${
             card.isCompleted
               ? 'text-pastel-blue-500'
               : isOverdue
@@ -411,7 +412,8 @@ export const CardItem: React.FC<CardItemProps> = ({
               ? 'bg-pastel-yellow-100 text-pastel-yellow-700 font-semibold border-2 border-pastel-yellow-500 px-2 py-1 rounded'
               : 'text-pastel-blue-600'
           }`}>
-            📅 {dueDateInfo.dateStr}
+            <HiCalendar className="w-3.5 h-3.5" />
+            <span>{dueDateInfo.dateStr}</span>
             {!card.isCompleted && isOverdue && ' (지남)'}
             {!card.isCompleted && isDueSoon && !isOverdue && ` (${dueDateInfo.daysUntilDue}일)`}
           </div>

@@ -1,36 +1,45 @@
+import { HiCalendar, HiExclamationCircle, HiFire, HiPlay } from 'react-icons/hi2';
 import type { DashboardCard } from '../hooks';
 
 type HighlightVariant = 'overdue' | 'inProgress' | 'upcoming';
 
 type VariantConfig = {
   title: string;
+  Icon: React.ElementType;
   subtitleColor: string;
   titleColor: string;
   containerClass: string;
   badgeClass: string;
+  iconColor: string;
 };
 
 const VARIANT_CONFIG: Record<HighlightVariant, VariantConfig> = {
   overdue: {
-    title: '지연 중인 작업 ⚠️',
+    title: '지연 중인 작업',
+    Icon: HiExclamationCircle,
     subtitleColor: 'text-pastel-pink-500',
     titleColor: 'text-pastel-pink-700',
     containerClass: 'border border-pastel-pink-200 bg-pastel-pink-50',
     badgeClass: 'bg-pastel-pink-100 text-pastel-pink-700',
+    iconColor: 'text-pastel-pink-500',
   },
   inProgress: {
-    title: '진행 중인 작업 🔄',
+    title: '진행 중인 작업',
+    Icon: HiPlay,
     subtitleColor: 'text-pastel-cyan-500',
     titleColor: 'text-pastel-cyan-700',
     containerClass: 'border border-pastel-cyan-200 bg-pastel-cyan-50',
     badgeClass: 'bg-pastel-cyan-100 text-pastel-cyan-700',
+    iconColor: 'text-pastel-cyan-500',
   },
   upcoming: {
-    title: '임박한 작업 🔔',
+    title: '임박한 작업',
+    Icon: HiFire,
     subtitleColor: 'text-pastel-blue-500',
     titleColor: 'text-pastel-blue-700',
     containerClass: 'border border-pastel-blue-200 bg-pastel-blue-50',
     badgeClass: 'bg-pastel-blue-100 text-pastel-blue-700',
+    iconColor: 'text-pastel-blue-500',
   },
 };
 
@@ -67,20 +76,20 @@ const getDueDateBadge = (variant: HighlightVariant, card: DashboardCard) => {
 
   if (variant === 'overdue') {
     const daysOverdue = Math.abs(Math.min(diff, 0));
-    return `📅 ${formatted} (${daysOverdue}일 전)`;
+    return `${formatted} (${daysOverdue}일 전)`;
   }
 
   if (variant === 'upcoming') {
     if (diff === 0) {
-      return `📅 ${formatted} (오늘!)`;
+      return `${formatted} (오늘!)`;
     }
     if (diff === 1) {
-      return `📅 ${formatted} (내일)`;
+      return `${formatted} (내일)`;
     }
-    return `📅 ${formatted}`;
+    return `${formatted}`;
   }
 
-  return `📅 ${formatted}`;
+  return `${formatted}`;
 };
 
 const HighlightCard = ({ variant, card, onClick }: { variant: HighlightVariant; card: DashboardCard; onClick: () => void }) => {
@@ -105,7 +114,12 @@ const HighlightCard = ({ variant, card, onClick }: { variant: HighlightVariant; 
           {card.priority && (
             <span className={`text-xs px-2 py-1 rounded font-medium ${priorityClass}`}>{card.priority}</span>
           )}
-          {badgeLabel && <span className={`text-xs px-2 py-1 rounded font-semibold ${config.badgeClass}`}>{badgeLabel}</span>}
+          {badgeLabel && (
+            <span className={`text-xs px-2 py-1 rounded font-semibold ${config.badgeClass} flex items-center gap-1`}>
+              {card.dueDate && <HiCalendar className="text-sm" />}
+              {badgeLabel}
+            </span>
+          )}
         </div>
       </div>
       {card.assignee && (
@@ -125,7 +139,10 @@ export const CardHighlightSection = ({ variant, cards, onCardClick }: CardHighli
   return (
     <section className="flex-shrink-0">
       <div className="mb-3">
-        <h2 className={`text-xl font-bold ${config.titleColor}`}>{config.title}</h2>
+        <h2 className={`text-xl font-bold ${config.titleColor} flex items-center gap-2`}>
+          {config.title}
+          <config.Icon className={`text-2xl ${config.iconColor}`} />
+        </h2>
         <p className={`text-xs mt-1 ${config.subtitleColor}`}>{cards.length}개의 카드</p>
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">

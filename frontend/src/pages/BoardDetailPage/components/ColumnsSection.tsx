@@ -3,25 +3,25 @@
 // FR-04b: 순서 변경 저장 (낙관적 업데이트)
 // FR-04c: 실패 시 롤백
 
-import { useState, useEffect } from 'react';
-import {
-  DndContext,
-  closestCenter,
-  KeyboardSensor,
-  PointerSensor,
-  useSensor,
-  useSensors,
-  DragEndEvent,
-} from '@dnd-kit/core';
-import {
-  arrayMove,
-  SortableContext,
-  sortableKeyboardCoordinates,
-  horizontalListSortingStrategy,
-} from '@dnd-kit/sortable';
 import { SortableColumnCard } from '@/components/SortableColumnCard';
 import { useColumn } from '@/context/ColumnContext';
 import type { Column } from '@/types/column';
+import {
+    closestCenter,
+    DndContext,
+    DragEndEvent,
+    KeyboardSensor,
+    PointerSensor,
+    useSensor,
+    useSensors,
+} from '@dnd-kit/core';
+import {
+    arrayMove,
+    horizontalListSortingStrategy,
+    SortableContext,
+    sortableKeyboardCoordinates,
+} from '@dnd-kit/sortable';
+import { useEffect, useState } from 'react';
 
 type ColumnsSectionProps = {
   columns: Column[];
@@ -176,7 +176,7 @@ export const ColumnsSection = ({
             {canEdit && (
               <button
                 onClick={onCreateColumn}
-                className="flex-shrink-0 w-80 min-h-28 rounded-2xl border-4 border-dashed border-white/70 bg-white/10 flex items-center justify-center text-pastel-blue-800 font-semibold text-base hover:bg-white/20 hover:border-black transition"
+                className="flex-shrink-0 w-80 min-h-28 rounded-2xl border-4 border-dashed border-white/70 bg-white/10 flex items-center justify-center text-pastel-blue-800 font-semibold text-base hover:bg-white/20 hover:border-4 hover:border-dashed hover:border-black transition"
               >
                 + 칼럼 추가
               </button>

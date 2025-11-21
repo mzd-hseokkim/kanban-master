@@ -28,8 +28,8 @@ const NavButton: React.FC<NavButtonProps> = ({ icon, label, onClick, isActive })
             font-semibold text-sm
             transition-all duration-300
             ${isActive
-                ? 'text-pastel-blue-900 border-b-2 border-pastel-blue-500'
-                : 'text-pastel-blue-600 hover:text-pastel-blue-900'
+                ? 'text-blue-400 bg-white/10'
+                : 'text-slate-400 hover:text-white hover:bg-white/5'
             }
         `}
     >
@@ -248,7 +248,7 @@ export const GlobalNavBar: React.FC = () => {
     }, [showMenu, showInbox, showWatchList]);
 
     return (
-        <nav className="backdrop-blur-xl bg-white/70 shadow-[0_8px_32px_0_rgba(31,38,135,0.15)] sticky top-0 z-50 border-b border-white/40">
+        <nav className="backdrop-blur-xl bg-slate-900/80 shadow-lg sticky top-0 z-50 border-b border-white/5 transition-colors duration-300">
             <div className="w-full max-w-[95vw] mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="flex items-center justify-between h-16 gap-4">
                     {/* 좌측: 로고 + 네비게이션 탭 */}
@@ -256,7 +256,7 @@ export const GlobalNavBar: React.FC = () => {
                         {/* 로고 */}
                         <button
                             onClick={handleHome}
-                            className="text-2xl font-bold bg-gradient-to-r from-pastel-blue-700 to-pastel-cyan-600 bg-clip-text text-transparent hover:from-pastel-blue-800 hover:to-pastel-cyan-700 transition-all"
+                            className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-cyan-300 bg-clip-text text-transparent hover:from-blue-300 hover:to-cyan-200 transition-all"
                         >
                             Kanban Master
                         </button>
@@ -264,7 +264,7 @@ export const GlobalNavBar: React.FC = () => {
                         {/* 세로 구분선 + 네비게이션 탭 */}
                         {user && (
                             <>
-                                <div className="h-8 w-px bg-white/30 hidden lg:block" />
+                                <div className="h-8 w-px bg-white/10 hidden lg:block" />
 
                                 <div className="hidden lg:flex items-center gap-2">
                                     <NavButton
@@ -288,14 +288,14 @@ export const GlobalNavBar: React.FC = () => {
                     <div className="flex-1 max-w-2xl mx-4 hidden md:block">
                         <div className="relative group">
                             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                <svg className="h-5 w-5 text-pastel-blue-400 group-focus-within:text-pastel-blue-600 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <svg className="h-5 w-5 text-slate-400 group-focus-within:text-blue-400 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                                 </svg>
                             </div>
                             <input
                                 type="text"
                                 placeholder="검색"
-                                className="block w-full pl-10 pr-3 py-2.5 border-none rounded-lg bg-pastel-blue-50/50 text-pastel-blue-900 placeholder-pastel-blue-400 focus:outline-none focus:ring-2 focus:ring-pastel-blue-200 focus:bg-white shadow-inner-sm transition-all duration-200"
+                                className="block w-full pl-10 pr-3 py-2.5 rounded-lg !bg-white/90 !text-slate-900 !placeholder-slate-500 border border-white/20 focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-400/50 !focus:bg-white shadow-lg shadow-black/20 transition-all duration-200"
                                 onKeyDown={(e) => {
                                     if (e.key === 'Enter' && !e.nativeEvent.isComposing) {
                                         const target = e.target as HTMLInputElement;
@@ -316,12 +316,12 @@ export const GlobalNavBar: React.FC = () => {
                             <div className="relative" ref={watchListRef}>
                                 <button
                                     onClick={handleWatchListClick}
-                                    className="relative w-10 h-10 hover:bg-pastel-blue-100 rounded-lg transition-all duration-200 flex items-center justify-center"
+                                    className="relative w-10 h-10 hover:bg-white/10 rounded-lg transition-all duration-200 flex items-center justify-center group"
                                     title="관심 카드 목록"
                                 >
-                                    <HiEye className="text-2xl text-pastel-blue-600" />
+                                    <HiEye className="text-2xl text-slate-300 group-hover:text-white transition-colors" />
                                     {watchedCards.length > 0 && (
-                                        <span className="absolute -top-1 -right-1 flex items-center justify-center w-5 h-5 bg-pastel-cyan-500 text-white text-xs font-bold rounded-full shadow-glass-sm">
+                                        <span className="absolute -top-1 -right-1 flex items-center justify-center w-5 h-5 bg-cyan-500 text-white text-xs font-bold rounded-full shadow-sm ring-2 ring-slate-900">
                                             {watchedCards.length}
                                         </span>
                                     )}
@@ -330,18 +330,18 @@ export const GlobalNavBar: React.FC = () => {
                                 {/* Watch List Dropdown */}
                                 {watchListTransition.shouldRender && (
                                     <div
-                                        className={`dropdown-panel dropdown-panel-${watchListTransition.stage} absolute right-0 mt-2 w-96 bg-white rounded-lg shadow-lg border border-pastel-blue-200`}
+                                        className={`dropdown-panel dropdown-panel-${watchListTransition.stage} absolute right-0 mt-2 w-96 bg-slate-800 rounded-lg shadow-xl border border-white/10 text-slate-200`}
                                     >
-                                        <div className="px-4 py-3 border-b border-pastel-blue-100 flex justify-between items-center">
-                                            <p className="text-sm font-semibold text-pastel-blue-900">관심 카드 목록</p>
+                                        <div className="px-4 py-3 border-b border-white/10 flex justify-between items-center">
+                                            <p className="text-sm font-semibold text-white">관심 카드 목록</p>
                                         </div>
 
                                         {loadingWatchList ? (
                                             <div className="px-4 py-8 flex items-center justify-center">
-                                                <div className="animate-spin h-5 w-5 border-2 border-pastel-blue-500 border-t-transparent rounded-full" />
+                                                <div className="animate-spin h-5 w-5 border-2 border-blue-500 border-t-transparent rounded-full" />
                                             </div>
                                         ) : watchedCards.length === 0 ? (
-                                            <div className="px-4 py-8 text-center text-pastel-blue-500 text-sm">
+                                            <div className="px-4 py-8 text-center text-slate-400 text-sm">
                                                 관심 카드가 없습니다
                                             </div>
                                         ) : (
@@ -349,21 +349,21 @@ export const GlobalNavBar: React.FC = () => {
                                                 {watchedCards.map((watchedCard) => (
                                                     <div
                                                         key={watchedCard.watchId}
-                                                        className="px-4 py-3 border-b border-pastel-blue-50 hover:bg-pastel-blue-50 transition cursor-pointer"
+                                                        className="px-4 py-3 border-b border-white/5 hover:bg-white/5 transition cursor-pointer"
                                                         onClick={() => handleWatchedCardClick(watchedCard)}
                                                     >
                                                         <div className="flex items-start gap-3">
                                                             <div className="flex-shrink-0 mt-1">
-                                                                <HiEye className="text-xl text-pastel-blue-500" />
+                                                                <HiEye className="text-xl text-blue-400" />
                                                             </div>
                                                             <div className="flex-1 min-w-0">
-                                                                <p className="text-sm font-semibold text-pastel-blue-900 truncate">
+                                                                <p className="text-sm font-semibold text-white truncate">
                                                                     {watchedCard.card.title}
                                                                 </p>
-                                                                <p className="text-xs text-pastel-blue-600 mt-1">
+                                                                <p className="text-xs text-slate-400 mt-1">
                                                                     {watchedCard.boardName} • {watchedCard.columnName}
                                                                 </p>
-                                                                <p className="text-[10px] text-pastel-blue-400 mt-1">
+                                                                <p className="text-[10px] text-slate-500 mt-1">
                                                                     {new Date(watchedCard.watchedAt).toLocaleString()}
                                                                 </p>
                                                             </div>
@@ -380,12 +380,12 @@ export const GlobalNavBar: React.FC = () => {
                             <div className="relative" ref={inboxRef}>
                                 <button
                                     onClick={handleInboxClick}
-                                    className="relative w-10 h-10 hover:bg-pastel-blue-100 rounded-lg transition-all duration-200 flex items-center justify-center"
+                                    className="relative w-10 h-10 hover:bg-white/10 rounded-lg transition-all duration-200 flex items-center justify-center group"
                                     title="알림함"
                                 >
-                                    <HiInbox className="text-2xl text-pastel-blue-600" />
+                                    <HiInbox className="text-2xl text-slate-300 group-hover:text-white transition-colors" />
                                     {inboxItems.filter(i => !i.isRead).length > 0 && (
-                                        <span className="absolute -top-1 -right-1 flex items-center justify-center w-5 h-5 bg-pastel-pink-500 text-white text-xs font-bold rounded-full shadow-glass-sm">
+                                        <span className="absolute -top-1 -right-1 flex items-center justify-center w-5 h-5 bg-rose-500 text-white text-xs font-bold rounded-full shadow-sm ring-2 ring-slate-900">
                                             {inboxItems.filter(i => !i.isRead).length}
                                         </span>
                                     )}
@@ -394,18 +394,18 @@ export const GlobalNavBar: React.FC = () => {
                                 {/* Inbox Dropdown */}
                                 {inboxTransition.shouldRender && (
                                     <div
-                                        className={`dropdown-panel dropdown-panel-${inboxTransition.stage} absolute right-0 mt-2 w-96 bg-white rounded-lg shadow-lg border border-pastel-blue-200`}
+                                        className={`dropdown-panel dropdown-panel-${inboxTransition.stage} absolute right-0 mt-2 w-96 bg-slate-800 rounded-lg shadow-xl border border-white/10 text-slate-200`}
                                     >
-                                        <div className="px-4 py-3 border-b border-pastel-blue-100 flex justify-between items-center">
-                                            <p className="text-sm font-semibold text-pastel-blue-900">알림함</p>
+                                        <div className="px-4 py-3 border-b border-white/10 flex justify-between items-center">
+                                            <p className="text-sm font-semibold text-white">알림함</p>
                                         </div>
 
                                         {loadingInbox ? (
                                             <div className="px-4 py-8 flex items-center justify-center">
-                                                <div className="animate-spin h-5 w-5 border-2 border-pastel-blue-500 border-t-transparent rounded-full" />
+                                                <div className="animate-spin h-5 w-5 border-2 border-blue-500 border-t-transparent rounded-full" />
                                             </div>
                                         ) : inboxItems.length === 0 ? (
-                                            <div className="px-4 py-8 text-center text-pastel-blue-500 text-sm">
+                                            <div className="px-4 py-8 text-center text-slate-400 text-sm">
                                                 새로운 알림이 없습니다
                                             </div>
                                         ) : (
@@ -413,7 +413,7 @@ export const GlobalNavBar: React.FC = () => {
                                                 {inboxItems.map((item) => (
                                                     <div
                                                         key={item.id}
-                                                        className={`px-4 py-3 border-b border-pastel-blue-50 hover:bg-pastel-blue-50 transition cursor-pointer \${!item.isRead ? 'bg-pastel-blue-50/50' : ''}`}
+                                                        className={`px-4 py-3 border-b border-white/5 hover:bg-white/5 transition cursor-pointer \${!item.isRead ? 'bg-blue-500/10' : ''}`}
                                                         onClick={() => handleNotificationClick(item)}
                                                     >
                                                         <div className="flex items-start gap-3">
@@ -421,18 +421,18 @@ export const GlobalNavBar: React.FC = () => {
                                                                 {item.type === 'INVITATION' ? '💌' : '🔔'}
                                                             </div>
                                                             <div className="flex-1 min-w-0">
-                                                                <p className="text-sm font-semibold text-pastel-blue-900 truncate">
+                                                                <p className="text-sm font-semibold text-white truncate">
                                                                     {item.title}
                                                                 </p>
-                                                                <p className="text-xs text-pastel-blue-600 mt-1 line-clamp-2">
+                                                                <p className="text-xs text-slate-400 mt-1 line-clamp-2">
                                                                     {item.message}
                                                                 </p>
-                                                                <p className="text-[10px] text-pastel-blue-400 mt-1">
+                                                                <p className="text-[10px] text-slate-500 mt-1">
                                                                     {new Date(item.createdAt).toLocaleString()}
                                                                 </p>
                                                             </div>
                                                             {!item.isRead && (
-                                                                <div className="w-2 h-2 rounded-full bg-pastel-pink-500 flex-shrink-0 mt-2" />
+                                                                <div className="w-2 h-2 rounded-full bg-rose-500 flex-shrink-0 mt-2" />
                                                             )}
                                                         </div>
                                                     </div>
@@ -447,14 +447,14 @@ export const GlobalNavBar: React.FC = () => {
                             <div className="relative z-50" ref={menuRef}>
                                 <button
                                     onClick={() => setShowMenu(!showMenu)}
-                                    className="flex items-center gap-3 px-3 py-2 hover:opacity-80 transition-all duration-200"
+                                    className="flex items-center gap-3 px-3 py-2 hover:bg-white/10 rounded-lg transition-all duration-200"
                                 >
                                     <Avatar
                                         avatarUrl={user.avatarUrl}
                                         userName={user.name}
                                         size="md"
                                     />
-                                    <span className="text-sm font-semibold text-pastel-blue-900 hidden sm:inline">
+                                    <span className="text-sm font-semibold text-slate-200 hidden sm:inline">
                                         {user.name}
                                     </span>
                                 </button>
@@ -462,11 +462,11 @@ export const GlobalNavBar: React.FC = () => {
                                 {/* Dropdown Menu */}
                                 {menuTransition.shouldRender && (
                                     <div
-                                        className={`dropdown-panel dropdown-panel-${menuTransition.stage} absolute right-0 mt-2 w-64 bg-white rounded-lg shadow-lg border border-pastel-blue-200 py-1`}
+                                        className={`dropdown-panel dropdown-panel-${menuTransition.stage} absolute right-0 mt-2 w-64 bg-slate-800 rounded-lg shadow-xl border border-white/10 py-1 text-slate-200`}
                                     >
-                                        <div className="px-4 py-2 border-b border-pastel-blue-100">
-                                            <p className="text-xs text-pastel-blue-600">로그인 정보</p>
-                                            <p className="text-sm font-semibold text-pastel-blue-900 truncate">
+                                        <div className="px-4 py-2 border-b border-white/10">
+                                            <p className="text-xs text-slate-400">로그인 정보</p>
+                                            <p className="text-sm font-semibold text-white truncate">
                                                 {user.email}
                                             </p>
                                         </div>
@@ -475,7 +475,7 @@ export const GlobalNavBar: React.FC = () => {
                                                 setShowMenu(false);
                                                 handleHome();
                                             }}
-                                            className="w-full text-left px-4 py-2 text-sm text-pastel-blue-700 hover:bg-pastel-blue-50 transition md:hidden"
+                                            className="w-full text-left px-4 py-2 text-sm text-slate-300 hover:bg-white/5 transition md:hidden"
                                         >
                                             대시보드
                                         </button>
@@ -484,7 +484,7 @@ export const GlobalNavBar: React.FC = () => {
                                                 setShowMenu(false);
                                                 handleBoards();
                                             }}
-                                            className="w-full text-left px-4 py-2 text-sm text-pastel-blue-700 hover:bg-pastel-blue-50 transition md:hidden"
+                                            className="w-full text-left px-4 py-2 text-sm text-slate-300 hover:bg-white/5 transition md:hidden"
                                         >
                                             보드
                                         </button>
@@ -493,7 +493,7 @@ export const GlobalNavBar: React.FC = () => {
                                                 setShowMenu(false);
                                                 navigate('/profile');
                                             }}
-                                            className="w-full text-left px-4 py-2 text-sm text-pastel-blue-700 hover:bg-pastel-blue-50 transition border-t border-pastel-blue-100"
+                                            className="w-full text-left px-4 py-2 text-sm text-slate-300 hover:bg-white/5 transition border-t border-white/10"
                                         >
                                             프로필 설정
                                         </button>
@@ -502,7 +502,7 @@ export const GlobalNavBar: React.FC = () => {
                                                 setShowMenu(false);
                                                 handleLogout();
                                             }}
-                                            className="w-full text-left px-4 py-2 text-sm text-pastel-pink-700 hover:bg-pastel-pink-50 transition border-t border-pastel-blue-100"
+                                            className="w-full text-left px-4 py-2 text-sm text-rose-400 hover:bg-rose-500/10 transition border-t border-white/10"
                                         >
                                             로그아웃
                                         </button>

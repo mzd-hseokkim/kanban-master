@@ -10,9 +10,15 @@ export const useModalAnimation = (onClose: () => void, duration = MODAL_TRANSITI
   const [stage, setStage] = useState<ModalAnimationStage>('enter');
   const timeoutRef = useRef<number | null>(null);
 
+  const onCloseRef = useRef(onClose);
+
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  }, [onClose]);
+
   const close = useCallback(() => {
     if (prefersReducedMotion) {
-      onClose();
+      onCloseRef.current();
       return;
     }
 
@@ -23,9 +29,9 @@ export const useModalAnimation = (onClose: () => void, duration = MODAL_TRANSITI
     }
 
     timeoutRef.current = window.setTimeout(() => {
-      onClose();
+      onCloseRef.current();
     }, duration);
-  }, [onClose, prefersReducedMotion, duration]);
+  }, [prefersReducedMotion, duration]);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {

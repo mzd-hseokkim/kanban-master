@@ -94,7 +94,7 @@ export const SearchPage: React.FC = () => {
 
     if (!query) {
         return (
-            <div className="flex flex-col items-center justify-center min-h-[50vh] text-pastel-blue-400">
+            <div className="h-full flex flex-col items-center justify-center text-slate-400 bg-gradient-pastel">
                 <HiSearch className="w-16 h-16 mb-4 opacity-50" />
                 <p className="text-lg font-medium">검색어를 입력해주세요</p>
             </div>
@@ -102,118 +102,124 @@ export const SearchPage: React.FC = () => {
     }
 
     return (
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-            <h1 className="text-2xl font-bold text-pastel-blue-900 mb-8 flex items-center gap-2">
-                <span className="text-pastel-blue-500">"{query}"</span> 검색 결과
-            </h1>
+        <div className="h-full flex flex-col overflow-hidden bg-gradient-pastel">
+            <header className="bg-white/90 backdrop-blur-md border-b border-slate-200/50 flex-shrink-0 transition-colors duration-300">
+                <div className="w-full max-w-[95vw] mx-auto py-4 px-4 sm:px-6 lg:px-8">
+                    <h1 className="text-2xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
+                        <span className="text-blue-600">"{query}"</span> 검색 결과
+                    </h1>
+                </div>
+            </header>
 
-            <div className="space-y-8">
-                {/* Boards Section */}
-                {step !== 'IDLE' && (
-                    <section className="animate-fadeIn">
-                        <h2 className="text-lg font-semibold text-pastel-blue-800 mb-4 flex items-center gap-2">
-                            <HiClipboardList className="text-xl" />
-                            보드
-                            {step === 'BOARDS' && (
-                                <div className="ml-2 animate-spin h-4 w-4 border-2 border-pastel-blue-500 border-t-transparent rounded-full" />
-                            )}
-                        </h2>
-                        {boardResults.length > 0 ? (
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                                {boardResults.map(board => (
-                                    <div
-                                        key={board.id}
-                                        onClick={() => handleBoardClick(board)}
-                                        className="bg-white p-4 rounded-xl shadow-sm border border-pastel-blue-100 hover:shadow-md hover:border-pastel-blue-300 transition-all cursor-pointer group"
-                                    >
-                                        <div className="flex items-center gap-3 mb-2">
-                                            <div className="w-8 h-8 rounded-lg bg-pastel-blue-50 flex items-center justify-center text-lg group-hover:scale-110 transition-transform text-pastel-blue-500">
-                                                {board.icon === 'sparkles' ? <HiSparkles /> : <HiClipboardList />}
+            <main className="flex-1 overflow-auto w-full max-w-[95vw] mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                <div className="space-y-8 pb-8">
+                    {/* Boards Section */}
+                    {step !== 'IDLE' && (
+                        <section className="animate-fadeIn">
+                            <h2 className="text-lg font-semibold text-slate-800 mb-4 flex items-center gap-2">
+                                <HiClipboardList className="text-xl text-slate-500" />
+                                보드
+                                {step === 'BOARDS' && (
+                                    <div className="ml-2 animate-spin h-4 w-4 border-2 border-blue-500 border-t-transparent rounded-full" />
+                                )}
+                            </h2>
+                            {boardResults.length > 0 ? (
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                    {boardResults.map(board => (
+                                        <div
+                                            key={board.id}
+                                            onClick={() => handleBoardClick(board)}
+                                            className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 hover:shadow-md hover:border-blue-300 transition-all cursor-pointer group"
+                                        >
+                                            <div className="flex items-center gap-3 mb-2">
+                                                <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center text-lg group-hover:scale-110 transition-transform text-blue-500">
+                                                    {board.icon === 'sparkles' ? <HiSparkles /> : <HiClipboardList />}
+                                                </div>
+                                                <h3 className="font-semibold text-slate-900 truncate">{board.name}</h3>
                                             </div>
-                                            <h3 className="font-semibold text-pastel-blue-900 truncate">{board.name}</h3>
+                                            <p className="text-sm text-slate-500 line-clamp-2">{board.description || '설명 없음'}</p>
                                         </div>
-                                        <p className="text-sm text-pastel-blue-500 line-clamp-2">{board.description || '설명 없음'}</p>
-                                    </div>
-                                ))}
-                            </div>
-                        ) : step !== 'BOARDS' && (
-                            <p className="text-sm text-pastel-blue-400 italic">검색 결과가 없습니다.</p>
-                        )}
-                    </section>
-                )}
-
-                {/* Columns Section */}
-                {(step === 'COLUMNS' || step === 'CARDS' || step === 'DONE') && (
-                    <section className="animate-fadeIn">
-                        <h2 className="text-lg font-semibold text-pastel-blue-800 mb-4 flex items-center gap-2">
-                            <HiCollection className="text-xl" />
-                            칼럼
-                            {step === 'COLUMNS' && (
-                                <div className="ml-2 animate-spin h-4 w-4 border-2 border-pastel-blue-500 border-t-transparent rounded-full" />
+                                    ))}
+                                </div>
+                            ) : step !== 'BOARDS' && (
+                                <p className="text-sm text-slate-400 italic">검색 결과가 없습니다.</p>
                             )}
-                        </h2>
-                        {columnResults.length > 0 ? (
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                                {columnResults.map(column => (
-                                    <div
-                                        key={column.id}
-                                        onClick={() => handleColumnClick(column)}
-                                        className="bg-white p-4 rounded-xl shadow-sm border border-pastel-blue-100 hover:shadow-md hover:border-pastel-blue-300 transition-all cursor-pointer"
-                                    >
-                                        <div className="flex items-center justify-between mb-2">
-                                            <h3 className="font-semibold text-pastel-blue-900 truncate">{column.name}</h3>
-                                            <span className="text-xs px-2 py-1 rounded-full bg-pastel-blue-50 text-pastel-blue-600">
-                                                Board #{column.boardId}
-                                            </span>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        ) : step !== 'COLUMNS' && (
-                            <p className="text-sm text-pastel-blue-400 italic">검색 결과가 없습니다.</p>
-                        )}
-                    </section>
-                )}
+                        </section>
+                    )}
 
-                {/* Cards Section */}
-                {(step === 'CARDS' || step === 'DONE') && (
-                    <section className="animate-fadeIn">
-                        <h2 className="text-lg font-semibold text-pastel-blue-800 mb-4 flex items-center gap-2">
-                            <HiDocumentText className="text-xl" />
-                            카드
-                            {step === 'CARDS' && (
-                                <div className="ml-2 animate-spin h-4 w-4 border-2 border-pastel-blue-500 border-t-transparent rounded-full" />
-                            )}
-                        </h2>
-                        {cardResults.length > 0 ? (
-                            <div className="grid grid-cols-1 gap-3">
-                                {cardResults.map(card => (
-                                    <div
-                                        key={card.id}
-                                        onClick={() => handleCardClick(card)}
-                                        className="bg-white p-4 rounded-xl shadow-sm border border-pastel-blue-100 hover:shadow-md hover:border-pastel-blue-300 transition-all cursor-pointer flex items-center gap-4"
-                                    >
-                                        <div className={`w-2 h-12 rounded-full ${card.bgColor || 'bg-gray-200'}`} />
-                                        <div className="flex-1 min-w-0">
-                                            <h3 className="font-semibold text-pastel-blue-900 truncate">{card.title}</h3>
-                                            <div className="flex items-center gap-2 mt-1 text-xs text-pastel-blue-500">
-                                                <span>{card.boardName}</span>
-                                                <span>•</span>
-                                                <span>{card.columnName}</span>
-                                                {card.isCompleted && (
-                                                    <span className="px-2 py-0.5 rounded-full bg-green-100 text-green-700 font-medium">완료</span>
-                                                )}
+                    {/* Columns Section */}
+                    {(step === 'COLUMNS' || step === 'CARDS' || step === 'DONE') && (
+                        <section className="animate-fadeIn">
+                            <h2 className="text-lg font-semibold text-slate-800 mb-4 flex items-center gap-2">
+                                <HiCollection className="text-xl text-slate-500" />
+                                칼럼
+                                {step === 'COLUMNS' && (
+                                    <div className="ml-2 animate-spin h-4 w-4 border-2 border-blue-500 border-t-transparent rounded-full" />
+                                )}
+                            </h2>
+                            {columnResults.length > 0 ? (
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                    {columnResults.map(column => (
+                                        <div
+                                            key={column.id}
+                                            onClick={() => handleColumnClick(column)}
+                                            className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 hover:shadow-md hover:border-blue-300 transition-all cursor-pointer"
+                                        >
+                                            <div className="flex items-center justify-between mb-2">
+                                                <h3 className="font-semibold text-slate-900 truncate">{column.name}</h3>
+                                                <span className="text-xs px-2 py-1 rounded-full bg-slate-100 text-slate-600">
+                                                    Board #{column.boardId}
+                                                </span>
                                             </div>
                                         </div>
-                                    </div>
-                                ))}
-                            </div>
-                        ) : step === 'DONE' && (
-                            <p className="text-sm text-pastel-blue-400 italic">검색 결과가 없습니다.</p>
-                        )}
-                    </section>
-                )}
-            </div>
+                                    ))}
+                                </div>
+                            ) : step !== 'COLUMNS' && (
+                                <p className="text-sm text-slate-400 italic">검색 결과가 없습니다.</p>
+                            )}
+                        </section>
+                    )}
+
+                    {/* Cards Section */}
+                    {(step === 'CARDS' || step === 'DONE') && (
+                        <section className="animate-fadeIn">
+                            <h2 className="text-lg font-semibold text-slate-800 mb-4 flex items-center gap-2">
+                                <HiDocumentText className="text-xl text-slate-500" />
+                                카드
+                                {step === 'CARDS' && (
+                                    <div className="ml-2 animate-spin h-4 w-4 border-2 border-blue-500 border-t-transparent rounded-full" />
+                                )}
+                            </h2>
+                            {cardResults.length > 0 ? (
+                                <div className="grid grid-cols-1 gap-3">
+                                    {cardResults.map(card => (
+                                        <div
+                                            key={card.id}
+                                            onClick={() => handleCardClick(card)}
+                                            className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 hover:shadow-md hover:border-blue-300 transition-all cursor-pointer flex items-center gap-4"
+                                        >
+                                            <div className={`w-2 h-12 rounded-full ${card.bgColor || 'bg-gray-200'}`} />
+                                            <div className="flex-1 min-w-0">
+                                                <h3 className="font-semibold text-slate-900 truncate">{card.title}</h3>
+                                                <div className="flex items-center gap-2 mt-1 text-xs text-slate-500">
+                                                    <span>{card.boardName}</span>
+                                                    <span>•</span>
+                                                    <span>{card.columnName}</span>
+                                                    {card.isCompleted && (
+                                                        <span className="px-2 py-0.5 rounded-full bg-green-100 text-green-700 font-medium">완료</span>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            ) : step === 'DONE' && (
+                                <p className="text-sm text-slate-400 italic">검색 결과가 없습니다.</p>
+                            )}
+                        </section>
+                    )}
+                </div>
+            </main>
         </div>
     );
 };
