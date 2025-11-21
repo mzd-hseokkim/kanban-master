@@ -5,6 +5,7 @@ import { ErrorNotification } from '@/components/ErrorNotification';
 import { useCard } from '@/context/CardContext';
 import { useColumn } from '@/context/ColumnContext';
 import { useDialog } from '@/hooks/useDialog';
+import { useColumnScrollPersistence } from '@/hooks/useColumnScrollPersistence';
 import type { Card } from '@/types/card';
 import { Column } from '@/types/column';
 import React, { useEffect, useRef, useState } from 'react';
@@ -37,6 +38,13 @@ export const ColumnCard: React.FC<ColumnCardProps> = ({ column, workspaceId, boa
   const [animatedCardIds, setAnimatedCardIds] = useState<Set<number>>(new Set());
   const [recentlyCreatedCardId, setRecentlyCreatedCardId] = useState<number | null>(null);
   const highlightTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useColumnScrollPersistence({
+    boardId,
+    columnId: column.id,
+    enabled: !cardsLoading,
+    containerRef: cardListRef,
+  });
 
   useEffect(() => {
     const loadColumnCards = async () => {

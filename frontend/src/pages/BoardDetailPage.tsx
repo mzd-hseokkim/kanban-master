@@ -14,7 +14,7 @@ import {
     BoardLoadingState,
 } from "./BoardDetailPage/components/BoardStateFallbacks";
 import { ColumnsSection } from "./BoardDetailPage/components/ColumnsSection";
-import { MembersPanel } from "./BoardDetailPage/components/MembersPanel";
+import { MembersModal } from "./BoardDetailPage/components/MembersModal";
 import {
     useAutoOpenTargets,
     useBoardData,
@@ -38,7 +38,7 @@ const BoardDetailPage = () => {
   const [showLabelManager, setShowLabelManager] = useState(false);
   const [showSearchPanel, setShowSearchPanel] = useState(false);
 
-  const membersPanelTransition = usePresenceTransition(showMembersPanel);
+
   const activityPanelTransition = usePresenceTransition(showActivityPanel);
 
   const { board, loading, error } = useBoardData(
@@ -128,11 +128,8 @@ const BoardDetailPage = () => {
               />
             </div>
 
-            <MembersPanel
-              transition={{
-                shouldRender: membersPanelTransition.shouldRender,
-                stage: membersPanelTransition.stage,
-              }}
+            <MembersModal
+              isOpen={showMembersPanel}
               boardId={boardNumericId}
               canManage={canManage}
               onInvite={() => setShowInviteModal(true)}

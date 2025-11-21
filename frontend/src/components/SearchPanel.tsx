@@ -12,6 +12,7 @@ import {
 import type { Label } from '@/types/label';
 import type { CardSearchRequest, CardSearchResult } from '@/types/search';
 import { useEffect, useState } from 'react';
+import { IoClose, IoFilter, IoRefresh } from 'react-icons/io5';
 
 interface SearchPanelProps {
   boardId: number;
@@ -149,7 +150,7 @@ export const SearchPanel: React.FC<SearchPanelProps> = ({ boardId, onClose, onCa
               aria-label="검색 닫기"
               type="button"
             >
-              ✕
+              <IoClose />
             </button>
           </div>
         </div>
@@ -173,7 +174,7 @@ export const SearchPanel: React.FC<SearchPanelProps> = ({ boardId, onClose, onCa
               }`}
               type="button"
             >
-              🔍 필터
+              <IoFilter /> 필터
             </button>
             <button
               onClick={handleSearch}
@@ -287,7 +288,7 @@ export const SearchPanel: React.FC<SearchPanelProps> = ({ boardId, onClose, onCa
                 className="inline-flex items-center gap-1 text-sm text-pastel-blue-600 hover:text-pastel-blue-800 font-semibold"
                 type="button"
               >
-                ♻️ 필터 초기화
+                <IoRefresh /> 필터 초기화
               </button>
             </div>
           </div>

@@ -1,6 +1,20 @@
-import { useEffect, useState } from "react";
 import { activityService } from "@/services/activityService";
 import type { Activity } from "@/types/activity";
+import { useEffect, useState } from "react";
+import {
+    FaArrowsAltH,
+    FaChalkboard,
+    FaComment,
+    FaEdit,
+    FaExchangeAlt,
+    FaPen,
+    FaPlus,
+    FaStickyNote,
+    FaTrash,
+    FaUserCog,
+    FaUserMinus,
+    FaUserPlus,
+} from "react-icons/fa";
 
 interface ActivityTimelineProps {
   boardId: number;
@@ -9,26 +23,26 @@ interface ActivityTimelineProps {
   maxHeight?: string;
 }
 
-const getActivityIcon = (eventType: string): string => {
-  const iconMap: Record<string, string> = {
-    BOARD_CREATED: "✨",
-    BOARD_UPDATED: "📝",
-    BOARD_DELETED: "🗑️",
-    COLUMN_CREATED: "➕",
-    COLUMN_UPDATED: "📝",
-    COLUMN_DELETED: "🗑️",
-    COLUMN_REORDERED: "🔄",
-    CARD_CREATED: "📌",
-    CARD_UPDATED: "✏️",
-    CARD_DELETED: "🗑️",
-    CARD_MOVED: "↔️",
-    MEMBER_INVITED: "👤",
-    MEMBER_ROLE_CHANGED: "👑",
-    MEMBER_REMOVED: "❌",
-    COMMENT_ADDED: "💬",
-    COMMENT_DELETED: "🗑️",
+const getActivityIcon = (eventType: string): JSX.Element => {
+  const iconMap: Record<string, JSX.Element> = {
+    BOARD_CREATED: <FaChalkboard />,
+    BOARD_UPDATED: <FaEdit />,
+    BOARD_DELETED: <FaTrash />,
+    COLUMN_CREATED: <FaPlus />,
+    COLUMN_UPDATED: <FaEdit />,
+    COLUMN_DELETED: <FaTrash />,
+    COLUMN_REORDERED: <FaExchangeAlt />,
+    CARD_CREATED: <FaStickyNote />,
+    CARD_UPDATED: <FaPen />,
+    CARD_DELETED: <FaTrash />,
+    CARD_MOVED: <FaArrowsAltH />,
+    MEMBER_INVITED: <FaUserPlus />,
+    MEMBER_ROLE_CHANGED: <FaUserCog />,
+    MEMBER_REMOVED: <FaUserMinus />,
+    COMMENT_ADDED: <FaComment />,
+    COMMENT_DELETED: <FaTrash />,
   };
-  return iconMap[eventType] || "📌";
+  return iconMap[eventType] || <FaStickyNote />;
 };
 
 const getActivityColor = (eventType: string): string => {

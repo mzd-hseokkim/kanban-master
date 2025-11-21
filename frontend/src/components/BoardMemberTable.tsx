@@ -1,8 +1,8 @@
-import { useEffect, useState } from "react";
+import { Avatar } from "@/components/common/Avatar";
+import { useDialog } from "@/hooks/useDialog";
 import { memberService } from "@/services/memberService";
 import type { BoardMember, BoardMemberRole } from "@/types/member";
-import { useDialog } from "@/hooks/useDialog";
-import { Avatar } from "@/components/common/Avatar";
+import { useEffect, useState } from "react";
 
 interface BoardMemberTableProps {
   boardId: number;
@@ -109,30 +109,7 @@ export const BoardMemberTable = ({
     }
   };
 
-  const getStatusBadge = (member: BoardMember) => {
-    if (member.invitationStatus === "PENDING") {
-      return (
-        <span className="inline-block px-2 py-1 text-xs bg-yellow-100 text-yellow-800 rounded whitespace-nowrap">
-          초대 대기중
-        </span>
-      );
-    }
-    if (member.invitationStatus === "DECLINED") {
-      return (
-        <span className="inline-block px-2 py-1 text-xs bg-red-100 text-red-800 rounded whitespace-nowrap">
-          거절됨
-        </span>
-      );
-    }
-    if (member.invitationStatus === "EXPIRED") {
-      return (
-        <span className="inline-block px-2 py-1 text-xs bg-gray-100 text-gray-800 rounded whitespace-nowrap">
-          만료됨
-        </span>
-      );
-    }
-    return null;
-  };
+
 
   if (error && members.length === 0) {
     return (
@@ -159,9 +136,10 @@ export const BoardMemberTable = ({
           <div className="w-full">
             {/* Table Header */}
             <div
-              className={`grid ${canManage ? "grid-cols-4" : "grid-cols-3"} gap-4 bg-gray-50 border-b border-gray-200 px-4 py-3 text-xs font-medium text-gray-700 sticky top-0`}
+              className={`grid ${canManage ? "grid-cols-[minmax(0,1.5fr)_minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,0.5fr)]" : "grid-cols-[minmax(0,1.5fr)_minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)]"} gap-4 bg-gray-50 border-b border-gray-200 px-4 py-3 text-xs font-medium text-gray-700 sticky top-0`}
             >
               <div className="col-span-1">이름</div>
+              <div className="col-span-1">이메일</div>
               <div className="col-span-1">권한</div>
               <div className="col-span-1">상태</div>
               {canManage && (
@@ -173,25 +151,23 @@ export const BoardMemberTable = ({
             {members.map((member) => (
               <div
                 key={member.userId}
-                className={`grid ${canManage ? "grid-cols-4" : "grid-cols-3"} gap-4 border-b border-gray-100 px-4 py-2 items-center hover:bg-blue-50 transition-colors`}
+                className={`grid ${canManage ? "grid-cols-[minmax(0,1.5fr)_minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,0.5fr)]" : "grid-cols-[minmax(0,1.5fr)_minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)]"} gap-4 border-b border-gray-100 px-4 py-2 items-center hover:bg-blue-50 transition-colors`}
               >
-                {/* Name with Avatar and Tooltip */}
-                <div className="col-span-1 relative group">
-                  <div className="flex items-center gap-2">
-                    <Avatar
-                      avatarUrl={member.avatarUrl}
-                      userName={member.userName}
-                      size="sm"
-                    />
-                    <span className="text-xs text-gray-900 font-medium cursor-help inline-block">
-                      {member.userName}
-                    </span>
-                  </div>
-                  {/* Tooltip */}
-                  <div className="absolute left-0 bottom-full mb-2 hidden group-hover:block z-50 bg-gray-900 text-white text-xs px-2 py-1 rounded whitespace-nowrap">
-                    {member.userEmail}
-                    <div className="absolute top-full left-2 border-4 border-transparent border-t-gray-900" />
-                  </div>
+                {/* Name with Avatar */}
+                <div className="col-span-1 flex items-center gap-2">
+                  <Avatar
+                    avatarUrl={member.avatarUrl ? (member.avatarUrl.startsWith('http') ? member.avatarUrl : `${import.meta.env.VITE_API_URL}${member.avatarUrl}`) : null}
+                    userName={member.userName}
+                    size="sm"
+                  />
+                  <span className="text-xs text-gray-900 font-medium truncate">
+                    {member.userName}
+                  </span>
+                </div>
+
+                {/* Email */}
+                <div className="col-span-1 text-xs text-gray-600 truncate" title={member.userEmail}>
+                  {member.userEmail}
                 </div>
 
                 {/* Role */}
@@ -224,7 +200,25 @@ export const BoardMemberTable = ({
                 </div>
 
                 {/* Status */}
-                <div className="col-span-1">{getStatusBadge(member)}</div>
+                <div className="col-span-1">
+                  {member.invitationStatus === "PENDING" ? (
+                    <span className="inline-block px-2 py-1 text-xs bg-yellow-100 text-yellow-800 rounded whitespace-nowrap">
+                      초대 대기중
+                    </span>
+                  ) : member.invitationStatus === "DECLINED" ? (
+                    <span className="inline-block px-2 py-1 text-xs bg-red-100 text-red-800 rounded whitespace-nowrap">
+                      거절됨
+                    </span>
+                  ) : member.invitationStatus === "EXPIRED" ? (
+                    <span className="inline-block px-2 py-1 text-xs bg-gray-100 text-gray-800 rounded whitespace-nowrap">
+                      만료됨
+                    </span>
+                  ) : (
+                    <span className="inline-block px-2 py-1 text-xs bg-green-100 text-green-800 rounded whitespace-nowrap">
+                      활동 중
+                    </span>
+                  )}
+                </div>
 
                 {/* Action */}
                 {canManage && (
