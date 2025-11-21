@@ -65,10 +65,11 @@ public class Card extends BaseEntity {
     private String priority;
 
     /**
-     * 담당자 ID (User 엔티티의 ID)
+     * 담당자 (User 엔티티와의 관계)
      */
-    @Column(name = "assignee_id")
-    private Long assigneeId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "assignee_id")
+    private com.kanban.user.User assignee;
 
     /**
      * 마감 날짜

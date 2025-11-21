@@ -1,4 +1,4 @@
-import { HiArrowLeft, HiLightningBolt, HiSearch, HiTag, HiUsers } from 'react-icons/hi';
+import { HiArrowLeft, HiCalendar, HiChartPie, HiLightningBolt, HiSearch, HiTag, HiUsers } from 'react-icons/hi';
 
 interface BoardHeaderProps {
   boardName: string;
@@ -8,6 +8,8 @@ interface BoardHeaderProps {
   onLabelManager: () => void;
   onToggleActivity: () => void;
   onToggleMembers: () => void;
+  onCalendar: () => void;
+  onToggleInsights: () => void;
 }
 
 export const BoardHeader = ({
@@ -18,6 +20,8 @@ export const BoardHeader = ({
   onLabelManager,
   onToggleActivity,
   onToggleMembers,
+  onCalendar,
+  onToggleInsights,
 }: BoardHeaderProps) => {
   return (
     <header className="bg-white/90 backdrop-blur-md border-b border-slate-200/50 flex-shrink-0 transition-colors duration-300">
@@ -44,6 +48,16 @@ export const BoardHeader = ({
         </div>
 
         <div className="flex items-center gap-2">
+          <HeaderButton
+            icon={<HiChartPie />}
+            label="인사이트"
+            onClick={onToggleInsights}
+          />
+          <HeaderButton
+            icon={<HiCalendar />}
+            label="일정"
+            onClick={onCalendar}
+          />
           <HeaderButton
             icon={<HiSearch />}
             label="검색"

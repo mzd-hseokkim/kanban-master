@@ -61,6 +61,8 @@ public class ColumnService {
     /**
      * 칼럼 생성 (권한 검증 없음 - 내부 사용)
      */
+    @org.springframework.cache.annotation.CacheEvict(value = {"dashboardSummary", "boardInsights"},
+            allEntries = true)
     public ColumnResponse createColumn(Long boardId, String name, String description,
             String bgColor, Long userId) {
         Board board = boardRepository.findById(boardId)
@@ -101,6 +103,8 @@ public class ColumnService {
     /**
      * 칼럼 업데이트 (권한 검증 없음 - 내부 사용)
      */
+    @org.springframework.cache.annotation.CacheEvict(value = {"dashboardSummary", "boardInsights"},
+            allEntries = true)
     public ColumnResponse updateColumn(Long columnId, String name, String description,
             String bgColor) {
         BoardColumn column = columnRepository.findById(columnId)
@@ -145,6 +149,8 @@ public class ColumnService {
     /**
      * 칼럼 위치 업데이트 (드래그 앤 드롭, 권한 검증 없음 - 내부 사용)
      */
+    @org.springframework.cache.annotation.CacheEvict(value = {"dashboardSummary", "boardInsights"},
+            allEntries = true)
     public ColumnResponse updateColumnPosition(Long boardId, Long columnId, Integer newPosition,
             Long userId) {
         BoardColumn column = columnRepository.findByIdAndBoardId(columnId, boardId)
@@ -192,6 +198,8 @@ public class ColumnService {
     /**
      * 칼럼 삭제 (권한 검증 없음 - 내부 사용)
      */
+    @org.springframework.cache.annotation.CacheEvict(value = {"dashboardSummary", "boardInsights"},
+            allEntries = true)
     public void deleteColumn(Long boardId, Long columnId, Long userId) {
         BoardColumn column = columnRepository.findByIdAndBoardId(columnId, boardId)
                 .orElseThrow(() -> new NoSuchElementException("칼럼을 찾을 수 없습니다: " + columnId));

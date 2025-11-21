@@ -1,8 +1,8 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
 import { boardService } from '@/services/boardService';
 import type { Board } from '@/types/board';
-import type { Column } from '@/types/column';
 import type { Card } from '@/types/card';
+import type { Column } from '@/types/column';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
 export const useBoardData = (
   workspaceId: string | undefined,
@@ -75,7 +75,7 @@ export const useOverdueCardCount = (columns: Column[] | null | undefined, cards:
 
 interface InlineCardFocus {
   cardId: number;
-  columnId: number;
+  columnId?: number | null;
 }
 
 const parseNumericParam = (params: URLSearchParams, key: string) => {

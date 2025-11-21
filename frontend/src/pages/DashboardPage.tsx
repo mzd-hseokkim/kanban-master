@@ -1,7 +1,12 @@
 import { BoardCard } from '@/components/BoardCard';
 import { CreateBoardModal } from '@/components/CreateBoardModal';
+import { ActivityTrend } from '@/components/dashboard/ActivityTrend';
+import { KPITiles } from '@/components/dashboard/KPITiles';
+import { TopBoards } from '@/components/dashboard/TopBoards';
 import { useAuth } from '@/context/AuthContext';
 import { useBoard } from '@/context/BoardContext';
+import { dashboardService } from '@/services/dashboardService';
+import { DashboardSummaryResponse } from '@/types/dashboard';
 import { useCallback, useEffect, useState } from 'react';
 import { HiClipboardList, HiPlus, HiViewGrid } from 'react-icons/hi';
 import { useNavigate } from 'react-router-dom';
@@ -20,10 +25,12 @@ const DashboardPage = () => {
     boards,
     selectedWorkspaceId
   );
+  const [summary, setSummary] = useState<DashboardSummaryResponse | null>(null);
 
   useEffect(() => {
     if (selectedWorkspaceId) {
       loadBoards(selectedWorkspaceId);
+      dashboardService.getGlobalSummary(selectedWorkspaceId).then(setSummary).catch(console.error);
     }
   }, [loadBoards, selectedWorkspaceId]);
 
@@ -77,6 +84,16 @@ const DashboardPage = () => {
 
           {!boardsLoading && !shouldShowEmptyState && (
             <div className="flex-1 overflow-auto flex flex-col gap-8">
+              {summary && (
+                <>
+                  <KPITiles summary={{ ...summary, totalBoards: boards.length }} />
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <TopBoards boards={summary.boardsByOverdue} workspaceId={selectedWorkspaceId!} />
+                    <ActivityTrend activity={summary.recentActivity} />
+                  </div>
+                </>
+              )}
+
               <CardHighlightSection variant="overdue" cards={overdueCards} onCardClick={handleCardNavigate} />
               <CardHighlightSection variant="inProgress" cards={inProgressCards} onCardClick={handleCardNavigate} />
               <CardHighlightSection variant="upcoming" cards={upcomingCards} onCardClick={handleCardNavigate} />

@@ -65,7 +65,7 @@ public class SearchService {
 
         // 담당자 필터
         if (request.getAssigneeIds() != null && !request.getAssigneeIds().isEmpty()) {
-            predicates.add(card.get("assigneeId").in(request.getAssigneeIds()));
+            predicates.add(card.get("assignee").get("id").in(request.getAssigneeIds()));
         }
 
         // 완료 상태 필터
@@ -143,7 +143,7 @@ public class SearchService {
 
         // 담당자 필터
         if (request.getAssigneeIds() != null && !request.getAssigneeIds().isEmpty()) {
-            predicates.add(card.get("assigneeId").in(request.getAssigneeIds()));
+            predicates.add(card.get("assignee").get("id").in(request.getAssigneeIds()));
         }
 
         // 완료 상태 필터
@@ -231,9 +231,9 @@ public class SearchService {
                 .boardName(card.getColumn().getBoard().getName()).title(card.getTitle())
                 .description(card.getDescription()).position(card.getPosition())
                 .bgColor(card.getBgColor()).priority(card.getPriority())
-                .assigneeId(card.getAssigneeId()).dueDate(card.getDueDate())
-                .isCompleted(card.getIsCompleted()).startedAt(card.getStartedAt())
-                .completedAt(card.getCompletedAt()).labels(labels)
+                .assigneeId(card.getAssignee() != null ? card.getAssignee().getId() : null)
+                .dueDate(card.getDueDate()).isCompleted(card.getIsCompleted())
+                .startedAt(card.getStartedAt()).completedAt(card.getCompletedAt()).labels(labels)
                 .createdAt(card.getCreatedAt()).updatedAt(card.getUpdatedAt()).build();
     }
 }

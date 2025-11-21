@@ -8,17 +8,18 @@ import { useCallback, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { ActivityPanel } from "./BoardDetailPage/components/ActivityPanel";
 import { BoardHeader } from "./BoardDetailPage/components/BoardHeader";
+import { BoardInsightsPanel } from "./BoardDetailPage/components/BoardInsightsPanel";
 import { BoardModals } from "./BoardDetailPage/components/BoardModals";
 import {
-    BoardErrorState,
-    BoardLoadingState,
+  BoardErrorState,
+  BoardLoadingState,
 } from "./BoardDetailPage/components/BoardStateFallbacks";
 import { ColumnsSection } from "./BoardDetailPage/components/ColumnsSection";
 import { MembersModal } from "./BoardDetailPage/components/MembersModal";
 import {
-    useAutoOpenTargets,
-    useBoardData,
-    useOverdueCardCount,
+  useAutoOpenTargets,
+  useBoardData,
+  useOverdueCardCount,
 } from "./BoardDetailPage/hooks";
 
 const BoardDetailPage = () => {
@@ -37,6 +38,8 @@ const BoardDetailPage = () => {
   const [showActivityPanel, setShowActivityPanel] = useState(false);
   const [showLabelManager, setShowLabelManager] = useState(false);
   const [showSearchPanel, setShowSearchPanel] = useState(false);
+  const [showCalendarModal, setShowCalendarModal] = useState(false);
+  const [showInsightsPanel, setShowInsightsPanel] = useState(false);
 
 
   const activityPanelTransition = usePresenceTransition(showActivityPanel);
@@ -108,9 +111,18 @@ const BoardDetailPage = () => {
         onLabelManager={() => setShowLabelManager(true)}
         onToggleActivity={() => setShowActivityPanel((prev) => !prev)}
         onToggleMembers={() => setShowMembersPanel((prev) => !prev)}
+        onCalendar={() => setShowCalendarModal(true)}
+        onToggleInsights={() => setShowInsightsPanel((prev) => !prev)}
       />
 
       <main className="flex-1 overflow-hidden flex flex-col">
+        <div
+          className={`transition-all duration-300 ease-in-out overflow-hidden ${
+            showInsightsPanel ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
+          }`}
+        >
+          <BoardInsightsPanel workspaceId={workspaceNumericId} boardId={boardNumericId} />
+        </div>
         <div className="w-full px-4 sm:px-6 lg:px-8 flex-1 overflow-hidden pt-4 pb-4 flex">
           <div className="w-full max-w-[95vw] mx-auto flex flex-1 relative min-h-0 h-full">
             <div className="flex-1 overflow-auto flex flex-col pr-0 lg:pr-4 h-full">
@@ -128,13 +140,15 @@ const BoardDetailPage = () => {
               />
             </div>
 
-            <MembersModal
-              isOpen={showMembersPanel}
-              boardId={boardNumericId}
-              canManage={canManage}
-              onInvite={() => setShowInviteModal(true)}
-              onClose={() => setShowMembersPanel(false)}
-            />
+            {showMembersPanel && (
+              <MembersModal
+                isOpen={showMembersPanel}
+                boardId={boardNumericId}
+                canManage={canManage}
+                onInvite={() => setShowInviteModal(true)}
+                onClose={() => setShowMembersPanel(false)}
+              />
+            )}
 
             <ActivityPanel
               transition={{
@@ -161,6 +175,9 @@ const BoardDetailPage = () => {
         showSearchPanel={showSearchPanel}
         onCloseSearchPanel={() => setShowSearchPanel(false)}
         onCardSelect={handleCardSelect}
+        showCalendarModal={showCalendarModal}
+        onCloseCalendarModal={() => setShowCalendarModal(false)}
+        cards={Object.values(cards).flat()}
       />
     </div>
   );

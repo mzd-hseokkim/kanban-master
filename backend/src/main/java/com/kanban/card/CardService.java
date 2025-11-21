@@ -130,6 +130,8 @@ public class CardService {
     /**
      * 카드 생성 (권한 검증 없음 - 내부 사용) Spec § 5. 기능 요구사항 - FR-06j: 계층 제한 검증
      */
+    @org.springframework.cache.annotation.CacheEvict(value = {"dashboardSummary", "boardInsights"},
+            allEntries = true)
     public CardResponse createCard(Long columnId, CreateCardRequest request, Long userId) {
         BoardColumn column = columnRepository.findById(columnId)
                 .orElseThrow(() -> new ResourceNotFoundException("Column not found"));
@@ -159,8 +161,13 @@ public class CardService {
         Card card = Card.builder().column(column).title(request.getTitle())
                 .description(sanitizeHtml(request.getDescription())).position(nextPosition)
                 .bgColor(request.getBgColor()).priority(request.getPriority())
-                .assigneeId(request.getAssigneeId()).dueDate(request.getDueDate())
-                .parentCard(parentCard).build();
+                .dueDate(request.getDueDate()).parentCard(parentCard).build();
+
+        if (request.getAssigneeId() != null) {
+            com.kanban.user.User assignee = userRepository.findById(request.getAssigneeId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Assignee not found"));
+            card.setAssignee(assignee);
+        }
 
         Card savedCard = cardRepository.save(card);
 
@@ -181,13 +188,13 @@ public class CardService {
                 column.getBoard().getId(), response, userId, System.currentTimeMillis()));
 
         // 알림 생성 (담당자가 지정된 경우)
-        if (savedCard.getAssigneeId() != null) {
+        if (savedCard.getAssignee() != null) {
             // 본인이 본인을 할당한 경우는 알림 제외
-            if (!savedCard.getAssigneeId().equals(userId)) {
+            if (!savedCard.getAssignee().getId().equals(userId)) {
                 System.out.println("Creating notification for user (createCard): "
-                        + savedCard.getAssigneeId());
+                        + savedCard.getAssignee().getId());
                 Long workspaceId = column.getBoard().getWorkspace().getId();
-                notificationService.createNotification(savedCard.getAssigneeId(),
+                notificationService.createNotification(savedCard.getAssignee().getId(),
                         com.kanban.notification.domain.NotificationType.CARD_ASSIGNMENT,
                         "새 카드 \"" + savedCard.getTitle() + "\"에 할당되었습니다.",
                         "/boards/" + workspaceId + "/" + column.getBoard().getId() + "?cardId="
@@ -215,6 +222,8 @@ public class CardService {
     /**
      * 카드 수정 (활동 기록 포함, 권한 검증 없음 - 내부 사용) Spec § 5. 기능 요구사항 - FR-06i: 컬럼 이동 시 부모 관계 해제
      */
+    @org.springframework.cache.annotation.CacheEvict(value = {"dashboardSummary", "boardInsights"},
+            allEntries = true)
     public CardResponse updateCard(Long columnId, Long cardId, UpdateCardRequest request,
             Long userId) {
         Card card = cardRepository.findByIdAndColumnId(cardId, columnId)
@@ -227,7 +236,7 @@ public class CardService {
         boolean markedCompleted = false;
 
         // 담당자 변경 감지 및 알림을 위한 기존 담당자 ID 저장
-        Long oldAssigneeId = card.getAssigneeId();
+        Long oldAssigneeId = card.getAssignee() != null ? card.getAssignee().getId() : null;
         boolean wasCompleted = card.getIsCompleted();
 
         if (request.getTitle() != null) {
@@ -245,9 +254,11 @@ public class CardService {
         if (request.getAssigneeId() != null) {
             // -1 means unassign
             if (request.getAssigneeId() == -1) {
-                card.setAssigneeId(null);
+                card.setAssignee(null);
             } else {
-                card.setAssigneeId(request.getAssigneeId());
+                com.kanban.user.User assignee = userRepository.findById(request.getAssigneeId())
+                        .orElseThrow(() -> new ResourceNotFoundException("Assignee not found"));
+                card.setAssignee(assignee);
             }
         }
         if (request.getDueDate() != null) {
@@ -391,6 +402,8 @@ public class CardService {
      * 카드 삭제 (권한 검증 없음 - 내부 사용) Spec § 7. 보안 처리 - 데이터 무결성 FR-06h 변경: 부모 카드 삭제 차단 결정 사항 2: 자식이 있으면 부모
      * 삭제 차단
      */
+    @org.springframework.cache.annotation.CacheEvict(value = {"dashboardSummary", "boardInsights"},
+            allEntries = true)
     public void deleteCard(Long columnId, Long cardId, Long userId) {
         Card card = cardRepository.findByIdAndColumnId(cardId, columnId)
                 .orElseThrow(() -> new ResourceNotFoundException("Card not found"));
@@ -436,6 +449,8 @@ public class CardService {
     /**
      * 카드 시작 처리 (권한 검증 없음 - 내부 사용)
      */
+    @org.springframework.cache.annotation.CacheEvict(value = {"dashboardSummary", "boardInsights"},
+            allEntries = true)
     public CardResponse startCard(Long columnId, Long cardId, Long userId) {
         Card card = cardRepository.findByIdAndColumnId(cardId, columnId)
                 .orElseThrow(() -> new ResourceNotFoundException("Card not found"));
@@ -468,8 +483,7 @@ public class CardService {
         CardResponse response = enrichWithAssigneeInfo(CardResponse.from(updated, labels));
         redisPublisher.publish(new com.kanban.notification.event.BoardEvent(
                 com.kanban.notification.event.BoardEvent.EventType.CARD_UPDATED.name(),
-                card.getColumn().getBoard().getId(), response, userId,
-                System.currentTimeMillis()));
+                card.getColumn().getBoard().getId(), response, userId, System.currentTimeMillis()));
 
         return response;
     }

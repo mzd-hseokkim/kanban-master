@@ -35,6 +35,8 @@ public class BoardService {
     /**
      * 새로운 보드를 생성한다. - 워크스페이스와 사용자가 유효한지 확인 - 보드를 생성하고 소유자로 등록 - 생성자를 보드 멤버로 추가 (추후 구현)
      */
+    @org.springframework.cache.annotation.CacheEvict(value = {"dashboardSummary", "boardInsights"},
+            allEntries = true)
     public BoardResponse createBoard(Long workspaceId, Long userId, CreateBoardRequest request) {
         log.debug("Creating board in workspace {} by user {}", workspaceId, userId);
 
@@ -205,6 +207,8 @@ public class BoardService {
     /**
      * 보드 정보를 업데이트한다. - 소유자만 업데이트 가능 (향후 MANAGER 권한도 추가)
      */
+    @org.springframework.cache.annotation.CacheEvict(value = {"dashboardSummary", "boardInsights"},
+            allEntries = true)
     public BoardResponse updateBoard(Long workspaceId, Long boardId, Long userId,
             UpdateBoardRequest request) {
         log.debug("Updating board {} in workspace {} by user {}", boardId, workspaceId, userId);
@@ -250,6 +254,8 @@ public class BoardService {
     /**
      * 보드를 아카이브한다.
      */
+    @org.springframework.cache.annotation.CacheEvict(value = {"dashboardSummary", "boardInsights"},
+            allEntries = true)
     public BoardResponse archiveBoard(Long workspaceId, Long boardId, Long userId) {
         log.debug("Archiving board {} in workspace {} by user {}", boardId, workspaceId, userId);
 
@@ -271,6 +277,8 @@ public class BoardService {
     /**
      * 아카이브된 보드를 복구한다.
      */
+    @org.springframework.cache.annotation.CacheEvict(value = {"dashboardSummary", "boardInsights"},
+            allEntries = true)
     public BoardResponse unarchiveBoard(Long workspaceId, Long boardId, Long userId) {
         log.debug("Unarchiving board {} in workspace {} by user {}", boardId, workspaceId, userId);
 
@@ -292,6 +300,8 @@ public class BoardService {
     /**
      * 보드를 삭제한다 (소프트 삭제). - DELETED 상태로 변경하고 deletedAt 타임스탐프 기록 - 30일 후 배치 작업으로 물리 삭제
      */
+    @org.springframework.cache.annotation.CacheEvict(value = {"dashboardSummary", "boardInsights"},
+            allEntries = true)
     public void deleteBoard(Long workspaceId, Long boardId, Long userId) {
         log.debug("Deleting board {} in workspace {} by user {}", boardId, workspaceId, userId);
 
@@ -321,6 +331,8 @@ public class BoardService {
     /**
      * 삭제된 보드를 복구한다.
      */
+    @org.springframework.cache.annotation.CacheEvict(value = {"dashboardSummary", "boardInsights"},
+            allEntries = true)
     public BoardResponse restoreBoard(Long workspaceId, Long boardId, Long userId) {
         log.debug("Restoring board {} in workspace {} by user {}", boardId, workspaceId, userId);
 
@@ -348,6 +360,8 @@ public class BoardService {
      * 배치 작업: 30일 이상 경과된 삭제된 보드를 물리 삭제한다.
      */
     @Transactional
+    @org.springframework.cache.annotation.CacheEvict(value = {"dashboardSummary", "boardInsights"},
+            allEntries = true)
     public void purgePermanentlyDeletedBoards() {
         log.info("Starting purge of permanently deleted boards");
 

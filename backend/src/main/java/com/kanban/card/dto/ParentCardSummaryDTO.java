@@ -50,6 +50,6 @@ public class ParentCardSummaryDTO {
 
         return ParentCardSummaryDTO.builder().id(card.getId()).title(card.getTitle())
                 .bgColor(card.getBgColor()).priority(card.getPriority())
-                .assigneeId(card.getAssigneeId()).build();
+                .assigneeId(card.getAssignee() != null ? card.getAssignee().getId() : null).build();
     }
 }
