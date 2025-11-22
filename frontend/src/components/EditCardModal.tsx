@@ -824,18 +824,20 @@ export const EditCardModal: React.FC<EditCardModalProps> = ({
             )}
 
             {/* 아카이브 확인 모달 */}
-            <ConfirmModal
-                isOpen={showArchiveConfirm}
-                message="이 카드를 아카이브하시겠습니까?&#10;아카이브된 카드는 '아카이브된 카드 보기'에서 복구할 수 있습니다."
-                onConfirm={() => {
-                    setShowArchiveConfirm(false);
-                    handleArchiveCard();
-                }}
-                onCancel={() => setShowArchiveConfirm(false)}
-                confirmText="아카이브"
-                cancelText="취소"
-                isDestructive={true}
-            />
+            {showArchiveConfirm && (
+                <ConfirmModal
+                    isOpen={showArchiveConfirm}
+                    message="이 카드를 아카이브하시겠습니까?&#10;아카이브된 카드는 '아카이브된 카드 보기'에서 복구할 수 있습니다."
+                    onConfirm={() => {
+                        setShowArchiveConfirm(false);
+                        handleArchiveCard();
+                    }}
+                    onCancel={() => setShowArchiveConfirm(false)}
+                    confirmText="아카이브"
+                    cancelText="취소"
+                    isDestructive={true}
+                />
+            )}
 
             {/* 에러 알림 (모달 외부 표시) */}
             {error && <ErrorNotification message={error} onClose={() => setError(null)} duration={5000} />}

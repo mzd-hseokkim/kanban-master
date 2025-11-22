@@ -10,12 +10,15 @@ import { DialogProvider } from '@/context/DialogContext';
 import { WebSocketProvider } from '@/context/WebSocketContext';
 import BoardDetailPage from '@/pages/BoardDetailPage';
 import BoardsPage from '@/pages/BoardsPage';
+import ContactPage from '@/pages/ContactPage';
 import DashboardPage from '@/pages/DashboardPage';
 import LoginPage from '@/pages/LoginPage';
 import OAuth2CallbackHandler from '@/pages/OAuth2CallbackHandler';
+import PrivacyPage from '@/pages/PrivacyPage';
 import ProfilePage from '@/pages/ProfilePage';
 import SearchPage from '@/pages/SearchPage';
 import { SignupPage } from '@/pages/SignupPage';
+import TermsPage from '@/pages/TermsPage';
 import { VerifyEmailPage } from '@/pages/VerifyEmailPage';
 import { Fragment, useEffect, useState } from 'react';
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
@@ -86,6 +89,30 @@ const App = () => {
         element={(
           <ProtectedRoute>
             <ProfilePage />
+          </ProtectedRoute>
+        )}
+      />
+      <Route
+        path="/privacy"
+        element={(
+          <ProtectedRoute>
+            <PrivacyPage />
+          </ProtectedRoute>
+        )}
+      />
+      <Route
+        path="/terms"
+        element={(
+          <ProtectedRoute>
+            <TermsPage />
+          </ProtectedRoute>
+        )}
+      />
+      <Route
+        path="/contact"
+        element={(
+          <ProtectedRoute>
+            <ContactPage />
           </ProtectedRoute>
         )}
       />

@@ -1,9 +1,13 @@
-import { HiArrowLeft, HiCalendar, HiChartPie, HiLightningBolt, HiSearch, HiTag, HiUsers } from 'react-icons/hi';
+import { useState, type DragEvent, type ReactNode } from 'react';
+import { HiArrowLeft, HiCalendar, HiChartPie, HiLightningBolt, HiPlus, HiSearch, HiTag, HiUsers, HiViewBoards, HiViewList } from 'react-icons/hi';
 import { MdArchive } from 'react-icons/md';
 
 interface BoardHeaderProps {
   boardName: string;
   overdueCardCount: number;
+  canEdit: boolean;
+  viewMode: 'BOARD' | 'LIST';
+  onViewModeChange: (mode: 'BOARD' | 'LIST') => void;
   onBack: () => void;
   onSearch: () => void;
   onLabelManager: () => void;
@@ -12,11 +16,16 @@ interface BoardHeaderProps {
   onCalendar: () => void;
   onToggleInsights: () => void;
   onToggleArchive: () => void;
+  onCreateColumn: () => void;
+  onArchiveDrop: (cardId: number, columnId: number) => void;
 }
 
 export const BoardHeader = ({
   boardName,
   overdueCardCount,
+  canEdit,
+  viewMode,
+  onViewModeChange,
   onBack,
   onSearch,
   onLabelManager,
@@ -25,7 +34,39 @@ export const BoardHeader = ({
   onCalendar,
   onToggleInsights,
   onToggleArchive,
+  onCreateColumn,
+  onArchiveDrop,
 }: BoardHeaderProps) => {
+  const [isArchiveDropTarget, setIsArchiveDropTarget] = useState(false);
+
+  const handleArchiveDragOver = (e: DragEvent<HTMLButtonElement>) => {
+    if (!canEdit) return;
+
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    setIsArchiveDropTarget(true);
+  };
+
+  const handleArchiveDragLeave = () => {
+    if (!canEdit) return;
+    setIsArchiveDropTarget(false);
+  };
+
+  const handleArchiveDrop = (e: DragEvent<HTMLButtonElement>) => {
+    if (!canEdit) return;
+    e.preventDefault();
+    e.stopPropagation();
+    setIsArchiveDropTarget(false);
+
+    const cardId = Number(e.dataTransfer.getData('cardId'));
+    const sourceColumnId = Number(e.dataTransfer.getData('sourceColumnId'));
+    if (Number.isNaN(cardId) || Number.isNaN(sourceColumnId)) {
+      return;
+    }
+
+    onArchiveDrop(cardId, sourceColumnId);
+  };
+
   return (
     <header className="bg-white/90 backdrop-blur-md border-b border-slate-200/50 flex-shrink-0 transition-colors duration-300">
       <div className="w-full max-w-[95vw] mx-auto py-4 px-4 sm:px-6 lg:px-8 flex items-center justify-between">
@@ -48,9 +89,45 @@ export const BoardHeader = ({
               </span>
             )}
           </div>
+
+          <div className="h-6 w-px bg-slate-200 mx-2" />
+
+          <div className="flex bg-slate-100 p-1 rounded-lg">
+            <button
+              onClick={() => onViewModeChange('BOARD')}
+              className={`p-1.5 rounded-md transition-all ${
+                viewMode === 'BOARD'
+                  ? 'bg-white text-pastel-blue-600 shadow-sm'
+                  : 'text-slate-400 hover:text-slate-600'
+              }`}
+              title="보드 뷰"
+            >
+              <HiViewBoards className="text-lg" />
+            </button>
+            <button
+              onClick={() => onViewModeChange('LIST')}
+              className={`p-1.5 rounded-md transition-all ${
+                viewMode === 'LIST'
+                  ? 'bg-white text-pastel-blue-600 shadow-sm'
+                  : 'text-slate-400 hover:text-slate-600'
+              }`}
+              title="리스트 뷰"
+            >
+              <HiViewList className="text-lg" />
+            </button>
+          </div>
         </div>
 
         <div className="flex items-center gap-2">
+          {canEdit && (
+            <button
+              onClick={onCreateColumn}
+              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-blue-600 to-cyan-600 text-white font-semibold text-sm shadow-md shadow-blue-500/20 hover:from-blue-500 hover:to-cyan-500 transition-all duration-200"
+            >
+              <HiPlus className="text-base" />
+              <span className="hidden md:inline">칼럼 추가</span>
+            </button>
+          )}
           <HeaderButton
             icon={<HiChartPie />}
             label="인사이트"
@@ -85,6 +162,10 @@ export const BoardHeader = ({
             icon={<MdArchive />}
             label="아카이브"
             onClick={onToggleArchive}
+            onDragOver={handleArchiveDragOver}
+            onDragLeave={handleArchiveDragLeave}
+            onDrop={handleArchiveDrop}
+            isDropActive={isArchiveDropTarget}
           />
         </div>
       </div>
@@ -93,17 +174,27 @@ export const BoardHeader = ({
 };
 
 interface HeaderButtonProps {
-  icon: React.ReactNode;
+  icon: ReactNode;
   label: string;
   onClick: () => void;
+  onDrop?: (e: DragEvent<HTMLButtonElement>) => void;
+  onDragOver?: (e: DragEvent<HTMLButtonElement>) => void;
+  onDragLeave?: (e: DragEvent<HTMLButtonElement>) => void;
+  isDropActive?: boolean;
 }
 
-const HeaderButton = ({ icon, label, onClick }: HeaderButtonProps) => (
+const HeaderButton = ({ icon, label, onClick, onDrop, onDragOver, onDragLeave, isDropActive }: HeaderButtonProps) => (
   <button
+    type="button"
     onClick={onClick}
-    className="flex items-center gap-2 px-3 py-2 rounded-lg text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition-all duration-200 font-medium text-sm group"
+    onDrop={onDrop}
+    onDragOver={onDragOver}
+    onDragLeave={onDragLeave}
+    className={`flex items-center gap-2 px-3 py-2 rounded-lg text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition-all duration-200 font-medium text-sm group focus:outline-none ${
+      isDropActive ? 'ring-2 ring-pastel-blue-300 bg-pastel-blue-50 text-pastel-blue-700' : ''
+    }`}
   >
     <span className="text-lg text-slate-400 group-hover:text-slate-900 transition-colors">{icon}</span>
-    <span>{label}</span>
+    <span className="hidden xl:inline">{label}</span>
   </button>
 );

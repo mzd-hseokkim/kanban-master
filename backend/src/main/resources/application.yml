@@ -40,10 +40,10 @@ spring:
                         user-name-attribute: sub
 
     datasource:
-        url: jdbc:h2:file:./data/kanban;AUTO_SERVER=TRUE
-        driver-class-name: org.h2.Driver
-        username: sa
-        password:
+        url: jdbc:postgresql://localhost:5432/kanban_db
+        driver-class-name: org.postgresql.Driver
+        username: root
+        password: password!
         hikari:
             maximum-pool-size: 10
             minimum-idle: 5
@@ -57,14 +57,15 @@ spring:
             port: ${REDIS_PORT:6379}
             database: ${REDIS_DB:0}
 
+    # H2 Console disabled
     h2:
         console:
-            enabled: true
+            enabled: false
             path: /h2-console
 
     jpa:
         open-in-view: false
-        database-platform: org.hibernate.dialect.H2Dialect
+        database-platform: org.hibernate.dialect.PostgreSQLDialect
         hibernate:
             ddl-auto: update
         show-sql: true

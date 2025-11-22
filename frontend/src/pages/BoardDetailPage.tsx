@@ -1,11 +1,13 @@
 import { ArchivedCardsPanel } from "@/components/archive/ArchivedCardsPanel";
+import { ErrorNotification } from "@/components/ErrorNotification";
 import { useCard } from "@/context/CardContext";
 import { useColumn } from "@/context/ColumnContext";
 import { useBoardSubscription } from "@/hooks/useBoardSubscription";
 import { usePermissions } from "@/hooks/usePermissions";
 import { usePresenceTransition } from "@/hooks/usePresenceTransition";
 import type { CardSearchResult } from "@/types/search";
-import { useCallback, useState } from "react";
+import cardService from "@/services/cardService";
+import { useCallback, useEffect, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { ActivityPanel } from "./BoardDetailPage/components/ActivityPanel";
 import { BoardHeader } from "./BoardDetailPage/components/BoardHeader";
@@ -16,6 +18,7 @@ import {
     BoardLoadingState,
 } from "./BoardDetailPage/components/BoardStateFallbacks";
 import { ColumnsSection } from "./BoardDetailPage/components/ColumnsSection";
+import { ListView } from "./BoardDetailPage/components/ListView";
 import { MembersModal } from "./BoardDetailPage/components/MembersModal";
 import {
     useAutoOpenTargets,
@@ -30,8 +33,17 @@ const BoardDetailPage = () => {
     boardId: string;
   }>();
   const [searchParams] = useSearchParams();
-  const { columns, loading: columnsLoading, loadColumns } = useColumn();
-  const { cards } = useCard();
+  const { columns, loading: columnsLoading, loadColumns, handleColumnEvent } = useColumn();
+  const { cards, loadCards, handleCardEvent } = useCard();
+
+  const [viewMode, setViewMode] = useState<'BOARD' | 'LIST'>(() => {
+    const savedMode = localStorage.getItem('boardViewMode');
+    return (savedMode === 'BOARD' || savedMode === 'LIST') ? savedMode : 'BOARD';
+  });
+
+  useEffect(() => {
+    localStorage.setItem('boardViewMode', viewMode);
+  }, [viewMode]);
 
   const [showCreateColumnModal, setShowCreateColumnModal] = useState(false);
   const [showInviteModal, setShowInviteModal] = useState(false);
@@ -87,19 +99,16 @@ const BoardDetailPage = () => {
     await loadColumns(workspaceNumericId, boardNumericId);
   }, [hasValidNumericIds, loadColumns, workspaceNumericId, boardNumericId]);
 
-  const { handleColumnEvent } = useColumn();
-  const { handleCardEvent } = useCard();
-
   useBoardSubscription(boardNumericId, (event) => {
     console.log('Board event received:', event);
     if (event.type.startsWith('COLUMN_')) {
-        handleColumnEvent(event);
-        setInsightsRefreshKey(prev => prev + 1); // Trigger insights refresh
+      handleColumnEvent(event);
+      setInsightsRefreshKey(prev => prev + 1); // Trigger insights refresh
     } else if (event.type.startsWith('CARD_')) {
-        handleCardEvent(event);
-        setInsightsRefreshKey(prev => prev + 1); // Trigger insights refresh
+      handleCardEvent(event);
+      setInsightsRefreshKey(prev => prev + 1); // Trigger insights refresh
     } else {
-        refreshColumns(); // Fallback for other events (e.g. BOARD_UPDATED)
+      refreshColumns(); // Fallback for other events (e.g. BOARD_UPDATED)
     }
   });
 
@@ -111,6 +120,22 @@ const BoardDetailPage = () => {
     },
     [setInlineCardFocus],
   );
+  const [archiveError, setArchiveError] = useState<string | null>(null);
+
+  const handleArchiveDrop = useCallback(async (cardId: number, columnId: number) => {
+    if (!canEdit || !hasValidNumericIds) return;
+
+    try {
+      setArchiveError(null);
+      await cardService.archiveCard(workspaceNumericId, boardNumericId, columnId, cardId);
+      await loadCards(workspaceNumericId, boardNumericId, columnId);
+      setShowArchivePanel(true);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : '카드 아카이브에 실패했습니다';
+      setArchiveError(message);
+      console.error('Failed to archive card from header drop:', err);
+    }
+  }, [boardNumericId, canEdit, hasValidNumericIds, loadCards, workspaceNumericId]);
 
   if (loading) {
     return <BoardLoadingState />;
@@ -122,9 +147,18 @@ const BoardDetailPage = () => {
 
   return (
     <div className="bg-gradient-pastel flex flex-col h-full">
+      {archiveError && (
+        <ErrorNotification
+          message={archiveError}
+          onClose={() => setArchiveError(null)}
+        />
+      )}
       <BoardHeader
         boardName={board.name}
         overdueCardCount={overdueCardCount}
+        canEdit={canEdit}
+        viewMode={viewMode}
+        onViewModeChange={setViewMode}
         onBack={handleNavigateBack}
         onSearch={() => setShowSearchPanel(true)}
         onLabelManager={() => setShowLabelManager(true)}
@@ -133,6 +167,8 @@ const BoardDetailPage = () => {
         onCalendar={() => setShowCalendarModal(true)}
         onToggleInsights={() => setShowInsightsPanel((prev) => !prev)}
         onToggleArchive={() => setShowArchivePanel(true)}
+        onCreateColumn={() => setShowCreateColumnModal(true)}
+        onArchiveDrop={handleArchiveDrop}
       />
 
       <main className="flex-1 overflow-hidden flex flex-col">
@@ -146,18 +182,30 @@ const BoardDetailPage = () => {
         <div className="w-full px-4 sm:px-6 lg:px-8 flex-1 overflow-hidden pt-4 pb-4 flex">
           <div className="w-full max-w-[95vw] mx-auto flex flex-1 relative min-h-0 h-full">
             <div className="flex-1 overflow-auto flex flex-col pr-0 lg:pr-4 h-full">
-              <ColumnsSection
-                columns={columns}
-                columnsLoading={columnsLoading}
-                workspaceId={workspaceNumericId}
-                boardId={boardNumericId}
-                boardOwnerId={board?.ownerId ?? 0}
-                canEdit={canEdit}
-                onCreateColumn={() => setShowCreateColumnModal(true)}
-                autoOpenCardId={effectiveAutoOpenCardId}
-                autoOpenColumnId={effectiveAutoOpenColumnId}
-                onAutoOpenHandled={handleInlineAutoOpenHandled}
-              />
+              {viewMode === 'BOARD' ? (
+                <ColumnsSection
+                  columns={columns}
+                  columnsLoading={columnsLoading}
+                  workspaceId={workspaceNumericId}
+                  boardId={boardNumericId}
+                  boardOwnerId={board?.ownerId ?? 0}
+                  canEdit={canEdit}
+                  onCreateColumn={() => setShowCreateColumnModal(true)}
+                  autoOpenCardId={effectiveAutoOpenCardId}
+                  autoOpenColumnId={effectiveAutoOpenColumnId}
+                  onAutoOpenHandled={handleInlineAutoOpenHandled}
+                />
+              ) : (
+                <ListView
+                  columns={columns}
+                  cards={cards}
+                  workspaceId={workspaceNumericId}
+                  boardId={boardNumericId}
+                  boardOwnerId={board?.ownerId ?? 0}
+                  canEdit={canEdit}
+                  onCreateColumn={() => setShowCreateColumnModal(true)}
+                />
+              )}
             </div>
 
             {showMembersPanel && (

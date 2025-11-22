@@ -3,11 +3,12 @@ import React, { useState } from 'react';
 export interface AvatarProps {
   avatarUrl?: string | null;
   userName: string;
-  size?: 'sm' | 'md' | 'lg' | 'xl';
+  size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl';
   className?: string;
 }
 
 const sizeClasses = {
+  xs: 'w-5 h-5 text-[10px]',  // 20px - 리스트 뷰
   sm: 'w-7 h-7 text-xs',      // 28px - 카드
   md: 'w-10 h-10 text-sm',    // 40px - GlobalNavBar
   lg: 'w-20 h-20 text-lg',    // 80px - 사용자 검색
