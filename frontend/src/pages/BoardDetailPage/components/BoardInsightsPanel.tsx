@@ -6,9 +6,10 @@ import { HiChartPie, HiExclamation } from 'react-icons/hi';
 interface BoardInsightsPanelProps {
   workspaceId: number;
   boardId: number;
+  refreshKey?: number;
 }
 
-export const BoardInsightsPanel: React.FC<BoardInsightsPanelProps> = ({ workspaceId, boardId }) => {
+export const BoardInsightsPanel: React.FC<BoardInsightsPanelProps> = ({ workspaceId, boardId, refreshKey }) => {
   const [insights, setInsights] = useState<BoardInsightsResponse | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -26,7 +27,7 @@ export const BoardInsightsPanel: React.FC<BoardInsightsPanelProps> = ({ workspac
     };
 
     fetchInsights();
-  }, [workspaceId, boardId]);
+  }, [workspaceId, boardId, refreshKey]);
 
   if (loading) {
     return <div className="p-4 text-center text-gray-500">Loading insights...</div>;

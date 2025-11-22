@@ -12,15 +12,15 @@ import { BoardHeader } from "./BoardDetailPage/components/BoardHeader";
 import { BoardInsightsPanel } from "./BoardDetailPage/components/BoardInsightsPanel";
 import { BoardModals } from "./BoardDetailPage/components/BoardModals";
 import {
-  BoardErrorState,
-  BoardLoadingState,
+    BoardErrorState,
+    BoardLoadingState,
 } from "./BoardDetailPage/components/BoardStateFallbacks";
 import { ColumnsSection } from "./BoardDetailPage/components/ColumnsSection";
 import { MembersModal } from "./BoardDetailPage/components/MembersModal";
 import {
-  useAutoOpenTargets,
-  useBoardData,
-  useOverdueCardCount,
+    useAutoOpenTargets,
+    useBoardData,
+    useOverdueCardCount,
 } from "./BoardDetailPage/hooks";
 
 const BoardDetailPage = () => {
@@ -41,6 +41,7 @@ const BoardDetailPage = () => {
   const [showSearchPanel, setShowSearchPanel] = useState(false);
   const [showCalendarModal, setShowCalendarModal] = useState(false);
   const [showInsightsPanel, setShowInsightsPanel] = useState(false);
+  const [insightsRefreshKey, setInsightsRefreshKey] = useState(0);
   const [showArchivePanel, setShowArchivePanel] = useState(false);
 
   // Search Panel State Persistence
@@ -93,8 +94,10 @@ const BoardDetailPage = () => {
     console.log('Board event received:', event);
     if (event.type.startsWith('COLUMN_')) {
         handleColumnEvent(event);
+        setInsightsRefreshKey(prev => prev + 1); // Trigger insights refresh
     } else if (event.type.startsWith('CARD_')) {
         handleCardEvent(event);
+        setInsightsRefreshKey(prev => prev + 1); // Trigger insights refresh
     } else {
         refreshColumns(); // Fallback for other events (e.g. BOARD_UPDATED)
     }
@@ -138,7 +141,7 @@ const BoardDetailPage = () => {
             showInsightsPanel ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
           }`}
         >
-          <BoardInsightsPanel workspaceId={workspaceNumericId} boardId={boardNumericId} />
+          <BoardInsightsPanel workspaceId={workspaceNumericId} boardId={boardNumericId} refreshKey={insightsRefreshKey} />
         </div>
         <div className="w-full px-4 sm:px-6 lg:px-8 flex-1 overflow-hidden pt-4 pb-4 flex">
           <div className="w-full max-w-[95vw] mx-auto flex flex-1 relative min-h-0 h-full">

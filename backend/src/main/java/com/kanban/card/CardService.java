@@ -137,8 +137,7 @@ public class CardService {
     /**
      * 카드 생성 (권한 검증 없음 - 내부 사용) Spec § 5. 기능 요구사항 - FR-06j: 계층 제한 검증
      */
-    @org.springframework.cache.annotation.CacheEvict(value = {"dashboardSummary", "boardInsights"},
-            allEntries = true)
+    @org.springframework.cache.annotation.CacheEvict(value = "dashboardSummary", allEntries = true)
     public CardResponse createCard(Long columnId, CreateCardRequest request, Long userId) {
         BoardColumn column = columnRepository.findById(columnId)
                 .orElseThrow(() -> new ResourceNotFoundException("Column not found"));
@@ -229,8 +228,7 @@ public class CardService {
     /**
      * 카드 수정 (활동 기록 포함, 권한 검증 없음 - 내부 사용) Spec § 5. 기능 요구사항 - FR-06i: 컬럼 이동 시 부모 관계 해제
      */
-    @org.springframework.cache.annotation.CacheEvict(value = {"dashboardSummary", "boardInsights"},
-            allEntries = true)
+    @org.springframework.cache.annotation.CacheEvict(value = "dashboardSummary", allEntries = true)
     public CardResponse updateCard(Long columnId, Long cardId, UpdateCardRequest request,
             Long userId) {
         Card card = cardRepository.findByIdAndColumnId(cardId, columnId)
@@ -417,8 +415,7 @@ public class CardService {
      * 카드 삭제 (권한 검증 없음 - 내부 사용) Spec § 7. 보안 처리 - 데이터 무결성 FR-06h 변경: 부모 카드 삭제 차단 결정 사항 2: 자식이 있으면 부모
      * 삭제 차단
      */
-    @org.springframework.cache.annotation.CacheEvict(value = {"dashboardSummary", "boardInsights"},
-            allEntries = true)
+    @org.springframework.cache.annotation.CacheEvict(value = "dashboardSummary", allEntries = true)
     public void deleteCard(Long columnId, Long cardId, Long userId) {
         Card card = cardRepository.findByIdAndColumnId(cardId, columnId)
                 .orElseThrow(() -> new ResourceNotFoundException("Card not found"));
@@ -464,8 +461,7 @@ public class CardService {
     /**
      * 카드 시작 처리 (권한 검증 없음 - 내부 사용)
      */
-    @org.springframework.cache.annotation.CacheEvict(value = {"dashboardSummary", "boardInsights"},
-            allEntries = true)
+    @org.springframework.cache.annotation.CacheEvict(value = "dashboardSummary", allEntries = true)
     public CardResponse startCard(Long columnId, Long cardId, Long userId) {
         Card card = cardRepository.findByIdAndColumnId(cardId, columnId)
                 .orElseThrow(() -> new ResourceNotFoundException("Card not found"));
@@ -614,8 +610,7 @@ public class CardService {
     /**
      * 카드 아카이브 (내부 사용)
      */
-    @org.springframework.cache.annotation.CacheEvict(value = {"dashboardSummary", "boardInsights"},
-            allEntries = true)
+    @org.springframework.cache.annotation.CacheEvict(value = "dashboardSummary", allEntries = true)
     private CardResponse archiveCardInternal(Long columnId, Long cardId, Long userId) {
         Card card = cardRepository.findByIdAndColumnId(cardId, columnId)
                 .orElseThrow(() -> new ResourceNotFoundException("Card not found"));
@@ -655,8 +650,7 @@ public class CardService {
     /**
      * 카드 아카이브 복구 (내부 사용)
      */
-    @org.springframework.cache.annotation.CacheEvict(value = {"dashboardSummary", "boardInsights"},
-            allEntries = true)
+    @org.springframework.cache.annotation.CacheEvict(value = "dashboardSummary", allEntries = true)
     private CardResponse unarchiveCardInternal(Long cardId, Long userId) {
         Card card = cardRepository.findById(cardId)
                 .orElseThrow(() -> new ResourceNotFoundException("Card not found"));

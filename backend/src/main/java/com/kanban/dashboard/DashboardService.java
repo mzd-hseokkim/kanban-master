@@ -70,7 +70,6 @@ public class DashboardService {
                                 .build();
         }
 
-        @Cacheable(value = "boardInsights", key = "#boardId")
         public BoardInsightsResponse getBoardInsights(Long boardId) {
                 java.time.LocalDate today = java.time.LocalDate.now();
                 // 2일 이내 마감 기준

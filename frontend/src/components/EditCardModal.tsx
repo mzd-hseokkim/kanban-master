@@ -640,10 +640,10 @@ export const EditCardModal: React.FC<EditCardModalProps> = ({
                                     disabled={
                                         !canEdit ||
                                         startLoading ||
-                                        (!isCompleted && Boolean(currentCard.startedAt))
+                                        Boolean(currentCard.startedAt)
                                     }
                                     className={`inline-flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-semibold transition ${
-                                        !canEdit || (!isCompleted && currentCard.startedAt)
+                                        !canEdit || currentCard.startedAt
                                             ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
                                             : 'bg-pastel-blue-600 text-white hover:bg-pastel-blue-500 shadow-sm'
                                     }`}
@@ -651,8 +651,8 @@ export const EditCardModal: React.FC<EditCardModalProps> = ({
                                     <HiPlay className="text-base" />
                                     {startLoading
                                         ? '시작 중...'
-                                        : currentCard.startedAt && !isCompleted
-                                            ? '진행 중'
+                                        : currentCard.startedAt
+                                            ? (isCompleted ? '완료됨' : '진행 중')
                                             : '작업 시작'}
                                 </button>
                             </div>
