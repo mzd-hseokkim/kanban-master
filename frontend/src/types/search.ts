@@ -10,7 +10,7 @@ import type { Label } from './label';
 export interface CardSearchRequest {
   keyword?: string;
   priorities?: string[];
-  assignees?: string[];
+  assigneeIds?: number[];
   labelIds?: number[];
   isCompleted?: boolean;
   dueDateFrom?: string;

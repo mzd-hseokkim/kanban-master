@@ -150,6 +150,15 @@ export default {
         'glass-sm': '0 4px 16px 0 rgba(31, 38, 135, 0.1)',
         'glass-lg': '0 12px 48px 0 rgba(31, 38, 135, 0.2)',
       },
+      keyframes: {
+        'slide-in-right': {
+          '0%': { transform: 'translateX(100%)', opacity: '0' },
+          '100%': { transform: 'translateX(0)', opacity: '1' },
+        },
+      },
+      animation: {
+        'slide-in-right': 'slide-in-right 0.3s ease-out forwards',
+      },
     },
   },
   plugins: [],

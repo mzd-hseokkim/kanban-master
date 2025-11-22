@@ -1,4 +1,5 @@
 import { HiArrowLeft, HiCalendar, HiChartPie, HiLightningBolt, HiSearch, HiTag, HiUsers } from 'react-icons/hi';
+import { MdArchive } from 'react-icons/md';
 
 interface BoardHeaderProps {
   boardName: string;
@@ -10,6 +11,7 @@ interface BoardHeaderProps {
   onToggleMembers: () => void;
   onCalendar: () => void;
   onToggleInsights: () => void;
+  onToggleArchive: () => void;
 }
 
 export const BoardHeader = ({
@@ -22,6 +24,7 @@ export const BoardHeader = ({
   onToggleMembers,
   onCalendar,
   onToggleInsights,
+  onToggleArchive,
 }: BoardHeaderProps) => {
   return (
     <header className="bg-white/90 backdrop-blur-md border-b border-slate-200/50 flex-shrink-0 transition-colors duration-300">
@@ -77,6 +80,11 @@ export const BoardHeader = ({
             icon={<HiUsers />}
             label="멤버"
             onClick={onToggleMembers}
+          />
+          <HeaderButton
+            icon={<MdArchive />}
+            label="아카이브"
+            onClick={onToggleArchive}
           />
         </div>
       </div>

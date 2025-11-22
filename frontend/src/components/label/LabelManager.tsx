@@ -1,16 +1,16 @@
-import { useState, useEffect } from 'react';
-import { labelService } from '@/services/labelService';
-import type { Label, CreateLabelRequest } from '@/types/label';
-import { LabelItem } from './LabelItem';
-import { LabelFormModal } from './LabelFormModal';
+import { useDialog } from '@/context/DialogContext';
 import { useModalAnimation } from '@/hooks/useModalAnimation';
-import { useDialog } from '@/hooks/useDialog';
+import { labelService } from '@/services/labelService';
 import {
-  modalOverlayClass,
-  modalPanelClass,
-  modalPrimaryButtonClass,
-  modalErrorClass,
+    modalErrorClass,
+    modalOverlayClass,
+    modalPanelClass,
+    modalPrimaryButtonClass,
 } from '@/styles/modalStyles';
+import type { CreateLabelRequest, Label } from '@/types/label';
+import { useEffect, useState } from 'react';
+import { LabelFormModal } from './LabelFormModal';
+import { LabelItem } from './LabelItem';
 
 interface LabelManagerProps {
   boardId: number;
@@ -23,7 +23,7 @@ interface LabelManagerProps {
  */
 export const LabelManager = ({ boardId, onClose }: LabelManagerProps) => {
   const { stage, close } = useModalAnimation(onClose);
-  const { showConfirm } = useDialog();
+  const { confirm } = useDialog();
   const [labels, setLabels] = useState<Label[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -76,12 +76,10 @@ export const LabelManager = ({ boardId, onClose }: LabelManagerProps) => {
   };
 
   const handleDeleteLabel = async (labelId: number) => {
-    const confirmed = await showConfirm({
-      title: '라벨 삭제',
-      message: '이 라벨을 삭제하시겠습니까?',
+    const confirmed = await confirm('이 라벨을 삭제하시겠습니까?', {
       confirmText: '삭제',
       cancelText: '취소',
-      variant: 'danger',
+      isDestructive: true,
     });
 
     if (!confirmed) return;

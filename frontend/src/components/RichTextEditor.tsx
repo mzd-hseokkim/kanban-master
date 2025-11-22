@@ -1,7 +1,7 @@
-import React, { useRef, useMemo } from 'react';
-import ReactQuill from 'react-quill';
 import DOMPurify from 'dompurify';
 import 'quill/dist/quill.snow.css';
+import React, { useMemo, useRef } from 'react';
+import ReactQuill from 'react-quill';
 import '../styles/quill-custom.css';
 
 type ReactQuillPrototype = {
@@ -35,6 +35,7 @@ export interface RichTextEditorProps {
   disabled?: boolean;
   maxLength?: number;
   className?: string;
+  skipSanitization?: boolean;
 }
 
 /**
@@ -42,7 +43,7 @@ export interface RichTextEditorProps {
  * Quill 에디터를 래핑한 재사용 가능한 리치 텍스트 에디터
  * XSS 방지를 위한 클라이언트 측 sanitization 포함
  */
-const RichTextEditor: React.FC<RichTextEditorProps> = ({
+const RichTextEditor = React.forwardRef<ReactQuill, RichTextEditorProps>(({
   value,
   onChange,
   placeholder = '내용을 입력하세요...',
@@ -51,8 +52,12 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
   disabled = false,
   maxLength = 50000,
   className = '',
-}) => {
-  const quillRef = useRef<ReactQuill>(null);
+  skipSanitization = false,
+}, ref) => {
+  const internalRef = useRef<ReactQuill>(null);
+
+  // Combine refs
+  React.useImperativeHandle(ref, () => internalRef.current as ReactQuill);
 
   // Quill 모듈 설정 (툴바 옵션)
   const modules = useMemo(
@@ -85,7 +90,9 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
   );
 
   // Quill 포맷 설정 (허용된 포맷)
-  const formats = [
+  // 컴포넌트 외부로 이동하거나 useMemo를 사용하여 참조 안정성 확보 필요
+  // 여기서는 useMemo를 사용
+  const formats = useMemo(() => [
     'header',
     'bold',
     'italic',
@@ -96,7 +103,8 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
     'link',
     'blockquote',
     'code-block',
-  ];
+    'mention',
+  ], []);
 
   /**
    * HTML Sanitization
@@ -129,9 +137,10 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
         'blockquote',
         'code',
         'pre',
+        'span', // 멘션 태그 허용
       ],
-      ALLOWED_ATTR: ['href', 'target', 'rel', 'class'],
-      ALLOW_DATA_ATTR: false,
+      ALLOWED_ATTR: ['href', 'target', 'rel', 'class', 'data-user-id', 'contenteditable'], // 멘션 속성 및 contenteditable 허용
+      ALLOW_DATA_ATTR: true, // data-* 속성 허용 (data-user-id를 위해 필수)
       ALLOWED_URI_REGEXP: /^(?:(?:https?|mailto):)/i,
     };
 
@@ -163,7 +172,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
     }
 
     // 길이 제한 체크
-    const editor = quillRef.current?.getEditor();
+    const editor = internalRef.current?.getEditor();
     if (editor && maxLength) {
       const textLength = editor.getText().length - 1; // Quill은 마지막에 \n을 추가하므로 -1
       if (textLength > maxLength) {
@@ -172,9 +181,9 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
       }
     }
 
-    // Sanitize 후 onChange 호출
-    const sanitized = sanitizeHtml(content);
-    onChange(sanitized);
+    // Sanitize 후 onChange 호출 (skipSanitization 옵션 확인)
+    const finalContent = skipSanitization ? content : sanitizeHtml(content);
+    onChange(finalContent);
   };
 
   /**
@@ -194,7 +203,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
    * 현재 텍스트 길이 계산
    */
   const currentLength = useMemo(() => {
-    const editor = quillRef.current?.getEditor();
+    const editor = internalRef.current?.getEditor();
     if (!editor) return 0;
     return Math.max(0, editor.getText().length - 1); // Quill은 마지막에 \n을 추가하므로 -1
   }, [value]);
@@ -203,7 +212,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
     <div className="rich-text-editor-wrapper">
       <div className={containerClassName}>
         <ReactQuill
-          ref={quillRef}
+          ref={internalRef}
           theme="snow"
           value={value}
           onChange={handleChange}
@@ -233,6 +242,8 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
       )}
     </div>
   );
-};
+});
+
+RichTextEditor.displayName = 'RichTextEditor';
 
 export default RichTextEditor;

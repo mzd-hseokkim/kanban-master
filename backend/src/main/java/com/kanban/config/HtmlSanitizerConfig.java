@@ -6,8 +6,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 /**
- * HTML Sanitization 설정
- * XSS 공격 방지를 위한 OWASP HTML Sanitizer 정책 정의
+ * HTML Sanitization 설정 XSS 공격 방지를 위한 OWASP HTML Sanitizer 정책 정의
  */
 @Configuration
 public class HtmlSanitizerConfig {
@@ -21,17 +20,16 @@ public class HtmlSanitizerConfig {
                 .allowElements("h1", "h2", "h3", "h4", "h5", "h6")
                 // 목록
                 .allowElements("ul", "ol", "li")
+                // Span for mentions and other use cases
+                .allowElements("span").allowAttributes("class").onElements("span")
+                .allowAttributes("data-user-id").onElements("span")
                 // 링크 (https, http 프로토콜만 허용)
-                .allowElements("a")
-                .allowAttributes("href").onElements("a")
-                .allowAttributes("target").onElements("a")
-                .allowAttributes("rel").onElements("a")
-                .allowStandardUrlProtocols()
-                .requireRelNofollowOnLinks()
+                .allowElements("a").allowAttributes("href").onElements("a")
+                .allowAttributes("target").onElements("a").allowAttributes("rel").onElements("a")
+                .allowStandardUrlProtocols().requireRelNofollowOnLinks()
                 // 인용
                 .allowElements("blockquote")
                 // 코드
-                .allowElements("code", "pre")
-                .toFactory();
+                .allowElements("code", "pre").toFactory();
     }
 }

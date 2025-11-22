@@ -1,5 +1,9 @@
 package com.kanban.comment;
 
+import java.util.HashSet;
+import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import org.owasp.html.PolicyFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -21,6 +25,8 @@ import com.kanban.comment.dto.CreateCommentRequest;
 import com.kanban.comment.dto.UpdateCommentRequest;
 import com.kanban.common.SecurityUtil;
 import com.kanban.exception.ResourceNotFoundException;
+import com.kanban.notification.domain.NotificationType;
+import com.kanban.notification.service.NotificationService;
 import com.kanban.user.User;
 import com.kanban.user.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -45,6 +51,7 @@ public class CommentService {
         private final BoardMemberRoleValidator roleValidator;
         private final PolicyFactory htmlSanitizerPolicy;
         private final com.kanban.watch.CardWatchService cardWatchService;
+        private final NotificationService notificationService;
 
         /**
          * 댓글 목록 조회 (페이지네이션)
@@ -122,6 +129,9 @@ public class CommentService {
                 // Watch 중인 사용자들에게 알림
                 cardWatchService.notifyWatchers(cardId, "새 댓글 추가", currentUserId);
 
+                // 멘션 처리
+                processMentions(sanitizedContent, card, author);
+
                 log.info("Comment created - ID: {}, Card: {}, Author: {}", savedComment.getId(),
                                 cardId, currentUserId);
 
@@ -168,6 +178,11 @@ public class CommentService {
                 // updatedAt은 BaseEntity의 @LastModifiedDate로 자동 갱신
 
                 Comment updatedComment = commentRepository.save(comment);
+
+                // 멘션 처리 (수정 시에도 새로운 멘션이 있을 수 있으므로 처리)
+                // 기존에 알림을 받은 사람에게 중복 알림이 갈 수 있는 이슈가 있지만, MVP에서는 단순하게 처리
+                User author = userRepository.findById(currentUserId).orElseThrow();
+                processMentions(sanitizedContent, comment.getCard(), author);
 
                 log.info("Comment updated - ID: {}, Card: {}, Author: {}", commentId, cardId,
                                 currentUserId);
@@ -244,5 +259,67 @@ public class CommentService {
                         return null;
                 }
                 return htmlSanitizerPolicy.sanitize(html);
+        }
+
+        private void processMentions(String content, Card card, com.kanban.user.User author) {
+                if (content == null)
+                        return;
+
+                log.info("[MENTION] Processing mentions for content: {}", content);
+
+                // Pattern: <span class="mention" data-user-id="userId">... (@ or &#64; or &commat;)
+                // HTML sanitizer may encode @ as &#64; or &commat;
+                Pattern pattern = Pattern.compile("<span[^>]+data-user-id=\"(\\d+)\"[^>]*>");
+                Matcher matcher = pattern.matcher(content);
+                Set<Long> mentionedUserIds = new HashSet<>();
+
+                while (matcher.find()) {
+                        try {
+                                Long userId = Long.parseLong(matcher.group(1));
+                                mentionedUserIds.add(userId);
+                        } catch (NumberFormatException e) {
+                                // Invalid userId format, skip
+                                continue;
+                        }
+                }
+
+                if (mentionedUserIds.isEmpty()) {
+                        log.info("[MENTION] No mentions found in content");
+                        return;
+                }
+
+                log.info("[MENTION] Found {} mention(s): {}", mentionedUserIds.size(),
+                                mentionedUserIds);
+
+                for (Long userId : mentionedUserIds) {
+                        if (!userId.equals(author.getId())) {
+                                log.info("[MENTION] Looking up user with ID: {}", userId);
+                                userRepository.findById(userId).ifPresentOrElse(user -> {
+                                        String message = String.format("%s님이 댓글에서 회원님을 언급했습니다.",
+                                                        author.getName());
+                                        // Fixed URL format:
+                                        // /boards/{workspaceId}/{boardId}?cardId={cardId}&columnId={columnId}
+                                        String url = String.format(
+                                                        "/boards/%d/%d?cardId=%d&columnId=%d",
+                                                        card.getColumn().getBoard().getWorkspace()
+                                                                        .getId(),
+                                                        card.getColumn().getBoard().getId(),
+                                                        card.getId(), card.getColumn().getId());
+                                        log.info("[MENTION] Sending notification to user: {} (ID: {})",
+                                                        user.getName(), user.getId());
+                                        try {
+                                                notificationService.createNotification(user.getId(),
+                                                                NotificationType.COMMENT_MENTION,
+                                                                message, url);
+                                                log.info("[MENTION] Notification sent successfully");
+                                        } catch (Exception e) {
+                                                log.error("[MENTION] Failed to send notification",
+                                                                e);
+                                        }
+                                }, () -> log.warn("[MENTION] User not found with ID: {}", userId));
+                        } else {
+                                log.info("[MENTION] Skipping self-mention for user ID: {}", userId);
+                        }
+                }
         }
 }

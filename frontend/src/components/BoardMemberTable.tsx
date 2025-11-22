@@ -1,5 +1,5 @@
 import { Avatar } from "@/components/common/Avatar";
-import { useDialog } from "@/hooks/useDialog";
+import { useDialog } from "@/context/DialogContext";
 import { memberService } from "@/services/memberService";
 import type { BoardMember, BoardMemberRole } from "@/types/member";
 import { useEffect, useState } from "react";
@@ -28,7 +28,7 @@ export const BoardMemberTable = ({
   canManage,
   onMemberCountChange,
 }: BoardMemberTableProps) => {
-  const { showConfirm } = useDialog();
+  const { confirm } = useDialog();
   const [members, setMembers] = useState<BoardMember[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -86,12 +86,10 @@ export const BoardMemberTable = ({
   };
 
   const handleRemoveMember = async (memberId: number) => {
-    const confirmed = await showConfirm({
-      title: '멤버 제거',
-      message: '이 멤버를 제거하시겠습니까?',
+    const confirmed = await confirm('이 멤버를 제거하시겠습니까?', {
       confirmText: '제거',
       cancelText: '취소',
-      variant: 'danger',
+      isDestructive: true,
     });
 
     if (!confirmed) return;

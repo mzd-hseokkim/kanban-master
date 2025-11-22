@@ -1,5 +1,7 @@
 package com.kanban.board.member.dto;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import com.kanban.board.member.BoardMember;
 import com.kanban.board.member.BoardMemberRole;
 import com.kanban.board.member.InvitationStatus;
@@ -7,9 +9,6 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 
 /**
  * 보드 멤버 응답 DTO
@@ -32,21 +31,18 @@ public class BoardMemberResponse {
     private String boardName;
     private String invitationToken;
     private String invitedByName;
+    private String avatarUrl;
 
     public static BoardMemberResponse from(BoardMember member) {
-        return BoardMemberResponse.builder()
-            .boardId(member.getBoard().getId())
-            .userId(member.getUser().getId())
-            .userEmail(member.getUser().getEmail())
-            .userName(member.getUser().getName())
-            .role(member.getRole())
-            .invitationStatus(member.getInvitationStatus())
-            .invitedAt(formatDateTime(member.getInvitedAt()))
-            .acceptedAt(formatDateTime(member.getAcceptedAt()))
-            .createdAt(formatDateTime(member.getCreatedAt()))
-            .boardName(member.getBoard().getName())
-            .invitationToken(member.getInvitationToken())
-            .build();
+        return BoardMemberResponse.builder().boardId(member.getBoard().getId())
+                .userId(member.getUser().getId()).userEmail(member.getUser().getEmail())
+                .userName(member.getUser().getName()).role(member.getRole())
+                .invitationStatus(member.getInvitationStatus())
+                .invitedAt(formatDateTime(member.getInvitedAt()))
+                .acceptedAt(formatDateTime(member.getAcceptedAt()))
+                .createdAt(formatDateTime(member.getCreatedAt()))
+                .boardName(member.getBoard().getName()).invitationToken(member.getInvitationToken())
+                .avatarUrl(member.getUser().getAvatarUrl()).build();
     }
 
     /**

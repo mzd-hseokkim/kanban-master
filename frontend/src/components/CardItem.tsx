@@ -2,11 +2,11 @@ import { Avatar } from '@/components/common/Avatar';
 import { EditCardModal } from '@/components/EditCardModal';
 import { ErrorNotification } from '@/components/ErrorNotification';
 import { useCard } from '@/context/CardContext';
-import { useDialog } from '@/hooks/useDialog';
+import { useDialog } from '@/context/DialogContext';
 import cardService from '@/services/cardService';
 import { Card } from '@/types/card';
 import React, { useEffect, useMemo, useState } from 'react';
-import { HiCalendar, HiPlay, HiCheckCircle } from 'react-icons/hi2';
+import { HiCalendar, HiCheckCircle, HiPlay } from 'react-icons/hi2';
 
 interface CardItemProps {
   card: Card;
@@ -21,7 +21,7 @@ interface CardItemProps {
   isRecentlyCreated?: boolean;
 }
 
-export const CardItem: React.FC<CardItemProps> = ({
+const CardItemComponent: React.FC<CardItemProps> = ({
   card,
   workspaceId,
   boardId,
@@ -34,7 +34,7 @@ export const CardItem: React.FC<CardItemProps> = ({
   isRecentlyCreated = false,
 }) => {
   const { deleteCard, updateCard, loadCards } = useCard();
-  const { showConfirm } = useDialog();
+  const { confirm } = useDialog();
   const [isDeleting, setIsDeleting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -44,12 +44,10 @@ export const CardItem: React.FC<CardItemProps> = ({
   const [isLoadingRelations, setIsLoadingRelations] = useState(false);
 
   const handleDelete = async () => {
-    const confirmed = await showConfirm({
-      title: '카드 삭제',
-      message: '정말 이 카드를 삭제하시겠습니까?',
+    const confirmed = await confirm('정말 이 카드를 삭제하시겠습니까?', {
       confirmText: '삭제',
       cancelText: '취소',
-      variant: 'danger',
+      isDestructive: true,
     });
 
     if (!confirmed) return;
@@ -212,7 +210,14 @@ export const CardItem: React.FC<CardItemProps> = ({
   const descriptionPreview = useMemo(() => {
     if (!card.description) return '';
 
-    const withListBullets = card.description
+    // 1. 멘션 태그를 텍스트로 변환 (@이름)
+    // <span class="mention" data-user-id="...">@이름</span> -> @이름
+    const withMentions = card.description.replace(
+      /<span[^>]*class="mention"[^>]*>@([^<]+)<\/span>/gi,
+      '@$1'
+    );
+
+    const withListBullets = withMentions
       .replace(/<\/li>\s*/gi, '\n')
       .replace(/<li[^>]*>/gi, '• ');
 
@@ -232,7 +237,10 @@ export const CardItem: React.FC<CardItemProps> = ({
       .filter(Boolean)
       .join('\n');
 
-    return plainText;
+    // HTML Entity Decode
+    const textarea = document.createElement('textarea');
+    textarea.innerHTML = plainText;
+    return textarea.value;
   }, [card.description]);
 
   const handleCardClick = async (e: React.MouseEvent) => {
@@ -265,9 +273,9 @@ export const CardItem: React.FC<CardItemProps> = ({
   };
 
   return (
-    <div className="relative w-full" data-card-id={card.id}>
+    <div className="relative w-full group" data-card-id={card.id}>
       <div
-        className={`bg-white rounded-lg shadow-sm border border-pastel-blue-200 p-3 hover:shadow-[0_35px_60px_-15px_rgba(0,0,0,0.3)] hover:-translate-y-4 hover:scale-105 hover:z-10 transition-all duration-200 w-full ${
+        className={`bg-white rounded-lg shadow-sm border border-pastel-blue-200 p-3 group-hover:shadow-[0_35px_60px_-15px_rgba(0,0,0,0.3)] group-hover:-translate-y-4 group-hover:scale-105 group-hover:z-10 transition-all duration-200 w-full ${
           isDragging ? 'opacity-50' : ''
         } ${animateOnMount ? 'card-enter' : ''} ${isLoadingRelations ? 'opacity-70 cursor-wait' : !canEdit ? 'cursor-default' : 'cursor-pointer'} ${
           isRecentlyCreated ? 'card-new-glow' : ''
@@ -505,3 +513,6 @@ export const CardItem: React.FC<CardItemProps> = ({
     </div>
   );
 };
+
+// Memoize to prevent unnecessary re-renders when WebSocket events update cards
+export const CardItem = React.memo(CardItemComponent);

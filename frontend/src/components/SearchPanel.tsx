@@ -1,35 +1,116 @@
 import { useModalAnimation } from '@/hooks/useModalAnimation';
 import { labelService } from '@/services/labelService';
+import { memberService } from '@/services/memberService';
 import { searchService } from '@/services/searchService';
 import {
-    modalInputClass,
-    modalLabelClass,
-    modalOverlayClass,
-    modalPanelClass,
-    modalPrimaryButtonClass,
-    modalSecondaryButtonClass,
+  modalInputClass,
+  modalLabelClass,
+  modalOverlayClass,
+  modalPanelClass,
+  modalPrimaryButtonClass,
+  modalSecondaryButtonClass,
 } from '@/styles/modalStyles';
 import type { Label } from '@/types/label';
+import type { BoardMember } from '@/types/member';
 import type { CardSearchRequest, CardSearchResult } from '@/types/search';
 import { useEffect, useState } from 'react';
+import { HiSortAscending, HiSortDescending } from 'react-icons/hi';
 import { IoClose, IoFilter, IoRefresh } from 'react-icons/io5';
+import { Avatar } from './common/Avatar';
 
 interface SearchPanelProps {
   boardId: number;
   onClose: () => void;
   onCardSelect: (result: CardSearchResult) => void;
+  searchState: {
+    keyword: string;
+    selectedPriorities: string[];
+    selectedLabelIds: number[];
+    selectedAssigneeIds: number[];
+    isCompleted: boolean | undefined;
+    overdue: boolean;
+    dueDateFrom: string;
+    dueDateTo: string;
+    sortBy: SortOption;
+    sortDir: SortDirection;
+  };
+  setSearchState: React.Dispatch<React.SetStateAction<{
+    keyword: string;
+    selectedPriorities: string[];
+    selectedLabelIds: number[];
+    selectedAssigneeIds: number[];
+    isCompleted: boolean | undefined;
+    overdue: boolean;
+    dueDateFrom: string;
+    dueDateTo: string;
+    sortBy: SortOption;
+    sortDir: SortDirection;
+  }>>;
 }
 
 const PRIORITIES = ['HIGH', 'MEDIUM', 'LOW'];
 
-export const SearchPanel: React.FC<SearchPanelProps> = ({ boardId, onClose, onCardSelect }) => {
-  const [keyword, setKeyword] = useState('');
-  const [selectedPriorities, setSelectedPriorities] = useState<string[]>([]);
-  const [selectedLabelIds, setSelectedLabelIds] = useState<number[]>([]);
-  const [isCompleted, setIsCompleted] = useState<boolean | undefined>(undefined);
-  const [overdue, setOverdue] = useState(false);
+type SortOption = 'PRIORITY' | 'DUE_DATE' | 'CREATED_AT' | 'UPDATED_AT';
+type SortDirection = 'ASC' | 'DESC';
+
+export const SearchPanel: React.FC<SearchPanelProps> = ({ boardId, onClose, onCardSelect, searchState, setSearchState }) => {
+  // Destructure state from props for easier usage
+  const {
+    keyword,
+    selectedPriorities,
+    selectedLabelIds,
+    selectedAssigneeIds,
+    isCompleted,
+    overdue,
+    dueDateFrom,
+    dueDateTo,
+    sortBy,
+    sortDir: sortDirection,
+  } = searchState;
+
+  // Helper to update specific fields in state
+  const updateState = (updates: Partial<typeof searchState>) => {
+    setSearchState(prev => ({ ...prev, ...updates }));
+  };
+
+  const setKeyword = (val: string) => updateState({ keyword: val });
+  const setSelectedPriorities = (val: string[] | ((prev: string[]) => string[])) => {
+    if (typeof val === 'function') {
+        setSearchState(prev => ({ ...prev, selectedPriorities: val(prev.selectedPriorities) }));
+    } else {
+        updateState({ selectedPriorities: val });
+    }
+  };
+  const setSelectedLabelIds = (val: number[] | ((prev: number[]) => number[])) => {
+    if (typeof val === 'function') {
+        setSearchState(prev => ({ ...prev, selectedLabelIds: val(prev.selectedLabelIds) }));
+    } else {
+        updateState({ selectedLabelIds: val });
+    }
+  };
+  const setSelectedAssigneeIds = (val: number[] | ((prev: number[]) => number[])) => {
+    if (typeof val === 'function') {
+        setSearchState(prev => ({ ...prev, selectedAssigneeIds: val(prev.selectedAssigneeIds) }));
+    } else {
+        updateState({ selectedAssigneeIds: val });
+    }
+  };
+  const setIsCompleted = (val: boolean | undefined) => updateState({ isCompleted: val });
+  const setOverdue = (val: boolean) => updateState({ overdue: val });
+  const setDueDateFrom = (val: string) => updateState({ dueDateFrom: val });
+  const setDueDateTo = (val: string) => updateState({ dueDateTo: val });
+  const setSortBy = (val: SortOption) => updateState({ sortBy: val });
+  const setSortDirection = (val: SortDirection | ((prev: SortDirection) => SortDirection)) => {
+    if (typeof val === 'function') {
+        setSearchState(prev => ({ ...prev, sortDir: val(prev.sortDir) }));
+    } else {
+        updateState({ sortDir: val });
+    }
+  };
+
   const [results, setResults] = useState<CardSearchResult[]>([]);
   const [labels, setLabels] = useState<Label[]>([]);
+  const [members, setMembers] = useState<BoardMember[]>([]);
   const [searching, setSearching] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
 
@@ -37,6 +118,12 @@ export const SearchPanel: React.FC<SearchPanelProps> = ({ boardId, onClose, onCa
 
   useEffect(() => {
     loadLabels();
+    loadMembers();
+    // Initial search if there are already filters applied (persistence)
+    if (keyword || selectedPriorities.length || selectedLabelIds.length || selectedAssigneeIds.length || isCompleted !== undefined || overdue || dueDateFrom || dueDateTo) {
+        handleSearch();
+        setShowFilters(true);
+    }
   }, [boardId]);
 
   const loadLabels = async () => {
@@ -48,6 +135,15 @@ export const SearchPanel: React.FC<SearchPanelProps> = ({ boardId, onClose, onCa
     }
   };
 
+  const loadMembers = async () => {
+    try {
+      const data = await memberService.getBoardMembers(boardId);
+      setMembers(data);
+    } catch (err) {
+      console.error('Failed to load members:', err);
+    }
+  };
+
   const handleSearch = async () => {
     try {
       setSearching(true);
@@ -55,16 +151,48 @@ export const SearchPanel: React.FC<SearchPanelProps> = ({ boardId, onClose, onCa
         keyword: keyword.trim() || undefined,
         priorities: selectedPriorities.length > 0 ? selectedPriorities : undefined,
         labelIds: selectedLabelIds.length > 0 ? selectedLabelIds : undefined,
+        assigneeIds: selectedAssigneeIds.length > 0 ? selectedAssigneeIds : undefined,
         isCompleted,
         overdue: overdue || undefined,
+        dueDateFrom: dueDateFrom || undefined,
+        dueDateTo: dueDateTo || undefined,
       };
       const data = await searchService.searchCardsInBoard(boardId, request);
-      setResults(data);
+      setResults(sortResults(data, sortBy, sortDirection));
     } catch (err) {
       console.error('Search failed:', err);
     } finally {
       setSearching(false);
     }
+  };
+
+  // Re-sort results when sort options change
+  useEffect(() => {
+    if (results.length > 0) {
+        setResults(prev => sortResults([...prev], sortBy, sortDirection));
+    }
+  }, [sortBy, sortDirection]);
+
+  const sortResults = (items: CardSearchResult[], by: SortOption, dir: SortDirection) => {
+    return items.sort((a, b) => {
+        let comparison = 0;
+        switch (by) {
+            case 'PRIORITY':
+                const pMap: {[key: string]: number} = { HIGH: 3, MEDIUM: 2, LOW: 1 };
+                comparison = (pMap[a.priority || ''] || 0) - (pMap[b.priority || ''] || 0);
+                break;
+            case 'DUE_DATE':
+                comparison = (new Date(a.dueDate || '9999-12-31').getTime()) - (new Date(b.dueDate || '9999-12-31').getTime());
+                break;
+            case 'CREATED_AT':
+                comparison = new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+                break;
+            case 'UPDATED_AT':
+                comparison = new Date(a.updatedAt).getTime() - new Date(b.updatedAt).getTime();
+                break;
+        }
+        return dir === 'ASC' ? comparison : -comparison;
+    });
   };
 
   const togglePriority = (priority: string) => {
@@ -83,12 +211,26 @@ export const SearchPanel: React.FC<SearchPanelProps> = ({ boardId, onClose, onCa
     );
   };
 
+  const toggleAssignee = (memberId: number) => {
+    setSelectedAssigneeIds(prev =>
+      prev.includes(memberId)
+        ? prev.filter(id => id !== memberId)
+        : [...prev, memberId]
+    );
+  };
+
   const clearFilters = () => {
-    setKeyword('');
-    setSelectedPriorities([]);
-    setSelectedLabelIds([]);
-    setIsCompleted(undefined);
-    setOverdue(false);
+    setSearchState(prev => ({
+        ...prev,
+        keyword: '',
+        selectedPriorities: [],
+        selectedLabelIds: [],
+        selectedAssigneeIds: [],
+        isCompleted: undefined,
+        overdue: false,
+        dueDateFrom: '',
+        dueDateTo: '',
+    }));
     setResults([]);
   };
 
@@ -134,7 +276,7 @@ export const SearchPanel: React.FC<SearchPanelProps> = ({ boardId, onClose, onCa
           stage,
           maxWidth: 'max-w-4xl',
           padding: 'p-0',
-          extra: 'max-h-[85vh] flex flex-col overflow-hidden',
+          extra: 'max-h-[90vh] flex flex-col overflow-hidden',
         })}
       >
         {/* Header */}
@@ -189,107 +331,176 @@ export const SearchPanel: React.FC<SearchPanelProps> = ({ boardId, onClose, onCa
 
         {/* Filters */}
         {showFilters && (
-          <div className="px-6 py-4 border-b border-white/30 bg-gradient-to-r from-pastel-blue-50 via-pastel-purple-50 to-pastel-cyan-50 space-y-4 flex-shrink-0">
-            {/* Priority Filter */}
-            <div>
-              <label className={modalLabelClass}>
-                우선순위
-              </label>
-              <div className="flex gap-2">
-                {PRIORITIES.map((priority) => (
-                  <button
-                    key={priority}
-                    onClick={() => togglePriority(priority)}
-                    className={`px-4 py-1.5 rounded-full text-sm font-semibold transition shadow ${selectedPriorities.includes(priority)
-                      ? priorityActiveClasses[priority]
-                      : 'bg-white/70 text-pastel-blue-600 border border-white/60 hover:bg-white'
-                    }`}
-                  >
-                    {priority}
-                  </button>
-                ))}
-              </div>
-            </div>
+          <div className="px-6 py-4 border-b border-white/30 bg-gradient-to-r from-pastel-blue-50 via-pastel-purple-50 to-pastel-cyan-50 space-y-6 flex-shrink-0 overflow-y-auto max-h-[40vh]">
 
-            {/* Label Filter */}
-            {labels.length > 0 && (
-            <div>
-              <label className={modalLabelClass}>
-                라벨
-              </label>
-                <div className="flex gap-2 flex-wrap">
-                  {labels.map((label) => {
-                    const bgColor = labelColorMap[label.colorToken] || '#8fb3ff';
-                    const isSelected = selectedLabelIds.includes(label.id);
-                    return (
-                      <button
-                        key={label.id}
-                        onClick={() => toggleLabel(label.id)}
-                        className={`px-3 py-1 rounded text-sm font-medium border-2 transition ${
-                          isSelected
-                            ? 'border-pastel-blue-600'
-                            : 'border-white/40'
-                        }`}
-                        style={{ backgroundColor: bgColor }}
-                      >
-                        {label.name}
-                      </button>
-                    );
-                  })}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Left Column */}
+                <div className="space-y-4">
+                    {/* Priority Filter */}
+                    <div>
+                        <label className={modalLabelClass}>우선순위</label>
+                        <div className="flex gap-2">
+                            {PRIORITIES.map((priority) => (
+                            <button
+                                key={priority}
+                                onClick={() => togglePriority(priority)}
+                                className={`px-4 py-1.5 rounded-full text-sm font-semibold transition shadow ${selectedPriorities.includes(priority)
+                                ? priorityActiveClasses[priority]
+                                : 'bg-white/70 text-pastel-blue-600 border border-white/60 hover:bg-white'
+                                }`}
+                            >
+                                {priority}
+                            </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Status Filters */}
+                    <div>
+                        <label className={modalLabelClass}>상태</label>
+                        <div className="flex gap-2 flex-wrap">
+                            <button
+                            onClick={() => setIsCompleted(isCompleted === true ? undefined : true)}
+                            className={`px-3.5 py-1.5 rounded-full text-sm font-semibold transition ${
+                                isCompleted === true
+                                ? 'bg-pastel-green-200 text-pastel-green-900 ring-1 ring-pastel-green-300 shadow-sm'
+                                : 'bg-pastel-green-50 text-pastel-green-700 border border-pastel-green-100 hover:bg-pastel-green-100/80'
+                            }`}
+                            type="button"
+                            >
+                            완료
+                            </button>
+                            <button
+                            onClick={() => setIsCompleted(isCompleted === false ? undefined : false)}
+                            className={`px-3.5 py-1.5 rounded-full text-sm font-semibold transition ${
+                                isCompleted === false
+                                ? 'bg-pastel-blue-200 text-pastel-blue-900 ring-1 ring-pastel-blue-300 shadow-sm'
+                                : 'bg-pastel-blue-50 text-pastel-blue-700 border border-pastel-blue-100 hover:bg-pastel-blue-100/80'
+                            }`}
+                            type="button"
+                            >
+                            미완료
+                            </button>
+                            <button
+                            onClick={() => setOverdue(!overdue)}
+                            className={`px-3.5 py-1.5 rounded-full text-sm font-semibold transition ${
+                                overdue
+                                ? 'bg-pastel-pink-200 text-pastel-pink-900 ring-1 ring-pastel-pink-300 shadow-sm'
+                                : 'bg-pastel-pink-50 text-pastel-pink-700 border border-pastel-pink-100 hover:bg-pastel-pink-100/80'
+                            }`}
+                            type="button"
+                            >
+                            지연됨
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* Date Range Filter */}
+                    <div>
+                        <label className={modalLabelClass}>마감일 범위</label>
+                        <div className="flex items-center gap-2">
+                            <input
+                                type="date"
+                                value={dueDateFrom}
+                                onChange={(e) => setDueDateFrom(e.target.value)}
+                                className={`${modalInputClass} !py-1.5 !text-sm`}
+                            />
+                            <span className="text-pastel-blue-400">~</span>
+                            <input
+                                type="date"
+                                value={dueDateTo}
+                                onChange={(e) => setDueDateTo(e.target.value)}
+                                className={`${modalInputClass} !py-1.5 !text-sm`}
+                            />
+                        </div>
+                    </div>
                 </div>
-              </div>
-            )}
 
-            {/* Status Filters */}
-            <div>
-              <label className={modalLabelClass}>
-                상태
-              </label>
-              <div className="flex gap-2 flex-wrap">
-                <button
-                  onClick={() => setIsCompleted(isCompleted === true ? undefined : true)}
-                  className={`px-3.5 py-1.5 rounded-full text-sm font-semibold transition ${
-                    isCompleted === true
-                      ? 'bg-pastel-green-200 text-pastel-green-900 ring-1 ring-pastel-green-300 shadow-sm'
-                      : 'bg-pastel-green-50 text-pastel-green-700 border border-pastel-green-100 hover:bg-pastel-green-100/80'
-                  }`}
-                  type="button"
-                >
-                  완료
-                </button>
-                <button
-                  onClick={() => setIsCompleted(isCompleted === false ? undefined : false)}
-                  className={`px-3.5 py-1.5 rounded-full text-sm font-semibold transition ${
-                    isCompleted === false
-                      ? 'bg-pastel-blue-200 text-pastel-blue-900 ring-1 ring-pastel-blue-300 shadow-sm'
-                      : 'bg-pastel-blue-50 text-pastel-blue-700 border border-pastel-blue-100 hover:bg-pastel-blue-100/80'
-                  }`}
-                  type="button"
-                >
-                  미완료
-                </button>
-                <button
-                  onClick={() => setOverdue(!overdue)}
-                  className={`px-3.5 py-1.5 rounded-full text-sm font-semibold transition ${
-                    overdue
-                      ? 'bg-pastel-pink-200 text-pastel-pink-900 ring-1 ring-pastel-pink-300 shadow-sm'
-                      : 'bg-pastel-pink-50 text-pastel-pink-700 border border-pastel-pink-100 hover:bg-pastel-pink-100/80'
-                  }`}
-                  type="button"
-                >
-                  지연됨
-                </button>
-              </div>
+                {/* Right Column */}
+                <div className="space-y-4">
+                    {/* Assignee Filter */}
+                    {members.length > 0 && (
+                        <div>
+                            <label className={modalLabelClass}>담당자</label>
+                            <div className="flex gap-2 flex-wrap max-h-24 overflow-y-auto p-1">
+                                {members.map((member) => (
+                                    <button
+                                        key={member.userId}
+                                        onClick={() => toggleAssignee(member.userId)}
+                                        className={`flex items-center gap-1.5 px-2 py-1 rounded-full border transition ${
+                                            selectedAssigneeIds.includes(member.userId)
+                                                ? 'bg-pastel-blue-100 border-pastel-blue-300 ring-1 ring-pastel-blue-200'
+                                                : 'bg-white/60 border-white/60 hover:bg-white'
+                                        }`}
+                                        title={member.userName}
+                                    >
+                                        <Avatar userName={member.userName} avatarUrl={member.avatarUrl} size="sm" className="!w-5 !h-5 !text-[10px]" />
+                                        <span className="text-xs text-pastel-blue-800 truncate max-w-[80px]">{member.userName}</span>
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Label Filter */}
+                    {labels.length > 0 && (
+                        <div>
+                            <label className={modalLabelClass}>라벨</label>
+                            <div className="flex gap-2 flex-wrap max-h-24 overflow-y-auto p-1">
+                                {labels.map((label) => {
+                                    const bgColor = labelColorMap[label.colorToken] || '#8fb3ff';
+                                    const isSelected = selectedLabelIds.includes(label.id);
+                                    return (
+                                    <button
+                                        key={label.id}
+                                        onClick={() => toggleLabel(label.id)}
+                                        className={`px-3 py-1 rounded text-sm font-medium border-2 transition ${
+                                        isSelected
+                                            ? 'border-pastel-blue-600'
+                                            : 'border-white/40'
+                                        }`}
+                                        style={{ backgroundColor: bgColor }}
+                                    >
+                                        {label.name}
+                                    </button>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    )}
+                </div>
             </div>
 
-            <div className="text-right">
-              <button
-                onClick={clearFilters}
-                className="inline-flex items-center gap-1 text-sm text-pastel-blue-600 hover:text-pastel-blue-800 font-semibold"
-                type="button"
-              >
-                <IoRefresh /> 필터 초기화
-              </button>
+            {/* Sorting & Reset */}
+            <div className="flex items-center justify-between pt-4 border-t border-white/30">
+                <div className="flex items-center gap-3">
+                    <span className="text-sm font-semibold text-pastel-blue-600">정렬:</span>
+                    <select
+                        value={sortBy}
+                        onChange={(e) => setSortBy(e.target.value as SortOption)}
+                        className={`${modalInputClass} !py-1 !px-2 !text-sm !w-auto`}
+                    >
+                        <option value="UPDATED_AT">최근 수정순</option>
+                        <option value="CREATED_AT">생성일순</option>
+                        <option value="DUE_DATE">마감일순</option>
+                        <option value="PRIORITY">우선순위순</option>
+                    </select>
+                    <button
+                        onClick={() => setSortDirection(prev => prev === 'ASC' ? 'DESC' : 'ASC')}
+                        className="p-1.5 rounded hover:bg-white/50 text-pastel-blue-600 transition"
+                        title={sortDirection === 'ASC' ? '오름차순' : '내림차순'}
+                    >
+                        {sortDirection === 'ASC' ? <HiSortAscending size={20} /> : <HiSortDescending size={20} />}
+                    </button>
+                </div>
+
+                <button
+                    onClick={clearFilters}
+                    className="inline-flex items-center gap-1 text-sm text-pastel-blue-600 hover:text-pastel-blue-800 font-semibold"
+                    type="button"
+                >
+                    <IoRefresh /> 필터 초기화
+                </button>
             </div>
           </div>
         )}
@@ -361,6 +572,22 @@ export const SearchPanel: React.FC<SearchPanelProps> = ({ boardId, onClose, onCa
                       )}
                     </div>
                   )}
+
+                  {/* Result Footer: Due Date & Assignee */}
+                  <div className="flex items-center justify-between pt-2 border-t border-pastel-blue-100/50 mt-auto">
+                    <div className="text-xs text-pastel-blue-500">
+                        {result.dueDate && (
+                            <span className={new Date(result.dueDate) < new Date() && !result.isCompleted ? 'text-pastel-pink-600 font-semibold' : ''}>
+                                📅 {result.dueDate}
+                            </span>
+                        )}
+                    </div>
+                    {result.assignee && (
+                        <div className="text-xs text-pastel-blue-600 font-medium">
+                            👤 {result.assignee}
+                        </div>
+                    )}
+                  </div>
                 </button>
               ))}
             </div>

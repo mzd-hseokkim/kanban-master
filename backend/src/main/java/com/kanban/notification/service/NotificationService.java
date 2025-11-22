@@ -12,6 +12,7 @@ import lombok.RequiredArgsConstructor;
 @Service
 @RequiredArgsConstructor
 @Transactional
+@lombok.extern.slf4j.Slf4j
 public class NotificationService {
 
     private final NotificationRepository notificationRepository;
@@ -19,28 +20,30 @@ public class NotificationService {
 
     public Notification createNotification(Long recipientId, NotificationType type, String message,
             String relatedUrl) {
+        log.info("[MENTION] Creating notification - Recipient: {}, Type: {}, Message: {}",
+                recipientId, type, message);
         Notification notification = Notification.builder().recipientId(recipientId).type(type)
                 .message(message).relatedUrl(relatedUrl).isRead(false).build();
-        Notification savedNotification = notificationRepository.save(notification);
-        System.out.println("Notification saved to DB. ID: " + savedNotification.getId()
-                + ", Recipient: " + recipientId);
+
+        Notification savedNotification;
+        try {
+            savedNotification = notificationRepository.save(notification);
+            log.info("[MENTION] Notification saved to DB. ID: {}, Recipient: {}",
+                    savedNotification.getId(), recipientId);
+        } catch (Exception e) {
+            log.error("[MENTION] Failed to save notification to DB", e);
+            throw e;
+        }
 
         // Publish real-time event
         try {
             redisPublisher.publishNotification(NotificationEvent.builder().recipientId(recipientId)
                     .id(savedNotification.getId()).message(message).type(type).actionUrl(relatedUrl)
                     .createdAt(savedNotification.getCreatedAt()).build());
-            System.out.println("Notification event published to Redis for user: " + recipientId);
+            log.info("[MENTION] Notification event published to Redis for user: {}", recipientId);
         } catch (Exception e) {
             // Log error but do not fail the transaction (ensure notification is saved)
-            // log.error("Failed to publish notification event", e);
-            // Assuming Slf4j is available as per class annotation, but let's just catch and
-            // continue or print stack trace if log not available in scope (it is not in the snippet
-            // I saw, wait, let me check imports)
-            // The file has @Slf4j? No, I need to check the file content again.
-            // Ah, I saw the file content. It does NOT have @Slf4j.
-            // I will add @Slf4j and the import.
-            System.err.println("Failed to publish notification event: " + e.getMessage());
+            log.error("[MENTION] Failed to publish notification event", e);
         }
 
         return savedNotification;

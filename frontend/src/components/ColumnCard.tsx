@@ -4,7 +4,7 @@ import { CreateColumnModal } from '@/components/CreateColumnModal';
 import { ErrorNotification } from '@/components/ErrorNotification';
 import { useCard } from '@/context/CardContext';
 import { useColumn } from '@/context/ColumnContext';
-import { useDialog } from '@/hooks/useDialog';
+import { useDialog } from '@/context/DialogContext';
 import { useColumnScrollPersistence } from '@/hooks/useColumnScrollPersistence';
 import type { Card } from '@/types/card';
 import { Column } from '@/types/column';
@@ -21,10 +21,10 @@ interface ColumnCardProps {
   dragHandleProps?: React.HTMLAttributes<HTMLDivElement>;
 }
 
-export const ColumnCard: React.FC<ColumnCardProps> = ({ column, workspaceId, boardId, boardOwnerId, canEdit, autoOpenCardId, onAutoOpenHandled, dragHandleProps }) => {
+const ColumnCardComponent: React.FC<ColumnCardProps> = ({ column, workspaceId, boardId, boardOwnerId, canEdit, autoOpenCardId, onAutoOpenHandled, dragHandleProps }) => {
   const { deleteColumn } = useColumn();
   const { cards, loadCards, updateCard } = useCard();
-  const { showConfirm } = useDialog();
+  const { confirm } = useDialog();
   const [showMenu, setShowMenu] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -43,7 +43,7 @@ export const ColumnCard: React.FC<ColumnCardProps> = ({ column, workspaceId, boa
     boardId,
     columnId: column.id,
     enabled: !cardsLoading,
-    containerRef: cardListRef,
+    containerRef: cardListRef as React.RefObject<HTMLElement>,
   });
 
   useEffect(() => {
@@ -109,12 +109,10 @@ export const ColumnCard: React.FC<ColumnCardProps> = ({ column, workspaceId, boa
   };
 
   const handleDelete = async () => {
-    const confirmed = await showConfirm({
-      title: '칼럼 삭제',
-      message: '정말 이 칼럼을 삭제하시겠습니까?',
+    const confirmed = await confirm('정말 이 칼럼을 삭제하시겠습니까?', {
       confirmText: '삭제',
       cancelText: '취소',
-      variant: 'danger',
+      isDestructive: true,
     });
 
     if (!confirmed) return;
@@ -404,3 +402,6 @@ export const ColumnCard: React.FC<ColumnCardProps> = ({ column, workspaceId, boa
     </>
   );
 };
+
+// Memoize to prevent unnecessary re-renders when WebSocket events update columns
+export const ColumnCard = React.memo(ColumnCardComponent);

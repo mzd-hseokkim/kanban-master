@@ -5,18 +5,18 @@
  * Spec § FR-06f: 페이지네이션 (더보기 버튼 방식)
  */
 
-import { useState, useEffect } from 'react';
-import type { Comment, CommentPage } from '../types/comment';
+import { useEffect, useState } from 'react';
 import {
-  getComments,
-  createComment,
-  updateComment,
-  deleteComment,
+    createComment,
+    deleteComment,
+    getComments,
+    updateComment,
 } from '../services/commentService';
+import type { Comment, CommentPage } from '../types/comment';
 import { CommentInput } from './CommentInput';
 import { CommentItem } from './CommentItem';
-import { EmptyComments } from './EmptyComments';
 import { CommentSkeleton } from './CommentSkeleton';
+import { EmptyComments } from './EmptyComments';
 
 interface CommentSectionProps {
   workspaceId: number;
@@ -144,7 +144,7 @@ export const CommentSection = ({
       <h3 className="text-lg font-semibold mb-4">댓글</h3>
 
       {/* 댓글 입력 */}
-      <CommentInput onSubmit={handleCreateComment} />
+      <CommentInput boardId={boardId} onSubmit={handleCreateComment} />
 
       {/* 댓글 목록 */}
       <div className="flex-1 overflow-y-auto">

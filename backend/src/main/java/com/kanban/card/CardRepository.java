@@ -21,6 +21,35 @@ public interface CardRepository extends JpaRepository<Card, Long> {
         List<Card> findByColumnIdOrderByPosition(@Param("columnId") Long columnId);
 
         /**
+         * 특정 칼럼의 아카이브되지 않은 카드를 위치 순서대로 조회
+         */
+        @Query("SELECT c FROM Card c WHERE c.column.id = :columnId AND c.isArchived = false ORDER BY c.position ASC")
+        List<Card> findByColumnIdAndIsArchivedFalseOrderByPosition(
+                        @Param("columnId") Long columnId);
+
+        /**
+         * 특정 칼럼의 아카이브된 카드를 아카이브 시각 역순으로 조회
+         */
+        @Query("SELECT c FROM Card c WHERE c.column.id = :columnId AND c.isArchived = true ORDER BY c.archivedAt DESC")
+        List<Card> findByColumnIdAndIsArchivedTrueOrderByArchivedAt(
+                        @Param("columnId") Long columnId);
+
+        /**
+         * 특정 보드의 아카이브된 카드를 아카이브 시각 역순으로 조회
+         */
+        @Query("SELECT c FROM Card c WHERE c.column.board.id = :boardId AND c.isArchived = true ORDER BY c.archivedAt DESC")
+        List<Card> findByBoardIdAndIsArchivedTrueOrderByArchivedAt(@Param("boardId") Long boardId);
+
+        /**
+         * 마감일이 특정 기간 내에 있는 카드 조회 (아카이브되지 않은 카드만)
+         */
+        @Query("SELECT c FROM Card c WHERE c.dueDate BETWEEN :start AND :end AND c.isArchived = false")
+        List<Card> findCardsDueBetween(@Param("start") java.time.LocalDateTime start,
+                        @Param("end") java.time.LocalDateTime end);
+
+
+
+        /**
          * 특정 칼럼의 카드 개수 조회
          */
         @Query("SELECT COUNT(c) FROM Card c WHERE c.column.id = :columnId")

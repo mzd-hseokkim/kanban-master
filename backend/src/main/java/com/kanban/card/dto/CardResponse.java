@@ -33,6 +33,8 @@ public class CardResponse {
     private Boolean isCompleted;
     private LocalDateTime startedAt;
     private LocalDateTime completedAt;
+    private Boolean isArchived;
+    private LocalDateTime archivedAt;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private List<LabelResponse> labels;
@@ -70,6 +72,7 @@ public class CardResponse {
                 .assigneeId(card.getAssignee() != null ? card.getAssignee().getId() : null)
                 .dueDate(card.getDueDate()).isCompleted(card.getIsCompleted())
                 .startedAt(card.getStartedAt()).completedAt(card.getCompletedAt())
+                .isArchived(card.getIsArchived()).archivedAt(card.getArchivedAt())
                 .createdAt(card.getCreatedAt()).updatedAt(card.getUpdatedAt()).labels(labels)
                 .parentCardId(card.getParentCard() != null ? card.getParentCard().getId() : null)
                 .build();
@@ -87,6 +90,7 @@ public class CardResponse {
                 .assigneeId(card.getAssignee() != null ? card.getAssignee().getId() : null)
                 .dueDate(card.getDueDate()).isCompleted(card.getIsCompleted())
                 .startedAt(card.getStartedAt()).completedAt(card.getCompletedAt())
+                .isArchived(card.getIsArchived()).archivedAt(card.getArchivedAt())
                 .createdAt(card.getCreatedAt()).updatedAt(card.getUpdatedAt()).labels(labels)
                 .parentCardId(card.getParentCard() != null ? card.getParentCard().getId() : null)
                 .parentCard(parentCard).childCards(childCards).build();

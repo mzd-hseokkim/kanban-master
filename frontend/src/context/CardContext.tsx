@@ -26,9 +26,11 @@ export const CardProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (!silent) setLoading(true);
       setError(null);
       const data = await cardService.listCards(workspaceId, boardId, columnId);
+      // 아카이브된 카드는 제외
+      const filteredData = data.filter(card => !card.isArchived);
       setCards(prev => ({
         ...prev,
-        [columnId]: data
+        [columnId]: filteredData
       }));
     } catch (err) {
       const message = err instanceof Error ? err.message : '카드를 불러올 수 없습니다';
@@ -55,10 +57,18 @@ export const CardProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
       case 'CARD_UPDATED': {
         const updatedCard = payload;
-        setCards(prev => ({
-          ...prev,
-          [updatedCard.columnId]: (prev[updatedCard.columnId] || []).map(c => c.id === updatedCard.id ? updatedCard : c)
-        }));
+        // 카드가 아카이브되면 목록에서 제거
+        if (updatedCard.isArchived) {
+          setCards(prev => ({
+            ...prev,
+            [updatedCard.columnId]: (prev[updatedCard.columnId] || []).filter(c => c.id !== updatedCard.id)
+          }));
+        } else {
+          setCards(prev => ({
+            ...prev,
+            [updatedCard.columnId]: (prev[updatedCard.columnId] || []).map(c => c.id === updatedCard.id ? updatedCard : c)
+          }));
+        }
         break;
       }
       case 'CARD_DELETED': {

@@ -8,14 +8,16 @@
  */
 
 import { useState } from 'react';
-import RichTextEditor from './RichTextEditor';
+import { MentionInput } from './common/MentionInput';
 
 interface CommentInputProps {
+  boardId: number;
   onSubmit: (content: string) => Promise<void>;
   placeholder?: string;
 }
 
 export const CommentInput = ({
+  boardId,
   onSubmit,
   placeholder = '댓글을 입력하세요...',
 }: CommentInputProps) => {
@@ -49,7 +51,8 @@ export const CommentInput = ({
 
   return (
     <div className="border-b border-gray-200 pb-4 mb-4">
-      <RichTextEditor
+      <MentionInput
+        boardId={boardId}
         value={content}
         onChange={setContent}
         placeholder={placeholder}

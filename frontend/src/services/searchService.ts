@@ -19,8 +19,8 @@ export const searchService = {
     if (request.priorities?.length) {
       request.priorities.forEach(p => params.append('priorities', p));
     }
-    if (request.assignees?.length) {
-      request.assignees.forEach(a => params.append('assignees', a));
+    if (request.assigneeIds?.length) {
+      request.assigneeIds.forEach(id => params.append('assigneeIds', id.toString()));
     }
     if (request.labelIds?.length) {
       request.labelIds.forEach(id => params.append('labelIds', id.toString()));
@@ -53,8 +53,8 @@ export const searchService = {
     if (request.priorities?.length) {
       request.priorities.forEach(p => params.append('priorities', p));
     }
-    if (request.assignees?.length) {
-      request.assignees.forEach(a => params.append('assignees', a));
+    if (request.assigneeIds?.length) {
+      request.assigneeIds.forEach(id => params.append('assigneeIds', id.toString()));
     }
     if (request.labelIds?.length) {
       request.labelIds.forEach(id => params.append('labelIds', id.toString()));

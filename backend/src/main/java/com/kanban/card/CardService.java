@@ -1,8 +1,12 @@
 package com.kanban.card;
 
 import java.time.LocalDateTime;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import org.owasp.html.PolicyFactory;
 import org.springframework.http.HttpStatus;
@@ -21,6 +25,7 @@ import com.kanban.exception.ResourceNotFoundException;
 import com.kanban.label.CardLabel;
 import com.kanban.label.CardLabelRepository;
 import com.kanban.label.dto.LabelResponse;
+import com.kanban.notification.domain.NotificationType;
 import com.kanban.user.UserRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -31,6 +36,7 @@ import lombok.RequiredArgsConstructor;
 @Service
 @RequiredArgsConstructor
 @Transactional
+@lombok.extern.slf4j.Slf4j
 public class CardService {
 
     private final CardRepository cardRepository;
@@ -43,6 +49,7 @@ public class CardService {
     private final com.kanban.notification.service.RedisPublisher redisPublisher;
     private final com.kanban.notification.service.NotificationService notificationService;
     private final com.kanban.watch.CardWatchService cardWatchService;
+    private final com.kanban.notification.NotificationLogRepository notificationLogRepository;
 
     /**
      * 특정 칼럼의 모든 카드 조회 Spec § 5. 기능 요구사항 - FR-06g: 자식 개수 표시
@@ -243,7 +250,10 @@ public class CardService {
             card.setTitle(request.getTitle());
         }
         if (request.getDescription() != null) {
-            card.setDescription(sanitizeHtml(request.getDescription()));
+            String sanitizedDescription = sanitizeHtml(request.getDescription());
+            card.setDescription(sanitizedDescription);
+            // 멘션 처리
+            processMentions(sanitizedDescription, card, userId);
         }
         if (request.getBgColor() != null) {
             card.setBgColor(request.getBgColor());
@@ -262,6 +272,11 @@ public class CardService {
             }
         }
         if (request.getDueDate() != null) {
+            // 마감일이 변경된 경우, 기존 알림 발송 기록 삭제 (재발송을 위해)
+            if (!request.getDueDate().equals(card.getDueDate())) {
+                notificationLogRepository.deleteByCardAndNotificationType(card,
+                        com.kanban.notification.domain.NotificationType.DUE_DATE_IMMINENT);
+            }
             card.setDueDate(request.getDueDate());
         }
         if (request.getIsCompleted() != null) {
@@ -586,5 +601,210 @@ public class CardService {
         }
 
         return changes.isEmpty() ? "카드 업데이트" : String.join(", ", changes);
+    }
+
+    /**
+     * 카드 아카이브 (권한 검증 포함)
+     */
+    public CardResponse archiveCard(Long boardId, Long columnId, Long cardId, Long userId) {
+        roleValidator.validateRole(boardId, BoardMemberRole.EDITOR);
+        return archiveCardInternal(columnId, cardId, userId);
+    }
+
+    /**
+     * 카드 아카이브 (내부 사용)
+     */
+    @org.springframework.cache.annotation.CacheEvict(value = {"dashboardSummary", "boardInsights"},
+            allEntries = true)
+    private CardResponse archiveCardInternal(Long columnId, Long cardId, Long userId) {
+        Card card = cardRepository.findByIdAndColumnId(cardId, columnId)
+                .orElseThrow(() -> new ResourceNotFoundException("Card not found"));
+
+        if (Boolean.TRUE.equals(card.getIsArchived())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Card is already archived");
+        }
+
+        card.setIsArchived(true);
+        card.setArchivedAt(LocalDateTime.now());
+        Card archived = cardRepository.save(card);
+
+        // 활동 기록
+        activityService.recordActivity(ActivityScopeType.CARD, cardId,
+                ActivityEventType.CARD_UPDATED, userId,
+                "\"" + archived.getTitle() + "\" 카드가 아카이브되었습니다");
+
+        // Redis 이벤트 발행
+        List<LabelResponse> labels = cardLabelRepository.findByCardId(archived.getId()).stream()
+                .map(cardLabel -> LabelResponse.from(cardLabel.getLabel())).toList();
+        CardResponse response = enrichWithAssigneeInfo(CardResponse.from(archived, labels));
+        redisPublisher.publish(new com.kanban.notification.event.BoardEvent(
+                com.kanban.notification.event.BoardEvent.EventType.CARD_UPDATED.name(),
+                card.getColumn().getBoard().getId(), response, userId, System.currentTimeMillis()));
+
+        return response;
+    }
+
+    /**
+     * 카드 아카이브 복구 (권한 검증 포함)
+     */
+    public CardResponse unarchiveCard(Long boardId, Long cardId, Long userId) {
+        roleValidator.validateRole(boardId, BoardMemberRole.EDITOR);
+        return unarchiveCardInternal(cardId, userId);
+    }
+
+    /**
+     * 카드 아카이브 복구 (내부 사용)
+     */
+    @org.springframework.cache.annotation.CacheEvict(value = {"dashboardSummary", "boardInsights"},
+            allEntries = true)
+    private CardResponse unarchiveCardInternal(Long cardId, Long userId) {
+        Card card = cardRepository.findById(cardId)
+                .orElseThrow(() -> new ResourceNotFoundException("Card not found"));
+
+        if (Boolean.FALSE.equals(card.getIsArchived())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Card is not archived");
+        }
+
+        card.setIsArchived(false);
+        card.setArchivedAt(null);
+        Card unarchived = cardRepository.save(card);
+
+        // 활동 기록
+        activityService.recordActivity(ActivityScopeType.CARD, cardId,
+                ActivityEventType.CARD_UPDATED, userId,
+                "\"" + unarchived.getTitle() + "\" 카드가 복구되었습니다");
+
+        // Redis 이벤트 발행
+        List<LabelResponse> labels = cardLabelRepository.findByCardId(unarchived.getId()).stream()
+                .map(cardLabel -> LabelResponse.from(cardLabel.getLabel())).toList();
+        CardResponse response = enrichWithAssigneeInfo(CardResponse.from(unarchived, labels));
+        redisPublisher.publish(new com.kanban.notification.event.BoardEvent(
+                com.kanban.notification.event.BoardEvent.EventType.CARD_UPDATED.name(),
+                card.getColumn().getBoard().getId(), response, userId, System.currentTimeMillis()));
+
+        return response;
+    }
+
+    /**
+     * 아카이브된 카드 조회 (보드 단위)
+     */
+    public List<CardResponse> getArchivedCards(Long boardId, Long userId) {
+        // VIEWER 이상 권한 필요
+        roleValidator.validateRole(boardId, BoardMemberRole.VIEWER);
+
+        List<Card> archivedCards =
+                cardRepository.findByBoardIdAndIsArchivedTrueOrderByArchivedAt(boardId);
+        if (archivedCards.isEmpty()) {
+            return List.of();
+        }
+
+        Map<Long, List<LabelResponse>> labelsByCardId =
+                getLabelsByCardIds(archivedCards.stream().map(Card::getId).toList());
+
+        return archivedCards.stream().map(card -> {
+            CardResponse response =
+                    CardResponse.from(card, labelsByCardId.getOrDefault(card.getId(), List.of()));
+            return enrichWithAssigneeInfo(response);
+        }).toList();
+    }
+
+    /**
+     * 카드 영구 삭제 (아카이브된 카드만 가능)
+     */
+    public void permanentlyDeleteCard(Long boardId, Long cardId, Long userId) {
+        roleValidator.validateRole(boardId, BoardMemberRole.MANAGER);
+
+        Card card = cardRepository.findById(cardId)
+                .orElseThrow(() -> new ResourceNotFoundException("Card not found"));
+
+        // 아카이브된 카드만 영구 삭제 가능
+        if (Boolean.FALSE.equals(card.getIsArchived())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "Only archived cards can be permanently deleted. Please archive the card first.");
+        }
+
+        // 자식 카드 존재 여부 확인
+        int childCount = cardRepository.countByParentCardId(cardId);
+        if (childCount > 0) {
+            throw new CardHasChildrenException(childCount);
+        }
+
+        String cardTitle = card.getTitle();
+
+        // 카드-라벨 연결 삭제
+        cardLabelRepository.deleteByCardId(cardId);
+
+        // 카드 영구 삭제
+        cardRepository.delete(card);
+
+        // 활동 기록
+        activityService.recordActivity(ActivityScopeType.CARD, cardId,
+                ActivityEventType.CARD_DELETED, userId, "\"" + cardTitle + "\" 카드가 영구 삭제되었습니다");
+
+        // Redis 이벤트 발행
+        redisPublisher.publish(new com.kanban.notification.event.BoardEvent(
+                com.kanban.notification.event.BoardEvent.EventType.CARD_DELETED.name(),
+                card.getColumn().getBoard().getId(),
+                Map.of("cardId", cardId, "action", "permanently_deleted"), userId,
+                System.currentTimeMillis()));
+    }
+
+    private void processMentions(String content, Card card, Long authorId) {
+        if (content == null)
+            return;
+
+        log.info("[MENTION] Processing mentions for card description: {}", content);
+
+        // Pattern: <span class="mention" data-user-id="userId">... (@ or &#64; or &commat;)
+        // HTML sanitizer may encode @ as &#64; or &commat;
+        Pattern pattern = Pattern.compile("<span[^>]+data-user-id=\"(\\d+)\"[^>]*>");
+        Matcher matcher = pattern.matcher(content);
+        Set<Long> mentionedUserIds = new HashSet<>();
+
+        while (matcher.find()) {
+            try {
+                Long userId = Long.parseLong(matcher.group(1));
+                mentionedUserIds.add(userId);
+            } catch (NumberFormatException e) {
+                // Invalid userId format, skip
+                continue;
+            }
+        }
+
+        if (mentionedUserIds.isEmpty()) {
+            log.info("[MENTION] No mentions found in card description");
+            return;
+        }
+
+        log.info("[MENTION] Found {} mention(s) in card description: {}", mentionedUserIds.size(),
+                mentionedUserIds);
+
+        com.kanban.user.User author = userRepository.findById(authorId).orElseThrow();
+
+        for (Long userId : mentionedUserIds) {
+            if (!userId.equals(authorId)) {
+                log.info("[MENTION] Looking up user with ID: {}", userId);
+                userRepository.findById(userId).ifPresentOrElse(user -> {
+                    String message = String.format("%s님이 카드 설명에서 회원님을 언급했습니다.", author.getName());
+                    // Fixed URL format:
+                    // /boards/{workspaceId}/{boardId}?cardId={cardId}&columnId={columnId}
+                    String url = String.format("/boards/%d/%d?cardId=%d&columnId=%d",
+                            card.getColumn().getBoard().getWorkspace().getId(),
+                            card.getColumn().getBoard().getId(), card.getId(),
+                            card.getColumn().getId());
+                    log.info("[MENTION] Sending notification to user: {} (ID: {})", user.getName(),
+                            user.getId());
+                    try {
+                        notificationService.createNotification(user.getId(),
+                                NotificationType.CARD_MENTION, message, url);
+                        log.info("[MENTION] Notification sent successfully");
+                    } catch (Exception e) {
+                        log.error("[MENTION] Failed to send notification", e);
+                    }
+                }, () -> log.warn("[MENTION] User not found with ID: {}", userId));
+            } else {
+                log.info("[MENTION] Skipping self-mention for user ID: {}", userId);
+            }
+        }
     }
 }

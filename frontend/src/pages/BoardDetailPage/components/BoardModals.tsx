@@ -22,6 +22,8 @@ interface BoardModalsProps {
   showCalendarModal: boolean;
   onCloseCalendarModal: () => void;
   cards: Card[];
+  searchState: any;
+  setSearchState: (state: any) => void;
 }
 
 export const BoardModals = ({
@@ -40,6 +42,8 @@ export const BoardModals = ({
   showCalendarModal,
   onCloseCalendarModal,
   cards,
+  searchState,
+  setSearchState,
 }: BoardModalsProps) => {
   return (
     <>
@@ -68,6 +72,8 @@ export const BoardModals = ({
           boardId={boardId}
           onClose={onCloseSearchPanel}
           onCardSelect={onCardSelect}
+          searchState={searchState}
+          setSearchState={setSearchState}
         />
       )}
 

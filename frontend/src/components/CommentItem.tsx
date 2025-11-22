@@ -8,6 +8,7 @@
 
 import { useState } from 'react';
 import type { Comment } from '../types/comment';
+import HtmlContent from './HtmlContent';
 import RichTextEditor from './RichTextEditor';
 
 interface CommentItemProps {
@@ -146,10 +147,7 @@ export const CommentItem = ({
           </div>
         ) : (
           <>
-            <div
-              className="text-sm text-gray-800 prose prose-sm max-w-none"
-              dangerouslySetInnerHTML={{ __html: comment.content }}
-            />
+            <HtmlContent html={comment.content} className="text-sm" />
 
             {/* 액션 버튼 */}
             {(canEdit || canDelete) && (

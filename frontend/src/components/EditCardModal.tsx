@@ -1,11 +1,11 @@
 import ChildCardList from '@/components/ChildCardList';
 import { CommentSection } from '@/components/CommentSection';
 import { Avatar } from '@/components/common/Avatar';
+import { MentionInput } from '@/components/common/MentionInput';
 import { CreateCardModal } from '@/components/CreateCardModal';
 import { ErrorNotification } from '@/components/ErrorNotification';
 import { LabelSelector } from '@/components/label/LabelSelector';
 import ParentCardLink from '@/components/ParentCardLink';
-import RichTextEditor from '@/components/RichTextEditor';
 import { useAuth } from '@/context/AuthContext';
 import { useCard } from '@/context/CardContext';
 import { useModalAnimation } from '@/hooks/useModalAnimation';
@@ -27,7 +27,11 @@ import {
 import { Card } from '@/types/card';
 import type { UserSearchResult } from '@/types/user';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { HiEye, HiOutlineEye, HiPlay } from 'react-icons/hi';
+import { HiCheck, HiEye, HiOutlineEye, HiPlay } from 'react-icons/hi';
+import { MdArchive } from 'react-icons/md';
+import { AttachmentSection } from './attachment/AttachmentSection';
+import { ChecklistSection } from './checklist/ChecklistSection';
+import { ConfirmModal } from './common/ConfirmModal';
 
 interface EditCardModalProps {
     card: Card;
@@ -100,7 +104,7 @@ export const EditCardModal: React.FC<EditCardModalProps> = ({
     const assigneeInputContainerRef = useRef<HTMLDivElement>(null);
     const assigneeDropdownRef = useRef<HTMLDivElement>(null);
     const assigneeDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-    const descriptionDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const [showArchiveConfirm, setShowArchiveConfirm] = useState(false);
 
     const performAssigneeSearch = async (keyword: string) => {
         const trimmedKeyword = keyword.trim();
@@ -226,36 +230,7 @@ export const EditCardModal: React.FC<EditCardModalProps> = ({
         }
     }, [canEdit, startLoading, workspaceId, boardId, columnId, currentCard.id, loadCards]);
 
-    // 설명 자동 저장 (debounced)
-    const saveDescriptionOnly = useCallback(async (newDescription: string) => {
-        if (!canEdit) return;
 
-        try {
-            setDescriptionSaving(true);
-            await updateCard(workspaceId, boardId, columnId, currentCard.id, {
-                description: newDescription,
-            });
-        } catch (err) {
-            console.error('Failed to save description:', err);
-            setError(err instanceof Error ? err.message : '설명 저장에 실패했습니다');
-        } finally {
-            setDescriptionSaving(false);
-        }
-    }, [canEdit, updateCard, workspaceId, boardId, columnId, currentCard.id]);
-
-    const handleDescriptionChange = (newDescription: string) => {
-        setDescription(newDescription);
-
-        // debounce 타이머 초기화
-        if (descriptionDebounceRef.current) {
-            clearTimeout(descriptionDebounceRef.current);
-        }
-
-        // 2초 후 자동 저장
-        descriptionDebounceRef.current = setTimeout(() => {
-            saveDescriptionOnly(newDescription);
-        }, 2000);
-    };
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
@@ -291,9 +266,7 @@ export const EditCardModal: React.FC<EditCardModalProps> = ({
             if (assigneeDebounceRef.current) {
                 clearTimeout(assigneeDebounceRef.current);
             }
-            if (descriptionDebounceRef.current) {
-                clearTimeout(descriptionDebounceRef.current);
-            }
+
         };
     }, []);
 
@@ -342,6 +315,24 @@ export const EditCardModal: React.FC<EditCardModalProps> = ({
             // 에러 시 상태 롤백 (낙관적 업데이트를 했다면)
         } finally {
             setWatchLoading(false);
+        }
+    };
+
+    // 아카이브 핸들러
+    const handleArchiveCard = async () => {
+        if (!canEdit || loading) return;
+
+        try {
+            setLoading(true);
+            setError(null);
+            await cardService.archiveCard(workspaceId, boardId, columnId, currentCard.id);
+            await loadCards(workspaceId, boardId, columnId);
+            close();
+        } catch (err) {
+            console.error('Failed to archive card:', err);
+            setError(err instanceof Error ? err.message : '카드 아카이브에 실패했습니다');
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -402,14 +393,14 @@ export const EditCardModal: React.FC<EditCardModalProps> = ({
                     className={modalPanelClass({
                         stage,
                         maxWidth: 'max-w-6xl',
-                        scrollable: false,
+                        scrollable: true,
                     })}
                     style={{ maxHeight: '90vh' }}
                 >
                     {/* 2열 레이아웃 */}
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-full">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                         {/* 왼쪽 컬럼: 카드 메타데이터 */}
-                        <div className="overflow-y-auto pr-4 flex flex-col" style={{ maxHeight: '80vh' }}>
+                        <div className="pr-4 flex flex-col">
                             {/* 헤더 */}
                         <h2 className="text-2xl font-bold text-pastel-blue-900 mb-1">카드 수정</h2>
                         <p className="text-sm text-pastel-blue-600 mb-6">카드 정보를 수정하세요</p>
@@ -670,16 +661,36 @@ export const EditCardModal: React.FC<EditCardModalProps> = ({
                         {/* 완료 상태 */}
                         <div className="mb-4">
                             <div className="flex items-center gap-3 rounded-2xl border border-white/30 bg-white/30 px-4 py-3">
-                                <input
-                                    type="checkbox"
-                                    checked={isCompleted}
-                                    onChange={(e) => setIsCompleted(e.target.checked)}
+                                <button
+                                    type="button"
+                                    onClick={() => setIsCompleted(!isCompleted)}
                                     disabled={loading || !canEdit}
-                                    className="w-5 h-5 rounded border-2 border-pastel-blue-200 cursor-pointer accent-pastel-green-500 bg-white disabled:cursor-not-allowed"
-                                />
+                                    className={`flex-shrink-0 w-5 h-5 rounded border-2 flex items-center justify-center transition ${
+                                        isCompleted
+                                            ? 'bg-white border-pastel-green-500'
+                                            : 'bg-white border-gray-300 hover:border-pastel-green-400'
+                                    } disabled:cursor-not-allowed disabled:opacity-50`}
+                                >
+                                    {isCompleted && <HiCheck className="text-pastel-green-500 text-sm font-bold" />}
+                                </button>
                                 <span className="text-sm font-semibold text-pastel-blue-900">카드를 완료로 표시</span>
                             </div>
                         </div>
+
+                        {/* 아카이브 버튼 */}
+                        {canEdit && (
+                            <div className="mb-4">
+                                <button
+                                    type="button"
+                                    onClick={() => setShowArchiveConfirm(true)}
+                                    disabled={loading}
+                                    className="w-full px-4 py-2 rounded-xl border border-pastel-pink-300 bg-pastel-pink-50 text-pastel-pink-700 text-sm font-semibold hover:bg-pastel-pink-100 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                                >
+                                    <MdArchive className="text-lg" />
+                                    아카이브
+                                </button>
+                            </div>
+                        )}
 
                         {/* 버튼 */}
                         <div className="flex gap-3">
@@ -705,25 +716,65 @@ export const EditCardModal: React.FC<EditCardModalProps> = ({
                         </div>
 
                         {/* 오른쪽 컬럼: 설명 + 댓글 섹션 */}
-                        <div className="border-l border-gray-200 pl-6 overflow-y-auto" style={{ maxHeight: '80vh' }}>
+                        <div className="border-l border-gray-200 pl-6">
                             {/* 설명 */}
                             <div className="mb-6">
                                 <div className="flex items-center justify-between mb-2">
                                     <label className={modalLabelClass}>설명</label>
-                                    {descriptionSaving && (
-                                        <span className="text-xs text-pastel-blue-500 flex items-center gap-1">
-                                            <div className="h-3 w-3 border-2 border-pastel-blue-400 border-t-transparent rounded-full animate-spin" />
-                                            저장 중...
-                                        </span>
+                                    {canEdit && (
+                                        <button
+                                            type="button"
+                                            onClick={async () => {
+                                                try {
+                                                    setDescriptionSaving(true);
+                                                    await updateCard(workspaceId, boardId, columnId, currentCard.id, {
+                                                        description: description,
+                                                    });
+                                                    // 성공 표시 (선택 사항)
+                                                } catch (err) {
+                                                    console.error('Failed to save description:', err);
+                                                    setError(err instanceof Error ? err.message : '설명 저장에 실패했습니다');
+                                                } finally {
+                                                    setDescriptionSaving(false);
+                                                }
+                                            }}
+                                            disabled={descriptionSaving || description === (currentCard.description || '')}
+                                            className="px-3 py-1 text-xs font-medium rounded-lg bg-pastel-blue-100 text-pastel-blue-700 hover:bg-pastel-blue-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                        >
+                                            {descriptionSaving ? '저장 중...' : '설명 저장'}
+                                        </button>
                                     )}
                                 </div>
-                                <RichTextEditor
+                                <MentionInput
+                                    boardId={boardId}
                                     value={description}
-                                    onChange={handleDescriptionChange}
+                                    onChange={useCallback((val: string) => setDescription(val), [])}
                                     placeholder="카드에 대한 설명을 입력하세요 (선택사항)"
                                     readOnly={!canEdit}
                                     disabled={loading || !canEdit}
                                     maxLength={50000}
+                                />
+                            </div>
+
+                            {/* 체크리스트 섹션 */}
+                            <div className="mb-6">
+                                <ChecklistSection
+                                    cardId={currentCard.id}
+                                    workspaceId={workspaceId}
+                                    boardId={boardId}
+                                    columnId={columnId}
+                                    canEdit={canEdit}
+                                />
+                            </div>
+
+                            {/* 첨부파일 섹션 */}
+                            <div className="mb-6">
+                                <AttachmentSection
+                                    cardId={currentCard.id}
+                                    workspaceId={workspaceId}
+                                    boardId={boardId}
+                                    columnId={columnId}
+                                    canEdit={canEdit}
                                 />
                             </div>
 
@@ -771,6 +822,20 @@ export const EditCardModal: React.FC<EditCardModalProps> = ({
                     }}
                 />
             )}
+
+            {/* 아카이브 확인 모달 */}
+            <ConfirmModal
+                isOpen={showArchiveConfirm}
+                message="이 카드를 아카이브하시겠습니까?&#10;아카이브된 카드는 '아카이브된 카드 보기'에서 복구할 수 있습니다."
+                onConfirm={() => {
+                    setShowArchiveConfirm(false);
+                    handleArchiveCard();
+                }}
+                onCancel={() => setShowArchiveConfirm(false)}
+                confirmText="아카이브"
+                cancelText="취소"
+                isDestructive={true}
+            />
 
             {/* 에러 알림 (모달 외부 표시) */}
             {error && <ErrorNotification message={error} onClose={() => setError(null)} duration={5000} />}

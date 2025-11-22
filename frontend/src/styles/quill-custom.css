@@ -184,6 +184,22 @@
   background-color: #ede9fe;
 }
 
+/* 멘션 스타일 */
+.ql-editor .mention {
+  color: #3b82f6;
+  background-color: #dbeafe;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.ql-editor .mention:hover {
+  background-color: #bfdbfe;
+  color: #2563eb;
+}
+
 /* 목록 스타일 */
 .ql-editor ul,
 .ql-editor ol {

@@ -1,5 +1,5 @@
-import React, { useMemo } from 'react';
 import DOMPurify from 'dompurify';
+import React, { useMemo } from 'react';
 
 export interface HtmlContentProps {
   html: string;
@@ -52,9 +52,10 @@ const HtmlContent: React.FC<HtmlContentProps> = ({
         'blockquote',
         'code',
         'pre',
+        'span',
       ],
-      ALLOWED_ATTR: ['href', 'target', 'rel', 'class'],
-      ALLOW_DATA_ATTR: false,
+      ALLOWED_ATTR: ['href', 'target', 'rel', 'class', 'data-user-id'],
+      ALLOW_DATA_ATTR: true, // data-* 속성 허용 (data-user-id를 위해 필수)
       ALLOWED_URI_REGEXP: /^(?:(?:https?|mailto):)/i,
     };
 

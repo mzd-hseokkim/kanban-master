@@ -1,16 +1,16 @@
-import { useState, useEffect } from 'react';
-import { templateService } from '@/services/templateService';
-import type { BoardTemplate, ApplyTemplateRequest } from '@/types/template';
+import { useDialog } from '@/context/DialogContext';
 import { useModalAnimation } from '@/hooks/useModalAnimation';
-import { useDialog } from '@/hooks/useDialog';
+import { templateService } from '@/services/templateService';
 import {
-  modalOverlayClass,
-  modalPanelClass,
-  modalLabelClass,
-  modalInputClass,
-  modalPrimaryButtonClass,
-  modalSecondaryButtonClass,
+    modalInputClass,
+    modalLabelClass,
+    modalOverlayClass,
+    modalPanelClass,
+    modalPrimaryButtonClass,
+    modalSecondaryButtonClass,
 } from '@/styles/modalStyles';
+import type { ApplyTemplateRequest, BoardTemplate } from '@/types/template';
+import { useEffect, useState } from 'react';
 
 interface TemplateGalleryProps {
   workspaceId: number;
@@ -34,7 +34,7 @@ export const TemplateGallery: React.FC<TemplateGalleryProps> = ({
   const [showApplyModal, setShowApplyModal] = useState(false);
 
   const { stage, close } = useModalAnimation(onClose);
-  const { showAlert } = useDialog();
+  const { alert } = useDialog();
 
   useEffect(() => {
     loadData();
@@ -82,11 +82,7 @@ export const TemplateGallery: React.FC<TemplateGalleryProps> = ({
       close();
     } catch (err) {
       console.error('Failed to apply template:', err);
-      await showAlert({
-        title: '오류',
-        message: '템플릿 적용에 실패했습니다',
-        variant: 'error',
-      });
+      await alert('템플릿 적용에 실패했습니다');
     } finally {
       setApplying(false);
     }

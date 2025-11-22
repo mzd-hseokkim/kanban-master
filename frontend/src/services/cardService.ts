@@ -1,5 +1,5 @@
-import axiosInstance from '@/utils/axios';
 import type { Card, CreateCardRequest, UpdateCardRequest } from '@/types/card';
+import axiosInstance from '@/utils/axios';
 
 class CardService {
   /**
@@ -139,6 +139,60 @@ class CardService {
       }
     );
     return response.data;
+  }
+
+  /**
+   * 카드 아카이브
+   */
+  async archiveCard(
+    workspaceId: number,
+    boardId: number,
+    columnId: number,
+    cardId: number
+  ): Promise<Card> {
+    const response = await axiosInstance.post<Card>(
+      `/workspaces/${workspaceId}/boards/${boardId}/columns/${columnId}/cards/${cardId}/archive`
+    );
+    return response.data;
+  }
+
+  /**
+   * 카드 아카이브 복구
+   */
+  async unarchiveCard(
+    workspaceId: number,
+    boardId: number,
+    columnId: number,
+    cardId: number
+  ): Promise<Card> {
+    const response = await axiosInstance.post<Card>(
+      `/workspaces/${workspaceId}/boards/${boardId}/columns/${columnId}/cards/${cardId}/unarchive`
+    );
+    return response.data;
+  }
+
+  /**
+   * 아카이브된 카드 조회 (보드 단위)
+   */
+  async getArchivedCards(workspaceId: number, boardId: number): Promise<Card[]> {
+    const response = await axiosInstance.get<Card[]>(
+      `/workspaces/${workspaceId}/boards/${boardId}/archived-cards`
+    );
+    return response.data;
+  }
+
+  /**
+   * 카드 영구 삭제 (아카이브된 카드만 가능)
+   */
+  async permanentlyDeleteCard(
+    workspaceId: number,
+    boardId: number,
+    columnId: number,
+    cardId: number
+  ): Promise<void> {
+    await axiosInstance.delete(
+      `/workspaces/${workspaceId}/boards/${boardId}/columns/${columnId}/cards/${cardId}/permanent`
+    );
   }
 }
 

@@ -93,6 +93,18 @@ public class Card extends BaseEntity {
      */
     private LocalDateTime completedAt;
 
+    /**
+     * 아카이브 여부
+     */
+    @Column(name = "is_archived")
+    @Builder.Default
+    private Boolean isArchived = false;
+
+    /**
+     * 아카이브 시각
+     */
+    private LocalDateTime archivedAt;
+
     // Spec § 6. 백엔드 규격 - 데이터베이스 스키마 확장
     // FR-06a: 부모-자식 관계 데이터 모델
 

@@ -14,4 +14,30 @@ export const notificationService = {
       await axiosInstance.post(`/notifications/${realId}/read`);
     }
   },
+
+  /**
+   * 내 알림 설정 조회
+   */
+  getMyPreference: async (): Promise<NotificationPreference> => {
+    const response = await axiosInstance.get<NotificationPreference>(
+      '/notifications/preferences'
+    );
+    return response.data;
+  },
+
+  /**
+   * 내 알림 설정 수정
+   */
+  updateMyPreference: async (preference: NotificationPreference): Promise<NotificationPreference> => {
+    const response = await axiosInstance.put<NotificationPreference>(
+      '/notifications/preferences',
+      preference
+    );
+    return response.data;
+  },
 };
+
+export interface NotificationPreference {
+  notifyDueDate: boolean;
+  dueDateBeforeMinutes: number;
+}

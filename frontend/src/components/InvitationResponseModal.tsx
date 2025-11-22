@@ -1,15 +1,15 @@
+import { useDialog } from '@/context/DialogContext';
+import { useModalAnimation } from '@/hooks/useModalAnimation';
+import { memberService } from '@/services/memberService';
+import {
+    modalOverlayClass,
+    modalPanelClass,
+    modalPrimaryButtonClass,
+    modalSecondaryButtonClass,
+} from '@/styles/modalStyles';
+import type { BoardMember } from '@/types/member';
 import React, { useState } from 'react';
 import { createPortal } from 'react-dom';
-import { memberService } from '@/services/memberService';
-import type { BoardMember } from '@/types/member';
-import { useModalAnimation } from '@/hooks/useModalAnimation';
-import { useDialog } from '@/hooks/useDialog';
-import {
-  modalOverlayClass,
-  modalPanelClass,
-  modalPrimaryButtonClass,
-  modalSecondaryButtonClass,
-} from '@/styles/modalStyles';
 
 interface InvitationResponseModalProps {
   invitation: BoardMember | null;
@@ -26,7 +26,7 @@ export const InvitationResponseModal: React.FC<InvitationResponseModalProps> = (
 }) => {
   const [loading, setLoading] = useState(false);
   const { stage, close } = useModalAnimation(onClose);
-  const { showAlert } = useDialog();
+  const { alert } = useDialog();
 
   if (!isOpen || !invitation) {
     return null;
@@ -45,11 +45,7 @@ export const InvitationResponseModal: React.FC<InvitationResponseModalProps> = (
       }, 300);
     } catch (err) {
       console.error('Failed to accept invitation:', err);
-      await showAlert({
-        title: '오류',
-        message: '초대 수락에 실패했습니다',
-        variant: 'error',
-      });
+      await alert('초대 수락에 실패했습니다');
     } finally {
       setLoading(false);
     }
@@ -68,11 +64,7 @@ export const InvitationResponseModal: React.FC<InvitationResponseModalProps> = (
       }, 300);
     } catch (err) {
       console.error('Failed to decline invitation:', err);
-      await showAlert({
-        title: '오류',
-        message: '초대 거절에 실패했습니다',
-        variant: 'error',
-      });
+      await alert('초대 거절에 실패했습니다');
     } finally {
       setLoading(false);
     }

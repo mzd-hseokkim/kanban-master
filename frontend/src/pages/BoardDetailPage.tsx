@@ -1,3 +1,4 @@
+import { ArchivedCardsPanel } from "@/components/archive/ArchivedCardsPanel";
 import { useCard } from "@/context/CardContext";
 import { useColumn } from "@/context/ColumnContext";
 import { useBoardSubscription } from "@/hooks/useBoardSubscription";
@@ -40,6 +41,21 @@ const BoardDetailPage = () => {
   const [showSearchPanel, setShowSearchPanel] = useState(false);
   const [showCalendarModal, setShowCalendarModal] = useState(false);
   const [showInsightsPanel, setShowInsightsPanel] = useState(false);
+  const [showArchivePanel, setShowArchivePanel] = useState(false);
+
+  // Search Panel State Persistence
+  const [searchState, setSearchState] = useState({
+    keyword: '',
+    selectedPriorities: [] as string[],
+    selectedLabelIds: [] as number[],
+    selectedAssigneeIds: [] as number[],
+    isCompleted: undefined as boolean | undefined,
+    overdue: false,
+    dueDateFrom: '',
+    dueDateTo: '',
+    sortBy: 'UPDATED_AT' as 'PRIORITY' | 'DUE_DATE' | 'CREATED_AT' | 'UPDATED_AT',
+    sortDir: 'DESC' as 'ASC' | 'DESC',
+  });
 
 
   const activityPanelTransition = usePresenceTransition(showActivityPanel);
@@ -113,6 +129,7 @@ const BoardDetailPage = () => {
         onToggleMembers={() => setShowMembersPanel((prev) => !prev)}
         onCalendar={() => setShowCalendarModal(true)}
         onToggleInsights={() => setShowInsightsPanel((prev) => !prev)}
+        onToggleArchive={() => setShowArchivePanel(true)}
       />
 
       <main className="flex-1 overflow-hidden flex flex-col">
@@ -178,7 +195,19 @@ const BoardDetailPage = () => {
         showCalendarModal={showCalendarModal}
         onCloseCalendarModal={() => setShowCalendarModal(false)}
         cards={Object.values(cards).flat()}
+        searchState={searchState}
+        setSearchState={setSearchState}
       />
+
+      {/* 아카이브 패널 */}
+      {showArchivePanel && (
+        <ArchivedCardsPanel
+          workspaceId={workspaceNumericId}
+          boardId={boardNumericId}
+          onClose={() => setShowArchivePanel(false)}
+          onRestore={() => refreshColumns()}
+        />
+      )}
     </div>
   );
 };

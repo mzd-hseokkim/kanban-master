@@ -43,6 +43,8 @@ export interface Card {
   isCompleted: boolean;
   startedAt?: string;
   completedAt?: string;
+  isArchived?: boolean;
+  archivedAt?: string;
   labels?: Label[];
   commentCount?: number;
   createdAt: string;

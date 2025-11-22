@@ -10,6 +10,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { HiClipboardList, HiEye, HiInbox, HiViewGrid } from 'react-icons/hi';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { InvitationResponseModal } from './InvitationResponseModal';
+import { SettingsModal } from './SettingsModal';
 import { Avatar } from './common/Avatar';
 
 // NavButton 컴포넌트
@@ -38,6 +39,49 @@ const NavButton: React.FC<NavButtonProps> = ({ icon, label, onClick, isActive })
     </button>
 );
 
+interface Toast {
+    id: number;
+    notificationId: string;
+    message: string;
+    type: string;
+    actionUrl?: string;
+}
+
+const ToastMessage: React.FC<{ toast: Toast; onClose: () => void; onClick: () => void }> = ({ toast, onClose, onClick }) => {
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            onClose();
+        }, 5000);
+        return () => clearTimeout(timer);
+    }, [onClose]);
+
+    return (
+        <div
+            className="fixed top-20 right-4 z-[60] animate-slide-in-right cursor-pointer"
+            onClick={onClick}
+        >
+            <div className="bg-slate-800/90 backdrop-blur-md border border-white/10 text-white px-4 py-3 rounded-lg shadow-2xl flex items-center gap-3 min-w-[300px] max-w-md hover:bg-slate-800 transition-colors">
+                <div className="flex-shrink-0 text-2xl">
+                    {toast.type === 'INVITATION' ? '💌' : '🔔'}
+                </div>
+                <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate">{toast.message}</p>
+                    <p className="text-xs text-slate-400 mt-0.5">지금 확인하기</p>
+                </div>
+                <button
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        onClose();
+                    }}
+                    className="text-slate-400 hover:text-white transition-colors p-1"
+                >
+                    ✕
+                </button>
+            </div>
+        </div>
+    );
+};
+
 export const GlobalNavBar: React.FC = () => {
     const navigate = useNavigate();
     const location = useLocation();
@@ -51,6 +95,7 @@ export const GlobalNavBar: React.FC = () => {
     const [loadingWatchList, setLoadingWatchList] = useState(false);
     const [selectedInvitation, setSelectedInvitation] = useState<BoardMember | null>(null);
     const [showInvitationModal, setShowInvitationModal] = useState(false);
+    const [showSettingsModal, setShowSettingsModal] = useState(false);
     const menuRef = useRef<HTMLDivElement>(null);
     const inboxRef = useRef<HTMLDivElement>(null);
     const watchListRef = useRef<HTMLDivElement>(null);
@@ -58,6 +103,8 @@ export const GlobalNavBar: React.FC = () => {
     const inboxTransition = usePresenceTransition(showInbox, 220);
     const watchListTransition = usePresenceTransition(showWatchList, 220);
     const { client, isConnected } = useWebSocket();
+
+    const [toast, setToast] = useState<Toast | null>(null);
 
     const handleLogout = async () => {
         try {
@@ -188,7 +235,14 @@ export const GlobalNavBar: React.FC = () => {
 
                 setInboxItems(prev => [newItem, ...prev]);
 
-                // Optional: Show toast or visual cue
+                // Show toast
+                setToast({
+                    id: Date.now(),
+                    notificationId: newItem.id,
+                    message: event.message,
+                    type: event.type || 'NOTIFICATION',
+                    actionUrl: event.actionUrl
+                });
             } catch (error) {
                 console.error('Failed to process notification:', error);
             }
@@ -491,7 +545,7 @@ export const GlobalNavBar: React.FC = () => {
                                         <button
                                             onClick={() => {
                                                 setShowMenu(false);
-                                                navigate('/profile');
+                                                setShowSettingsModal(true);
                                             }}
                                             className="w-full text-left px-4 py-2 text-sm text-slate-300 hover:bg-white/5 transition border-t border-white/10"
                                         >
@@ -527,6 +581,37 @@ export const GlobalNavBar: React.FC = () => {
                     loadInbox();
                 }}
             />
+
+            {/* Settings Modal */}
+            <SettingsModal
+                isOpen={showSettingsModal}
+                onClose={() => setShowSettingsModal(false)}
+            />
+
+            {/* Toast Notification */}
+            {toast && (
+                <ToastMessage
+                    toast={toast}
+                    onClose={() => setToast(null)}
+                    onClick={async () => {
+                        // Mark as read
+                        if (toast.notificationId) {
+                            try {
+                                await notificationService.markAsRead(toast.notificationId);
+                                // Update local state to mark as read
+                                setInboxItems(prev => prev.map(i => i.id === toast.notificationId ? { ...i, isRead: true } : i));
+                            } catch (error) {
+                                console.error('Failed to mark notification as read:', error);
+                            }
+                        }
+                        // Navigate
+                        if (toast.actionUrl) {
+                            navigate(toast.actionUrl);
+                            setToast(null);
+                        }
+                    }}
+                />
+            )}
         </nav>
     );
 };
