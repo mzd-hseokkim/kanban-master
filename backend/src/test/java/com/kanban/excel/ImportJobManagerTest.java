@@ -2,7 +2,6 @@ package com.kanban.excel;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import java.util.List;
 import org.junit.jupiter.api.Test;
 
 class ImportJobManagerTest {
@@ -11,8 +10,7 @@ class ImportJobManagerTest {
     void createAndTrackJobStatus() {
         ImportJobManager manager = new ImportJobManager();
 
-        ImportJobStatus created =
-                manager.createJob(1L, 2L, ExcelImportMode.MERGE, "sample.xlsx");
+        ImportJobStatus created = manager.createJob(1L, 2L, ExcelImportMode.MERGE, "sample.xlsx");
         assertNotNull(created.getJobId());
         assertEquals(ImportJobState.PENDING, created.getState());
 
