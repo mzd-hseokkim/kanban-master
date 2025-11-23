@@ -160,7 +160,7 @@ export const CalendarModal = ({ isOpen, onClose, cards, onCardSelect }: Calendar
   if (!isOpen) return null;
 
   return createPortal(
-    <div className="fixed inset-0 z-50 flex items-center justify-center overflow-hidden">
+    <div className="fixed inset-0 z-[210] flex items-center justify-center overflow-hidden">
       <div className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm transition-opacity" onClick={onClose} />
 
       <div className="relative w-full max-w-7xl h-[95vh] bg-white rounded-2xl shadow-2xl flex flex-col overflow-hidden m-4 animate-in fade-in zoom-in-95 duration-200">

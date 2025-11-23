@@ -22,7 +22,7 @@ export const ActivityPanel = ({
   }
 
   return (
-    <div className="absolute top-0 right-0 h-full z-10 pointer-events-none translate-x-2 lg:translate-x-4">
+    <div className="absolute top-0 right-0 h-full z-40 pointer-events-none translate-x-2 lg:translate-x-4">
       <aside
         className={`panel-slide panel-slide-${transition.stage} h-full w-96 glass shadow-glass-lg rounded-2xl border border-white/30 overflow-hidden pointer-events-auto`}
       >
