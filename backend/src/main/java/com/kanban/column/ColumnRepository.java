@@ -47,4 +47,9 @@ public interface ColumnRepository extends JpaRepository<BoardColumn, Long> {
          */
         List<BoardColumn> findByBoardWorkspaceIdAndNameContainingIgnoreCase(Long workspaceId,
                         String name);
+
+        /**
+         * 보드 내에서 이름으로 칼럼 조회 (대소문자 무시)
+         */
+        Optional<BoardColumn> findByBoardIdAndNameIgnoreCase(Long boardId, String name);
 }

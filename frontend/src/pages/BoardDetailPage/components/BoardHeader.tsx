@@ -1,5 +1,5 @@
-import { useState, type DragEvent, type ReactNode } from 'react';
-import { HiArrowLeft, HiCalendar, HiChartPie, HiLightningBolt, HiPlus, HiSearch, HiTag, HiUsers, HiViewBoards, HiViewList } from 'react-icons/hi';
+import { useEffect, useRef, useState, type DragEvent, type ReactNode } from 'react';
+import { HiArrowLeft, HiCalendar, HiChartPie, HiChevronDown, HiDownload, HiLightningBolt, HiPlus, HiSearch, HiTag, HiUpload, HiUsers, HiViewBoards, HiViewList } from 'react-icons/hi';
 import { MdArchive } from 'react-icons/md';
 
 interface BoardHeaderProps {
@@ -18,6 +18,11 @@ interface BoardHeaderProps {
   onToggleArchive: () => void;
   onCreateColumn: () => void;
   onArchiveDrop: (cardId: number, columnId: number) => void;
+  onTemplateDownload: () => void;
+  onExportBoard: () => void;
+  onImport: () => void;
+  isExporting?: boolean;
+  isDownloadingTemplate?: boolean;
 }
 
 export const BoardHeader = ({
@@ -36,8 +41,14 @@ export const BoardHeader = ({
   onToggleArchive,
   onCreateColumn,
   onArchiveDrop,
+  onTemplateDownload,
+  onExportBoard,
+  onImport,
+  isExporting,
 }: BoardHeaderProps) => {
   const [isArchiveDropTarget, setIsArchiveDropTarget] = useState(false);
+  const [isExcelMenuOpen, setIsExcelMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement | null>(null);
 
   const handleArchiveDragOver = (e: DragEvent<HTMLButtonElement>) => {
     if (!canEdit) return;
@@ -67,8 +78,18 @@ export const BoardHeader = ({
     onArchiveDrop(cardId, sourceColumnId);
   };
 
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setIsExcelMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
   return (
-    <header className="bg-white/90 backdrop-blur-md border-b border-slate-200/50 flex-shrink-0 transition-colors duration-300">
+    <header className="bg-white/90 backdrop-blur-md border-b border-slate-200/50 flex-shrink-0 transition-colors duration-300 relative z-[120]">
       <div className="w-full max-w-[95vw] mx-auto py-4 px-4 sm:px-6 lg:px-8 flex items-center justify-between">
         <div className="flex items-center gap-4">
           <button
@@ -133,6 +154,59 @@ export const BoardHeader = ({
             label="인사이트"
             onClick={onToggleInsights}
           />
+          <div className="relative" ref={menuRef}>
+            <button
+              type="button"
+              onClick={() => setIsExcelMenuOpen((prev) => !prev)}
+              className="flex items-center gap-2 px-3 py-2 rounded-lg text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition-all duration-200 font-medium text-sm"
+            >
+              <HiDownload className="text-lg" />
+              <span className="hidden md:inline">엑셀</span>
+              <HiChevronDown className="text-sm" />
+            </button>
+            {isExcelMenuOpen && (
+              <div
+                className="absolute right-0 mt-2 w-56 rounded-2xl overflow-hidden excel-dropdown"
+              >
+                <button
+                  className="w-full flex items-center gap-2 px-4 py-3 text-sm text-slate-700 hover:bg-slate-50 transition-colors"
+                  onClick={() => {
+                    onTemplateDownload();
+                    setIsExcelMenuOpen(false);
+                  }}
+                >
+                  <HiDownload className="text-slate-500" />
+                  템플릿 다운로드
+                </button>
+                <button
+                  className="w-full flex items-center gap-2 px-4 py-3 text-sm text-slate-700 hover:bg-slate-50 transition-colors"
+                  onClick={() => {
+                    onExportBoard();
+                    setIsExcelMenuOpen(false);
+                  }}
+                  disabled={isExporting}
+                >
+                  <HiArrowLeft className="text-slate-500 rotate-180" />
+                  {isExporting ? '내보내는 중...' : '엑셀로 내보내기'}
+                </button>
+                <button
+                  className={`w-full flex items-center gap-2 px-4 py-3 text-sm transition-colors ${
+                    canEdit
+                      ? 'text-slate-700 hover:bg-slate-50'
+                      : 'text-slate-400 cursor-not-allowed bg-slate-50'
+                  }`}
+                  onClick={() => {
+                    if (!canEdit) return;
+                    onImport();
+                    setIsExcelMenuOpen(false);
+                  }}
+                >
+                  <HiUpload className="text-slate-500" />
+                  엑셀 가져오기
+                </button>
+              </div>
+            )}
+          </div>
           <HeaderButton
             icon={<HiCalendar />}
             label="일정"

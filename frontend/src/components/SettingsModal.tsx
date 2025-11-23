@@ -1,4 +1,4 @@
-import { useAuth } from '@/context/AuthContext';
+
 import { useModalAnimation } from '@/hooks/useModalAnimation';
 import { NotificationPreference, notificationService } from '@/services/notificationService';
 import { modalOverlayClass, modalPanelClass } from '@/styles/modalStyles';
@@ -12,7 +12,7 @@ interface SettingsModalProps {
 
 export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
     const { stage, close } = useModalAnimation(onClose);
-    const { user } = useAuth();
+
     const [activeTab, setActiveTab] = useState<'profile' | 'notification'>('notification');
     const [preference, setPreference] = useState<NotificationPreference>({
         notifyDueDate: true,

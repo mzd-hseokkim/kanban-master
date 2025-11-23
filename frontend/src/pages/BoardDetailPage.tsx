@@ -2,12 +2,16 @@ import { ArchivedCardsPanel } from "@/components/archive/ArchivedCardsPanel";
 import { ErrorNotification } from "@/components/ErrorNotification";
 import { useCard } from "@/context/CardContext";
 import { useColumn } from "@/context/ColumnContext";
+import { useDialog } from "@/context/DialogContext";
 import { useBoardSubscription } from "@/hooks/useBoardSubscription";
+import { useImportProgress } from "@/hooks/useImportProgress";
 import { usePermissions } from "@/hooks/usePermissions";
 import { usePresenceTransition } from "@/hooks/usePresenceTransition";
-import type { CardSearchResult } from "@/types/search";
 import cardService from "@/services/cardService";
-import { useCallback, useEffect, useState } from "react";
+import excelService from "@/services/excelService";
+import type { ImportJobStartResponse } from "@/types/excel";
+import type { CardSearchResult } from "@/types/search";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { ActivityPanel } from "./BoardDetailPage/components/ActivityPanel";
 import { BoardHeader } from "./BoardDetailPage/components/BoardHeader";
@@ -18,6 +22,8 @@ import {
     BoardLoadingState,
 } from "./BoardDetailPage/components/BoardStateFallbacks";
 import { ColumnsSection } from "./BoardDetailPage/components/ColumnsSection";
+import { ExcelImportModal } from "./BoardDetailPage/components/ExcelImportModal";
+import { ImportProgressPanel } from "./BoardDetailPage/components/ImportProgressPanel";
 import { ListView } from "./BoardDetailPage/components/ListView";
 import { MembersModal } from "./BoardDetailPage/components/MembersModal";
 import {
@@ -35,6 +41,7 @@ const BoardDetailPage = () => {
   const [searchParams] = useSearchParams();
   const { columns, loading: columnsLoading, loadColumns, handleColumnEvent } = useColumn();
   const { cards, loadCards, handleCardEvent } = useCard();
+  const { alert } = useDialog();
 
   const [viewMode, setViewMode] = useState<'BOARD' | 'LIST'>(() => {
     const savedMode = localStorage.getItem('boardViewMode');
@@ -55,6 +62,13 @@ const BoardDetailPage = () => {
   const [showInsightsPanel, setShowInsightsPanel] = useState(false);
   const [insightsRefreshKey, setInsightsRefreshKey] = useState(0);
   const [showArchivePanel, setShowArchivePanel] = useState(false);
+  const [showImportModal, setShowImportModal] = useState(false);
+
+  const [activeImportJobId, setActiveImportJobId] = useState<string | null>(null);
+  const [importFileName, setImportFileName] = useState<string>('엑셀 가져오기');
+  const lastImportState = useRef<ImportJobStartResponse['state'] | null>(null);
+  const [isExporting, setIsExporting] = useState(false);
+  const [isDownloadingTemplate, setIsDownloadingTemplate] = useState(false);
 
   // Search Panel State Persistence
   const [searchState, setSearchState] = useState({
@@ -91,6 +105,8 @@ const BoardDetailPage = () => {
   const boardNumericId = boardId ? Number(boardId) : Number.NaN;
   const hasValidNumericIds =
     !Number.isNaN(workspaceNumericId) && !Number.isNaN(boardNumericId);
+  const { status: importStatus, refresh: refreshImportStatus } =
+    useImportProgress(boardNumericId, activeImportJobId);
 
   const refreshColumns = useCallback(async () => {
     if (!hasValidNumericIds) {
@@ -98,6 +114,19 @@ const BoardDetailPage = () => {
     }
     await loadColumns(workspaceNumericId, boardNumericId);
   }, [hasValidNumericIds, loadColumns, workspaceNumericId, boardNumericId]);
+
+  useEffect(() => {
+    if (!importStatus) return;
+    if (lastImportState.current === importStatus.state) return;
+    if (importStatus.state === 'COMPLETED') {
+      refreshColumns();
+      alert('엑셀 가져오기가 완료되었습니다.');
+    }
+    if (importStatus.state === 'FAILED') {
+      alert(importStatus.message || '엑셀 가져오기에 실패했습니다.');
+    }
+    lastImportState.current = importStatus.state;
+  }, [alert, importStatus, refreshColumns]);
 
   useBoardSubscription(boardNumericId, (event) => {
     console.log('Board event received:', event);
@@ -137,6 +166,57 @@ const BoardDetailPage = () => {
     }
   }, [boardNumericId, canEdit, hasValidNumericIds, loadCards, workspaceNumericId]);
 
+  const downloadBlob = useCallback((blob: Blob, filename: string) => {
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+  }, []);
+
+  const handleTemplateDownload = useCallback(async () => {
+    if (!hasValidNumericIds) {
+      await alert('보드 정보를 불러오는 중입니다. 잠시 후 다시 시도해주세요.');
+      return;
+    }
+    setIsDownloadingTemplate(true);
+    try {
+      const blob = await excelService.downloadTemplate(workspaceNumericId, boardNumericId);
+      downloadBlob(blob, `board-${boardNumericId}-template.xlsx`);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : '템플릿 다운로드에 실패했습니다.';
+      await alert(message);
+    } finally {
+      setIsDownloadingTemplate(false);
+    }
+  }, [alert, boardNumericId, downloadBlob, hasValidNumericIds, workspaceNumericId]);
+
+  const handleExportBoard = useCallback(async () => {
+    if (!hasValidNumericIds) {
+      await alert('보드 정보를 불러오는 중입니다. 잠시 후 다시 시도해주세요.');
+      return;
+    }
+    setIsExporting(true);
+    try {
+      const blob = await excelService.exportBoard(workspaceNumericId, boardNumericId);
+      downloadBlob(blob, `board-${boardNumericId}-export.xlsx`);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : '엑셀 내보내기에 실패했습니다.';
+      await alert(message);
+    } finally {
+      setIsExporting(false);
+    }
+  }, [alert, boardNumericId, downloadBlob, hasValidNumericIds, workspaceNumericId]);
+
+  const handleImportStarted = useCallback((job: ImportJobStartResponse, fileName: string) => {
+    setActiveImportJobId(job.jobId);
+    setImportFileName(fileName);
+    refreshImportStatus();
+  }, [refreshImportStatus]);
+
   if (loading) {
     return <BoardLoadingState />;
   }
@@ -169,12 +249,17 @@ const BoardDetailPage = () => {
         onToggleArchive={() => setShowArchivePanel(true)}
         onCreateColumn={() => setShowCreateColumnModal(true)}
         onArchiveDrop={handleArchiveDrop}
+        onTemplateDownload={handleTemplateDownload}
+        onExportBoard={handleExportBoard}
+        onImport={() => setShowImportModal(true)}
+        isExporting={isExporting}
+        isDownloadingTemplate={isDownloadingTemplate}
       />
 
       <main className="flex-1 overflow-hidden flex flex-col">
         <div
           className={`transition-all duration-300 ease-in-out overflow-hidden ${
-            showInsightsPanel ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
+            showInsightsPanel ? 'max-h-[800px] opacity-100' : 'max-h-0 opacity-0'
           }`}
         >
           <BoardInsightsPanel workspaceId={workspaceNumericId} boardId={boardNumericId} refreshKey={insightsRefreshKey} />
@@ -249,6 +334,23 @@ const BoardDetailPage = () => {
         searchState={searchState}
         setSearchState={setSearchState}
       />
+
+      <ExcelImportModal
+        isOpen={showImportModal}
+        workspaceId={workspaceNumericId}
+        boardId={boardNumericId}
+        onClose={() => setShowImportModal(false)}
+        onStarted={handleImportStarted}
+      />
+
+      {importStatus && activeImportJobId && (
+        <ImportProgressPanel
+          status={importStatus}
+          fileName={importFileName}
+          onRefresh={refreshImportStatus}
+          onClose={() => setActiveImportJobId(null)}
+        />
+      )}
 
       {/* 아카이브 패널 */}
       {showArchivePanel && (

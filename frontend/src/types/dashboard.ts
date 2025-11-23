@@ -45,6 +45,14 @@ export interface AssigneeInsight {
   name: string | null;
   total: number;
   overdue: number;
+  completed: number;
+}
+
+export interface LabelInsight {
+  labelId: number;
+  name: string;
+  colorToken: string;
+  count: number;
 }
 
 export interface BoardInsightsResponse {
@@ -52,5 +60,6 @@ export interface BoardInsightsResponse {
   completion: CompletionStats;
   priority: PriorityStats;
   byAssignee: AssigneeInsight[];
+  byLabel: LabelInsight[];
   noDueDate: number;
 }

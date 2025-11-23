@@ -50,4 +50,11 @@ public interface LabelRepository extends JpaRepository<Label, Long> {
      */
     @Query("SELECT COALESCE(MAX(l.displayOrder), -1) FROM Label l WHERE l.board.id = :boardId")
     Integer findMaxDisplayOrderByBoardId(@Param("boardId") Long boardId);
+
+    /**
+     * 이름 목록으로 라벨 조회
+     */
+    @Query("SELECT l FROM Label l WHERE l.board.id = :boardId AND LOWER(l.name) IN :names")
+    List<Label> findByBoardIdAndNameInIgnoreCase(@Param("boardId") Long boardId,
+                    @Param("names") List<String> names);
 }

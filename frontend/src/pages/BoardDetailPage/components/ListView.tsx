@@ -230,7 +230,7 @@ export const ListView = ({
                 <React.Fragment key={column.id}>
                     {/* Column Header */}
                     <div
-                      ref={(el) => (columnRefs.current[column.id] = el)}
+                      ref={(el) => { columnRefs.current[column.id] = el; }}
                       className={`sticky z-20 flex items-center justify-between px-4 py-3 bg-slate-50 border border-slate-200 cursor-pointer hover:bg-slate-100 transition-colors ${
                         isCollapsed ? 'rounded-lg mb-4' : 'rounded-t-lg border-b-0'
                       } ${
@@ -277,7 +277,7 @@ export const ListView = ({
                         {canEdit && (
                           <div
                             className="relative flex items-center"
-                            ref={(el) => (columnMenuRefs.current[column.id] = el)}
+                            ref={(el) => { columnMenuRefs.current[column.id] = el; }}
                             onClick={(e) => e.stopPropagation()}
                           >
                             <button
@@ -314,7 +314,7 @@ export const ListView = ({
                     {/* Cards List */}
                     {!isCollapsed && (
                       <div
-                          ref={(el) => (columnContentRefs.current[column.id] = el)}
+                          ref={(el) => { columnContentRefs.current[column.id] = el; }}
                           className={`relative bg-white border border-slate-200 rounded-b-lg shadow-sm mb-4 min-h-[40px] ${
                             isDragOver ? 'bg-slate-50 border-pastel-blue-300 ring-2 ring-pastel-blue-100' : ''
                           }`}

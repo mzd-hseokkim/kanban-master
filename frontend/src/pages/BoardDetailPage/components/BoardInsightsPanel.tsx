@@ -1,3 +1,4 @@
+import { getLabelColor } from '@/constants/labelColors';
 import { dashboardService } from '@/services/dashboardService';
 import { BoardInsightsResponse } from '@/types/dashboard';
 import React, { useEffect, useState } from 'react';
@@ -99,7 +100,7 @@ export const BoardInsightsPanel: React.FC<BoardInsightsPanelProps> = ({ workspac
           {/* Column Breakdown */}
           <div className="bg-gray-50 p-4 rounded-lg col-span-1 md:col-span-2">
             <h3 className="text-sm font-medium text-gray-500 mb-2">By Column</h3>
-            <div className="space-y-2">
+            <div className="space-y-2 max-h-40 overflow-y-auto pr-2 scrollbar-thin">
               {insights.byColumn.map(col => (
                 <div key={col.columnId} className="flex items-center gap-2 text-sm">
                   <span className="w-24 truncate font-medium text-gray-700" title={col.name}>{col.name}</span>
@@ -115,6 +116,52 @@ export const BoardInsightsPanel: React.FC<BoardInsightsPanelProps> = ({ workspac
                       <HiExclamation /> {col.overdue}
                     </span>
                   )}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Assignee Breakdown */}
+          <div className="bg-gray-50 p-4 rounded-lg col-span-1 md:col-span-2">
+            <h3 className="text-sm font-medium text-gray-500 mb-2">By Assignee</h3>
+            <div className="space-y-2 max-h-40 overflow-y-auto pr-2 scrollbar-thin">
+              {insights.byAssignee.map(assignee => (
+                <div key={assignee.assigneeId || 'unassigned'} className="flex items-center gap-2 text-sm">
+                  <span className="w-24 truncate font-medium text-gray-700" title={assignee.name || 'Unassigned'}>
+                    {assignee.name || 'Unassigned'}
+                  </span>
+                  <div className="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden flex">
+                    <div
+                      style={{ width: `${assignee.total > 0 ? (assignee.completed / assignee.total) * 100 : 0}%` }}
+                      className="bg-green-500 h-full"
+                      title={`${assignee.completed} Completed`}
+                    />
+                  </div>
+                  <span className="text-gray-600 w-16 text-right text-xs">
+                    {assignee.completed}/{assignee.total}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Label Breakdown */}
+          <div className="bg-gray-50 p-4 rounded-lg col-span-1 md:col-span-2">
+            <h3 className="text-sm font-medium text-gray-500 mb-2">By Label</h3>
+            <div className="space-y-2 max-h-40 overflow-y-auto pr-2 scrollbar-thin">
+              {insights.byLabel.map(label => (
+                <div key={label.labelId} className="flex items-center gap-2 text-sm">
+                  <span className="w-24 truncate font-medium text-gray-700" title={label.name}>{label.name}</span>
+                  <div className="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
+                    <div
+                      style={{
+                        width: `${(label.count / Math.max(1, Math.max(...insights.byLabel.map(l => l.count)))) * 100}%`,
+                        backgroundColor: getLabelColor(label.colorToken)
+                      }}
+                      className="h-full rounded-full"
+                    />
+                  </div>
+                  <span className="text-gray-600 w-8 text-right">{label.count}</span>
                 </div>
               ))}
             </div>

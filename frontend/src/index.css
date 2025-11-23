@@ -336,6 +336,29 @@ select:not(.borderless-input):not(:focus) {
     pointer-events: none;
 }
 
+.dropdown-solid {
+    background-color: #ffffff !important;
+    opacity: 1 !important;
+    mix-blend-mode: normal !important;
+    isolation: isolate;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    filter: none !important;
+}
+
+.excel-dropdown {
+    background-color: #ffffff !important;
+    opacity: 1 !important;
+    mix-blend-mode: normal !important;
+    isolation: isolate;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    filter: none !important;
+    box-shadow: 0 18px 40px rgba(15, 23, 42, 0.18) !important;
+    border: 1px solid #e2e8f0 !important;
+    z-index: 9999;
+}
+
 @media (prefers-reduced-motion: reduce) {
     .dropdown-panel-enter,
     .dropdown-panel-exit {

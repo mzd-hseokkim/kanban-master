@@ -41,4 +41,10 @@ public interface ChecklistItemRepository extends JpaRepository<ChecklistItem, Lo
      * 카드의 모든 체크리스트 항목 삭제
      */
     void deleteByCardId(Long cardId);
+
+    /**
+     * 여러 카드의 체크리스트 항목 조회 (순서 유지)
+     */
+    @Query("SELECT c FROM ChecklistItem c WHERE c.card.id IN :cardIds ORDER BY c.card.id, c.position")
+    List<ChecklistItem> findByCardIdInOrderByPosition(@Param("cardIds") List<Long> cardIds);
 }

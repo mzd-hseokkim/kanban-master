@@ -193,9 +193,10 @@ public interface CardRepository extends JpaRepository<Card, Long> {
          */
         @Query("SELECT c.assignee.id as assigneeId, c.assignee.name as assigneeName, "
                         + "COUNT(c) as total, "
-                        + "SUM(CASE WHEN c.isCompleted = false AND c.dueDate < :today THEN 1 ELSE 0 END) as overdue "
+                        + "SUM(CASE WHEN c.isCompleted = false AND c.dueDate < :today THEN 1 ELSE 0 END) as overdue, "
+                        + "SUM(CASE WHEN c.isCompleted = true THEN 1 ELSE 0 END) as completed "
                         + "FROM Card c " + "WHERE c.column.board.id = :boardId "
-                        + "GROUP BY c.assignee.id, c.assignee.name")
+                        + "GROUP BY c.assignee.id, c.assignee.name " + "ORDER BY total DESC")
         List<Object[]> findAssigneeInsightsByBoardId(@Param("boardId") Long boardId,
                         @Param("today") java.time.LocalDate today);
 
@@ -204,4 +205,27 @@ public interface CardRepository extends JpaRepository<Card, Long> {
          */
         @Query("SELECT COUNT(c) FROM Card c WHERE c.column.board.id = :boardId AND c.isCompleted = false AND c.dueDate IS NULL")
         long countByBoardIdAndDueDateIsNullAndIsCompletedFalse(@Param("boardId") Long boardId);
+
+        /**
+         * 칼럼 내에서 제목으로 카드 조회 (대소문자 무시)
+         */
+        @Query("SELECT c FROM Card c WHERE c.column.id = :columnId AND LOWER(c.title) = LOWER(:title)")
+        Optional<Card> findByColumnIdAndTitleIgnoreCase(@Param("columnId") Long columnId,
+                        @Param("title") String title);
+
+        /**
+         * 보드 내에서 제목으로 카드 조회 (대소문자 무시)
+         */
+        @Query("SELECT c FROM Card c WHERE c.column.board.id = :boardId AND LOWER(c.title) = LOWER(:title)")
+        List<Card> findByBoardIdAndTitleIgnoreCase(@Param("boardId") Long boardId,
+                        @Param("title") String title);
+
+        /**
+         * 보드 내 라벨별 카드 개수 조회
+         */
+        @Query("SELECT l.id as labelId, l.name as labelName, l.colorToken as colorToken, COUNT(c) as count "
+                        + "FROM Card c " + "JOIN c.cardLabels cl " + "JOIN cl.label l "
+                        + "WHERE c.column.board.id = :boardId "
+                        + "GROUP BY l.id, l.name, l.colorToken " + "ORDER BY count DESC")
+        List<Object[]> findLabelInsightsByBoardId(@Param("boardId") Long boardId);
 }

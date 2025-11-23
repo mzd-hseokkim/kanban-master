@@ -15,6 +15,7 @@ public class BoardInsightsResponse {
     private CompletionStats completion;
     private PriorityStats priority;
     private List<AssigneeInsight> byAssignee;
+    private List<LabelInsight> byLabel;
     private long noDueDate;
 
     @Data
@@ -57,5 +58,17 @@ public class BoardInsightsResponse {
         private String name;
         private long total;
         private long overdue;
+        private long completed;
+    }
+
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class LabelInsight {
+        private Long labelId;
+        private String name;
+        private String colorToken;
+        private long count;
     }
 }

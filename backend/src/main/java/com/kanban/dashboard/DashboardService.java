@@ -131,12 +131,22 @@ public class DashboardService {
                                 .map(obj -> BoardInsightsResponse.AssigneeInsight.builder()
                                                 .assigneeId((Long) obj[0]).name((String) obj[1])
                                                 .total((Long) obj[2]).overdue((Long) obj[3])
-                                                .build())
+                                                .completed((Long) obj[4]).build())
                                 .collect(Collectors.toList());
 
                 // No Due Date
                 long noDueDate = cardRepository
                                 .countByBoardIdAndDueDateIsNullAndIsCompletedFalse(boardId);
+
+                // Label Insights
+                List<Object[]> labelInsightsRaw =
+                                cardRepository.findLabelInsightsByBoardId(boardId);
+                List<BoardInsightsResponse.LabelInsight> byLabel = labelInsightsRaw.stream()
+                                .map(obj -> BoardInsightsResponse.LabelInsight.builder()
+                                                .labelId((Long) obj[0]).name((String) obj[1])
+                                                .colorToken((String) obj[2]).count((Long) obj[3])
+                                                .build())
+                                .collect(Collectors.toList());
 
                 return BoardInsightsResponse.builder().byColumn(byColumn)
                                 .completion(BoardInsightsResponse.CompletionStats.builder()
@@ -144,6 +154,7 @@ public class DashboardService {
                                                 .build())
                                 .priority(BoardInsightsResponse.PriorityStats.builder().high(high)
                                                 .medium(medium).low(low).build())
-                                .byAssignee(byAssignee).noDueDate(noDueDate).build();
+                                .byAssignee(byAssignee).byLabel(byLabel).noDueDate(noDueDate)
+                                .build();
         }
 }

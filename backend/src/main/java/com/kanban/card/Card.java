@@ -4,8 +4,13 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import com.kanban.attachment.CardAttachment;
+import com.kanban.checklist.ChecklistItem;
 import com.kanban.column.BoardColumn;
+import com.kanban.comment.Comment;
 import com.kanban.entity.BaseEntity;
+import com.kanban.label.CardLabel;
+import com.kanban.notification.NotificationLog;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -121,4 +126,39 @@ public class Card extends BaseEntity {
     @OneToMany(mappedBy = "parentCard")
     @Builder.Default
     private List<Card> childCards = new ArrayList<>();
+
+    /**
+     * 카드 라벨 목록
+     */
+    @OneToMany(mappedBy = "card", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    private List<CardLabel> cardLabels = new ArrayList<>();
+
+    /**
+     * 체크리스트 항목 목록
+     */
+    @OneToMany(mappedBy = "card", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    private List<ChecklistItem> checklistItems = new ArrayList<>();
+
+    /**
+     * 첨부파일 목록
+     */
+    @OneToMany(mappedBy = "card", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    private List<CardAttachment> attachments = new ArrayList<>();
+
+    /**
+     * 댓글 목록
+     */
+    @OneToMany(mappedBy = "card", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    private List<Comment> comments = new ArrayList<>();
+
+    /**
+     * 알림 로그 목록
+     */
+    @OneToMany(mappedBy = "card", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    private List<NotificationLog> notificationLogs = new ArrayList<>();
 }

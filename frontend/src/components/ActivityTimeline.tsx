@@ -23,8 +23,8 @@ interface ActivityTimelineProps {
   maxHeight?: string;
 }
 
-const getActivityIcon = (eventType: string): JSX.Element => {
-  const iconMap: Record<string, JSX.Element> = {
+const getActivityIcon = (eventType: string): React.ReactElement => {
+  const iconMap: Record<string, React.ReactElement> = {
     BOARD_CREATED: <FaChalkboard />,
     BOARD_UPDATED: <FaEdit />,
     BOARD_DELETED: <FaTrash />,

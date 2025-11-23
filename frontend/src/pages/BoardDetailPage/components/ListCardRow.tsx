@@ -22,7 +22,6 @@ export const ListCardRow = ({
   card,
   workspaceId,
   boardId,
-  boardOwnerId,
   columnId,
   canEdit,
   onEditCard,
@@ -33,7 +32,6 @@ export const ListCardRow = ({
   const [isDeleting, setIsDeleting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
-  const [cardWithRelations, setCardWithRelations] = useState<Card | null>(null);
   const [isLoadingRelations, setIsLoadingRelations] = useState(false);
 
   const handleDelete = async (e: React.MouseEvent) => {
@@ -137,7 +135,7 @@ export const ListCardRow = ({
         card.id,
         true
       );
-      setCardWithRelations(fullCard);
+
       onEditCard(fullCard);
     } catch (err) {
       const message = err instanceof Error ? err.message : '카드 정보를 불러오는데 실패했습니다';
