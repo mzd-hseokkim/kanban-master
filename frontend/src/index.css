@@ -192,7 +192,7 @@ select:not(.borderless-input):not(:focus) {
     align-items: flex-start;
     justify-content: center;
     padding: 1.5rem;
-    z-index: 200;
+    z-index: 1000;
     overflow-y: auto;
 }
 
