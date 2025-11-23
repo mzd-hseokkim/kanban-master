@@ -46,6 +46,13 @@ Lightweight reference for how the Spring Boot backend and React frontend coexist
 -   Backend CRUD operations should complete in under 200 ms with tuned queries, appropriate indexing, and connection pooling.
 -   Frontend aims for sub-3-second initial load on 3G, sub-500 KB initial bundle size, strategic code splitting, and optimized media assets.
 
+## Design System
+
+-   **Style**: Vibrant Dark Glassmorphism.
+-   **Core Elements**: Dark mesh gradient background, light glass panels for containers, and vibrant pastel accents for text and interactive elements.
+-   **Source of Truth**: Refer to `frontend/DESIGN.md` for detailed guidelines, color palettes, and component examples.
+-   **Tech Stack**: Tailwind CSS with custom configuration for colors and glassmorphism utilities.
+
 ## Testing Strategy
 
 -   Backend includes unit coverage for business logic, integration coverage for REST APIs, and database tests powered by containers.
