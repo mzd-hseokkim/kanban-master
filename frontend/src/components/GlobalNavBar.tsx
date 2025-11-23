@@ -302,7 +302,7 @@ export const GlobalNavBar: React.FC = () => {
     }, [showMenu, showInbox, showWatchList]);
 
     return (
-        <nav className="backdrop-blur-xl bg-slate-900/80 shadow-lg sticky top-0 z-50 border-b border-white/5 transition-colors duration-300">
+        <nav className="backdrop-blur-xl bg-slate-900/80 shadow-lg sticky top-0 z-[300] border-b border-white/5 transition-colors duration-300">
             <div className="w-full max-w-[95vw] mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="flex items-center justify-between h-16 gap-4">
                     {/* 좌측: 로고 + 네비게이션 탭 */}
@@ -367,7 +367,7 @@ export const GlobalNavBar: React.FC = () => {
                     {user && (
                         <div className="flex items-center gap-3">
                             {/* Watch List Button */}
-                            <div className="relative" ref={watchListRef}>
+                            <div className="relative z-[310]" ref={watchListRef}>
                                 <button
                                     onClick={handleWatchListClick}
                                     className="relative w-10 h-10 hover:bg-white/10 rounded-lg transition-all duration-200 flex items-center justify-center group"
@@ -384,7 +384,7 @@ export const GlobalNavBar: React.FC = () => {
                                 {/* Watch List Dropdown */}
                                 {watchListTransition.shouldRender && (
                                     <div
-                                        className={`dropdown-panel dropdown-panel-${watchListTransition.stage} absolute right-0 mt-2 w-96 bg-slate-800 rounded-lg shadow-xl border border-white/10 text-slate-200`}
+                                        className={`dropdown-panel dropdown-panel-${watchListTransition.stage} absolute right-0 top-[calc(100%+0.5rem)] w-96 bg-slate-800 rounded-lg shadow-xl border border-white/10 text-slate-200 z-[320]`}
                                     >
                                         <div className="px-4 py-3 border-b border-white/10 flex justify-between items-center">
                                             <p className="text-sm font-semibold text-white">관심 카드 목록</p>
@@ -431,7 +431,7 @@ export const GlobalNavBar: React.FC = () => {
                             </div>
 
                             {/* Inbox Button */}
-                            <div className="relative" ref={inboxRef}>
+                    <div className="relative z-[310]" ref={inboxRef}>
                                 <button
                                     onClick={handleInboxClick}
                                     className="relative w-10 h-10 hover:bg-white/10 rounded-lg transition-all duration-200 flex items-center justify-center group"
@@ -448,7 +448,7 @@ export const GlobalNavBar: React.FC = () => {
                                 {/* Inbox Dropdown */}
                                 {inboxTransition.shouldRender && (
                                     <div
-                                        className={`dropdown-panel dropdown-panel-${inboxTransition.stage} absolute right-0 mt-2 w-96 bg-slate-800 rounded-lg shadow-xl border border-white/10 text-slate-200`}
+                                        className={`dropdown-panel dropdown-panel-${inboxTransition.stage} absolute right-0 top-[calc(100%+0.5rem)] w-96 bg-slate-800 rounded-lg shadow-xl border border-white/10 text-slate-200 z-[320]`}
                                     >
                                         <div className="px-4 py-3 border-b border-white/10 flex justify-between items-center">
                                             <p className="text-sm font-semibold text-white">알림함</p>
@@ -498,7 +498,7 @@ export const GlobalNavBar: React.FC = () => {
                             </div>
 
                             {/* User Menu Button */}
-                            <div className="relative z-50" ref={menuRef}>
+                            <div className="relative z-[310]" ref={menuRef}>
                                 <button
                                     onClick={() => setShowMenu(!showMenu)}
                                     className="flex items-center gap-3 px-3 py-2 hover:bg-white/10 rounded-lg transition-all duration-200"
@@ -516,7 +516,7 @@ export const GlobalNavBar: React.FC = () => {
                                 {/* Dropdown Menu */}
                                 {menuTransition.shouldRender && (
                                     <div
-                                        className={`dropdown-panel dropdown-panel-${menuTransition.stage} absolute right-0 mt-2 w-64 bg-slate-800 rounded-lg shadow-xl border border-white/10 py-1 text-slate-200`}
+                                        className={`dropdown-panel dropdown-panel-${menuTransition.stage} absolute right-0 top-full mt-2 w-64 bg-slate-800 rounded-lg shadow-xl border border-white/10 py-1 text-slate-200 z-[320]`}
                                     >
                                         <div className="px-4 py-2 border-b border-white/10">
                                             <p className="text-xs text-slate-400">로그인 정보</p>
