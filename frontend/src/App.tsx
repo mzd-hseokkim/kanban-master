@@ -20,6 +20,7 @@ import SearchPage from '@/pages/SearchPage';
 import { SignupPage } from '@/pages/SignupPage';
 import TermsPage from '@/pages/TermsPage';
 import { VerifyEmailPage } from '@/pages/VerifyEmailPage';
+import PricingPage from '@/pages/PricingPage';
 import { Fragment, useEffect, useState } from 'react';
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
 
@@ -113,6 +114,14 @@ const App = () => {
         element={(
           <ProtectedRoute>
             <ContactPage />
+          </ProtectedRoute>
+        )}
+      />
+      <Route
+        path="/pricing"
+        element={(
+          <ProtectedRoute>
+            <PricingPage />
           </ProtectedRoute>
         )}
       />

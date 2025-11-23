@@ -7,6 +7,7 @@ export const Footer = () => {
   const links = [
     { label: 'Privacy', to: '/privacy' },
     { label: 'Terms', to: '/terms' },
+    { label: 'Pricing', to: '/pricing' },
     { label: 'Contact', to: '/contact' },
   ];
 
