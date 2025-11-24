@@ -1,12 +1,24 @@
 import cardService from '@/services/cardService';
-import { Card, CreateCardRequest, UpdateCardRequest } from '@/types/card';
+import { Card, CardPageResponse, CardSortKey, CreateCardRequest, SortDirection, UpdateCardRequest } from '@/types/card';
 import React, { createContext, useCallback, useContext, useState } from 'react';
 
 interface CardContextType {
   cards: { [columnId: number]: Card[] };
   loading: boolean;
   error: string | null;
-  loadCards: (workspaceId: number, boardId: number, columnId: number) => Promise<void>;
+  loadCards: (
+    workspaceId: number,
+    boardId: number,
+    columnId: number,
+    options?: {
+      page?: number;
+      size?: number;
+      sortKey?: CardSortKey;
+      direction?: SortDirection;
+      append?: boolean;
+      silent?: boolean;
+    }
+  ) => Promise<CardPageResponse | undefined>;
   createCard: (workspaceId: number, boardId: number, columnId: number, request: CreateCardRequest) => Promise<Card>;
   updateCard: (workspaceId: number, boardId: number, columnId: number, cardId: number, request: UpdateCardRequest) => Promise<Card>;
   deleteCard: (workspaceId: number, boardId: number, columnId: number, cardId: number) => Promise<void>;
@@ -21,21 +33,41 @@ export const CardProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const loadCards = useCallback(async (workspaceId: number, boardId: number, columnId: number, silent = false) => {
+  const loadCards = useCallback(async (
+    workspaceId: number,
+    boardId: number,
+    columnId: number,
+    options: {
+      page?: number;
+      size?: number;
+      sortKey?: CardSortKey;
+      direction?: SortDirection;
+      append?: boolean;
+      silent?: boolean;
+    } = {}
+  ) => {
+    const { page = 0, size = 500, sortKey = 'createdAt', direction = 'asc', append = false, silent = false } = options;
     try {
       if (!silent) setLoading(true);
       setError(null);
-      const data = await cardService.listCards(workspaceId, boardId, columnId);
+      const data = await cardService.listCards(workspaceId, boardId, columnId, {
+        page,
+        size,
+        sortBy: sortKey,
+        direction,
+      });
       // 아카이브된 카드는 제외
-      const filteredData = data.filter(card => !card.isArchived);
+      const filteredData = data.content.filter(card => !card.isArchived);
       setCards(prev => ({
         ...prev,
-        [columnId]: filteredData
+        [columnId]: append ? [...(prev[columnId] || []), ...filteredData] : filteredData
       }));
+      return data;
     } catch (err) {
       const message = err instanceof Error ? err.message : '카드를 불러올 수 없습니다';
       setError(message);
       console.error('Failed to load cards:', err);
+      return undefined;
     } finally {
       if (!silent) setLoading(false);
     }

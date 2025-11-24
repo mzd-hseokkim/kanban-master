@@ -84,4 +84,9 @@ public class AnalyticsService {
                 }).sorted(Comparator.comparing(CycleTimeData::getCompletedAt))
                 .collect(Collectors.toList());
     }
+
+    public Long getCompletedTasksCount(Long boardId) {
+        List<Card> completedCards = cardRepository.findByBoardIdAndIsCompletedTrue(boardId);
+        return completedCards.stream().filter(c -> !Boolean.TRUE.equals(c.getIsArchived())).count();
+    }
 }

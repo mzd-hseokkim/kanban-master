@@ -25,3 +25,8 @@ export const getCycleTime = async (boardId: number): Promise<CycleTimeData[]> =>
     const response = await axiosInstance.get(`${API_URL}/boards/${boardId}/cycletime`);
     return response.data;
 };
+
+export const getCompletedTasksCount = async (boardId: number): Promise<number> => {
+    const response = await axiosInstance.get(`${API_URL}/boards/${boardId}/completed-count`);
+    return response.data;
+};

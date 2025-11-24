@@ -1,10 +1,12 @@
 package com.kanban.card;
 
-import java.util.List;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import com.kanban.card.dto.CardPageResponse;
 import com.kanban.card.dto.CardResponse;
+import com.kanban.card.CardSortBy;
 import com.kanban.card.dto.CreateCardRequest;
 import com.kanban.card.dto.UpdateCardRequest;
 import com.kanban.common.SecurityUtil;
@@ -25,9 +27,14 @@ public class CardController {
      * 칼럼의 모든 카드 조회
      */
     @GetMapping
-    public ResponseEntity<List<CardResponse>> listCards(@PathVariable Long workspaceId,
-            @PathVariable Long boardId, @PathVariable Long columnId) {
-        List<CardResponse> cards = cardService.getCardsByColumn(columnId);
+    public ResponseEntity<CardPageResponse> listCards(@PathVariable Long workspaceId,
+            @PathVariable Long boardId, @PathVariable Long columnId,
+            @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "100") int size,
+            @RequestParam(defaultValue = "createdAt") String sortBy,
+            @RequestParam(defaultValue = "asc") String direction) {
+        Sort.Direction sortDirection = Sort.Direction.fromString(direction);
+        CardPageResponse cards = cardService.getCardsByColumn(columnId, page, size,
+                CardSortBy.from(sortBy), sortDirection);
         return ResponseEntity.ok(cards);
     }
 

@@ -154,7 +154,7 @@ export const LabelSelector = ({
 
       {!loading && labels.length > 0 && (
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
-          {labels.map((label) => {
+          {[...labels].sort((a, b) => a.name.localeCompare(b.name)).map((label) => {
             const bgColor = colorMap[label.colorToken] || '#8fb3ff';
             const isSelected = selectedLabelIds.includes(label.id);
 

@@ -4,11 +4,16 @@ import { EditCardModal } from '@/components/EditCardModal';
 import { useCard } from '@/context/CardContext';
 import { useColumn } from '@/context/ColumnContext';
 import { useDialog } from '@/context/DialogContext';
-import type { Card } from '@/types/card';
+import type { Card, CardSortKey, SortDirection } from '@/types/card';
 import type { Column } from '@/types/column';
-import React, { useEffect, useRef, useState } from 'react';
-import { HiChevronDown, HiChevronRight, HiDotsVertical, HiPlus } from 'react-icons/hi';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { HiChevronDown, HiChevronRight, HiChevronUp, HiDotsVertical, HiPlus, HiSelector } from 'react-icons/hi';
 import { ListCardRow } from './ListCardRow';
+
+interface SortConfig {
+  key: CardSortKey;
+  direction: SortDirection;
+}
 
 interface ListViewProps {
   columns: Column[];
@@ -18,6 +23,7 @@ interface ListViewProps {
   boardOwnerId: number;
   canEdit: boolean;
   onCreateColumn: () => void;
+  scrollContainerRef: React.RefObject<HTMLDivElement | null>;
 }
 
 export const ListView = ({
@@ -28,6 +34,7 @@ export const ListView = ({
   boardOwnerId,
   canEdit,
   onCreateColumn,
+  scrollContainerRef,
 }: ListViewProps) => {
   const { updateCard, loadCards } = useCard();
   const { deleteColumn } = useColumn();
@@ -37,80 +44,153 @@ export const ListView = ({
   const [editingCard, setEditingCard] = useState<{ card: Card; columnId: number } | null>(null);
   const [createCardState, setCreateCardState] = useState<{ isOpen: boolean; columnId: number | null }>({ isOpen: false, columnId: null });
   const [editingColumn, setEditingColumn] = useState<Column | null>(null);
-  const [loadingColumns, setLoadingColumns] = useState<Record<number, boolean>>({});
   const [openColumnMenuId, setOpenColumnMenuId] = useState<number | null>(null);
   const [isDeletingColumnId, setIsDeletingColumnId] = useState<number | null>(null);
   const [columnError, setColumnError] = useState<string | null>(null);
   const columnRefs = useRef<Record<number, HTMLDivElement | null>>({});
   const columnContentRefs = useRef<Record<number, HTMLDivElement | null>>({});
   const columnMenuRefs = useRef<Record<number, HTMLDivElement | null>>({});
+  const [sortConfig, setSortConfig] = useState<SortConfig>({ key: 'createdAt', direction: 'asc' });
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [paginationState, setPaginationState] = useState<Record<number, { page: number; hasNext: boolean; isLoading: boolean }>>({});
+  const loadMoreRefs = useRef<Record<number, HTMLDivElement | null>>({});
+  const PAGE_SIZE = 100;
 
-  // Load cards for all columns on mount or when columns change
-  useEffect(() => {
-    const fetchCards = async () => {
-      if (columns.length > 0) {
-        // Set all columns to loading initially
-        setLoadingColumns(columns.reduce((acc, col) => ({ ...acc, [col.id]: true }), {}));
-
-        try {
-          await Promise.all(columns.map(async (col) => {
-            try {
-              await loadCards(workspaceId, boardId, col.id);
-            } finally {
-              setLoadingColumns(prev => ({ ...prev, [col.id]: false }));
-            }
-          }));
-        } catch (err) {
-          console.error('Failed to load cards in ListView:', err);
+  const fetchColumnCards = useCallback(
+    async (columnId: number, page: number, append: boolean) => {
+      let skip = false;
+      setPaginationState((prev) => {
+        const current = prev[columnId];
+        if (current?.isLoading) {
+          skip = true;
+          return prev;
         }
+        return {
+          ...prev,
+          [columnId]: {
+            page: append ? current?.page ?? 0 : 0,
+            hasNext: current?.hasNext ?? true,
+            isLoading: true,
+          },
+        };
+      });
+
+      if (skip) return;
+
+      try {
+        const response = await loadCards(workspaceId, boardId, columnId, {
+          page,
+          size: PAGE_SIZE,
+          sortKey: sortConfig.key,
+          direction: sortConfig.direction,
+          append,
+          silent: true,
+        });
+        setPaginationState((prev) => ({
+          ...prev,
+          [columnId]: {
+            page,
+            hasNext: response ? !response.last : false,
+            isLoading: false,
+          },
+        }));
+      } catch (err) {
+        console.error('Failed to fetch column cards:', err);
+        setPaginationState((prev) => ({
+          ...prev,
+          [columnId]: {
+            page: prev[columnId]?.page ?? 0,
+            hasNext: prev[columnId]?.hasNext ?? true,
+            isLoading: false,
+          },
+        }));
       }
-    };
-    fetchCards();
-  }, [columns, workspaceId, boardId, loadCards]);
+    },
+    [boardId, loadCards, sortConfig.direction, sortConfig.key, workspaceId]
+  );
+
+  const refreshColumn = useCallback(async (columnId: number) => {
+    const state = paginationState[columnId] || { page: 0, hasNext: true };
+    const lastPage = state.page ?? 0;
+
+    setPaginationState((prev) => ({
+      ...prev,
+      [columnId]: { page: lastPage, hasNext: state.hasNext ?? true, isLoading: true },
+    }));
+
+    let latestHasNext = state.hasNext ?? true;
+    let latestPage = lastPage;
+
+    for (let p = 0; p <= lastPage; p++) {
+      const response = await loadCards(workspaceId, boardId, columnId, {
+        page: p,
+        size: PAGE_SIZE,
+        sortKey: sortConfig.key,
+        direction: sortConfig.direction,
+        append: p !== 0,
+        silent: true,
+      });
+      if (response) {
+        latestHasNext = !response.last;
+        latestPage = response.page ?? p;
+      }
+    }
+
+    setPaginationState((prev) => ({
+      ...prev,
+      [columnId]: { page: latestPage, hasNext: latestHasNext, isLoading: false },
+    }));
+  }, [boardId, loadCards, paginationState, sortConfig.direction, sortConfig.key, workspaceId]);
+
+  // Load first page for all columns on mount or when dependencies change
+  useEffect(() => {
+    const initialState: Record<number, { page: number; hasNext: boolean; isLoading: boolean }> = {};
+    columns.forEach((col) => {
+      initialState[col.id] = { page: 0, hasNext: true, isLoading: false };
+    });
+    setPaginationState(initialState);
+
+    columns.forEach((col) => {
+      fetchColumnCards(col.id, 0, false);
+    });
+  }, [columns, fetchColumnCards, sortConfig]);
+
+  const scrollToColumn = (columnId: number, index: number) => {
+    const scrollContainer = scrollContainerRef.current;
+    if (!scrollContainer) {
+      return;
+    }
+
+    const cardsContainer = columnContentRefs.current[columnId];
+
+    if (cardsContainer && cardsContainer.children.length > 0) {
+        const firstCard = cardsContainer.children[0] as HTMLElement;
+
+        if (firstCard) {
+            const containerScrollTop = scrollContainer.scrollTop;
+            const containerRect = scrollContainer.getBoundingClientRect();
+            const cardRect = firstCard.getBoundingClientRect();
+
+            // Calculate sticky headers: main header + all column headers up to and including this one
+            const stickyTop = MAIN_HEADER_HEIGHT + (index + 1) * COLUMN_HEADER_HEIGHT;
+
+            const relativeCardTop = cardRect.top - containerRect.top;
+            const targetScrollTop = containerScrollTop + relativeCardTop - stickyTop;
+
+            scrollContainer.scrollTo({
+                top: Math.max(0, targetScrollTop),
+                behavior: 'smooth'
+            });
+        }
+    }
+  };
 
   const toggleColumn = (columnId: number, e: React.MouseEvent) => {
-    e.stopPropagation(); // Prevent triggering scroll
+    e.stopPropagation();
     setCollapsedColumns((prev) => ({
       ...prev,
       [columnId]: !prev[columnId],
     }));
-  };
-
-  const scrollToColumn = (columnId: number, index: number) => {
-    const performScroll = () => {
-      const headerEl = columnRefs.current[columnId];
-      const contentEl = columnContentRefs.current[columnId];
-      const container = headerEl?.closest('.overflow-auto');
-
-      if (container && headerEl) {
-        const stickyTop = 45 + (index * 50); // MAIN_HEADER_HEIGHT + index * COLUMN_HEADER_HEIGHT
-
-        let targetTop;
-        if (contentEl) {
-          // Scroll to content: Content Top - (Header Stack + Current Header Height)
-          targetTop = (contentEl as HTMLElement).offsetTop - (stickyTop + 50);
-        } else {
-          // Fallback to header: Header Top - Header Stack
-          targetTop = (headerEl as HTMLElement).offsetTop - stickyTop;
-        }
-
-        container.scrollTo({
-          top: targetTop,
-          behavior: 'smooth'
-        });
-      }
-    };
-
-    if (collapsedColumns[columnId]) {
-      setCollapsedColumns((prev) => ({
-        ...prev,
-        [columnId]: false,
-      }));
-      // Wait for render to ensure content ref is available
-      setTimeout(performScroll, 100);
-    } else {
-      performScroll();
-    }
   };
 
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>, columnId: number) => {
@@ -118,10 +198,6 @@ export const ListView = ({
     e.preventDefault();
     e.dataTransfer.dropEffect = 'move';
     setDragOverColumnId(columnId);
-  };
-
-  const handleDragLeave = () => {
-    setDragOverColumnId(null);
   };
 
   const handleDrop = async (e: React.DragEvent<HTMLDivElement>, columnId: number) => {
@@ -141,8 +217,10 @@ export const ListView = ({
           columnId,
           position: 0,
         });
-        await loadCards(workspaceId, boardId, sourceColumnId);
-        await loadCards(workspaceId, boardId, columnId);
+        await Promise.all([
+          refreshColumn(sourceColumnId),
+          refreshColumn(columnId),
+        ]);
       } catch (err) {
         console.error('Failed to move card:', err);
       }
@@ -150,7 +228,7 @@ export const ListView = ({
   };
 
   // Constants for sticky header calculation
-  const MAIN_HEADER_HEIGHT = 45;
+  const MAIN_HEADER_HEIGHT = 60;
   const COLUMN_HEADER_HEIGHT = 50;
 
   useEffect(() => {
@@ -170,6 +248,35 @@ export const ListView = ({
     window.addEventListener('dragend', handleDragEnd);
     return () => window.removeEventListener('dragend', handleDragEnd);
   }, []);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (!entry.isIntersecting) return;
+          const columnId = Number(entry.target.getAttribute('data-column-id'));
+          if (Number.isNaN(columnId)) return;
+          const state = paginationState[columnId];
+          const isCollapsed = collapsedColumns[columnId];
+          if (isCollapsed || !state || state.isLoading || !state.hasNext) return;
+          void fetchColumnCards(columnId, (state.page ?? 0) + 1, true);
+        });
+      },
+      {
+        root: scrollContainerRef.current || null,
+        threshold: 0,
+        rootMargin: '200px 0px',
+      }
+    );
+
+    Object.entries(loadMoreRefs.current).forEach(([columnId, el]) => {
+      if (el) {
+        observer.observe(el);
+      }
+    });
+
+    return () => observer.disconnect();
+  }, [collapsedColumns, columns, fetchColumnCards, paginationState, scrollContainerRef]);
 
   const handleDeleteColumn = async (columnId: number) => {
     const confirmed = await confirm('정말 이 칼럼을 삭제하시겠습니까?', {
@@ -193,6 +300,76 @@ export const ListView = ({
     }
   };
 
+  const toggleSort = (key: CardSortKey) => {
+    setSortConfig((prev) => {
+      if (prev.key === key) {
+        return { key, direction: prev.direction === 'asc' ? 'desc' : 'asc' };
+      }
+      return { key, direction: 'asc' };
+    });
+  };
+
+  const renderSortIcon = (key: CardSortKey) => {
+    if (sortConfig.key !== key) {
+      return <HiSelector className="w-4 h-4 text-slate-300" />;
+    }
+    return sortConfig.direction === 'asc' ? (
+      <HiChevronUp className="w-4 h-4 text-pastel-blue-600" />
+    ) : (
+      <HiChevronDown className="w-4 h-4 text-pastel-blue-600" />
+    );
+  };
+
+  const renderSortableHeader = (label: string, key: CardSortKey) => (
+    <button
+      type="button"
+      onClick={() => toggleSort(key)}
+      className={`flex items-center gap-1 hover:text-pastel-blue-600 transition-colors ${sortConfig.key === key ? 'text-pastel-blue-700' : ''}`}
+    >
+      <span>{label}</span>
+      {renderSortIcon(key)}
+    </button>
+  );
+
+  const compareCards = (a: Card, b: Card) => {
+    const { key, direction } = sortConfig;
+    const multiplier = direction === 'asc' ? 1 : -1;
+    const priorityWeight: Record<string, number> = { HIGH: 3, MEDIUM: 2, LOW: 1 };
+    const getDateValue = (value?: string | null) => (value ? new Date(value).getTime() : null);
+    const fallback = direction === 'asc' ? Number.POSITIVE_INFINITY : Number.NEGATIVE_INFINITY;
+
+    switch (key) {
+      case 'title':
+        return a.title.localeCompare(b.title, 'ko') * multiplier;
+      case 'priority': {
+        const aWeight = priorityWeight[a.priority || ''] || 0;
+        const bWeight = priorityWeight[b.priority || ''] || 0;
+        return (aWeight - bWeight) * multiplier;
+      }
+      case 'startedAt': {
+        const aValue = getDateValue(a.startedAt) ?? fallback;
+        const bValue = getDateValue(b.startedAt) ?? fallback;
+        return (aValue - bValue) * multiplier;
+      }
+      case 'dueDate': {
+        const aValue = getDateValue(a.dueDate) ?? fallback;
+        const bValue = getDateValue(b.dueDate) ?? fallback;
+        return (aValue - bValue) * multiplier;
+      }
+      case 'completedAt': {
+        const aValue = getDateValue(a.completedAt) ?? fallback;
+        const bValue = getDateValue(b.completedAt) ?? fallback;
+        return (aValue - bValue) * multiplier;
+      }
+      case 'createdAt':
+      default: {
+        const aValue = getDateValue(a.createdAt) ?? fallback;
+        const bValue = getDateValue(b.createdAt) ?? fallback;
+        return (aValue - bValue) * multiplier;
+      }
+    }
+  };
+
   return (
     <div className="w-full max-w-[95vw] mx-auto pb-10 relative">
       {columnError && (
@@ -202,24 +379,53 @@ export const ListView = ({
       )}
       {/* Table Header */}
       <div
-        className="sticky top-0 z-30 bg-white/95 backdrop-blur shadow-sm grid grid-cols-[40px_minmax(300px,3fr)_100px_120px_minmax(200px,2fr)_100px_100px_100px_150px_40px] gap-4 px-4 py-3 text-xs font-semibold text-slate-500 border-b border-slate-200 mb-4 rounded-b-lg"
+        className="sticky top-0 z-30 bg-white/95 backdrop-blur shadow-sm grid grid-cols-[40px_minmax(300px,3fr)_100px_120px_minmax(200px,2fr)_110px_100px_100px_100px_150px_90px] gap-4 px-4 py-2 items-center text-xs font-semibold text-slate-500 border-b border-slate-200 mb-4 rounded-b-lg"
         style={{ height: `${MAIN_HEADER_HEIGHT}px` }}
       >
         <div className="text-center">완료</div>
-        <div>제목</div>
-        <div>우선순위</div>
+        <div className="flex items-center gap-2">
+          {renderSortableHeader('제목', 'title')}
+        </div>
+        <div className="flex items-center gap-2">
+          {renderSortableHeader('우선순위', 'priority')}
+        </div>
         <div>라벨</div>
         <div>설명</div>
-        <div>마감일</div>
-        <div>시작일</div>
-        <div>완료일</div>
+        <div className="flex items-center gap-2">
+          {renderSortableHeader('생성일', 'createdAt')}
+        </div>
+        <div className="flex items-center gap-2">
+          {renderSortableHeader('마감일', 'dueDate')}
+        </div>
+        <div className="flex items-center gap-2">
+          {renderSortableHeader('시작일', 'startedAt')}
+        </div>
+        <div className="flex items-center gap-2">
+          {renderSortableHeader('완료일', 'completedAt')}
+        </div>
         <div>담당자</div>
-        <div></div>
+        <div className="flex justify-end">
+          {canEdit && (
+            <button
+              onClick={() => setIsEditMode(!isEditMode)}
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all shadow-sm whitespace-nowrap ${
+                isEditMode
+                  ? 'bg-pastel-blue-500 text-white hover:bg-pastel-blue-600 ring-2 ring-pastel-blue-200'
+                  : 'bg-white text-slate-600 border border-slate-300 hover:bg-slate-50 hover:text-slate-800 hover:border-slate-400'
+              }`}
+            >
+              {isEditMode ? '편집 종료' : '편집 모드'}
+            </button>
+          )}
+        </div>
       </div>
 
       <div className="flex flex-col">
         {columns.map((column, index) => {
             const columnCards = cards[column.id] || [];
+            const sortedCards = [...columnCards].sort(compareCards);
+            const pageState = paginationState[column.id] || { page: 0, hasNext: true, isLoading: false };
+
             const isDragOver = dragOverColumnId === column.id;
             const isCollapsed = collapsedColumns[column.id];
 
@@ -227,144 +433,130 @@ export const ListView = ({
             const stickyTop = MAIN_HEADER_HEIGHT + (index * COLUMN_HEADER_HEIGHT);
 
             return (
-                <React.Fragment key={column.id}>
-                    {/* Column Header */}
-                    <div
-                      ref={(el) => { columnRefs.current[column.id] = el; }}
-                      className={`sticky z-20 flex items-center justify-between px-4 py-3 bg-slate-50 border border-slate-200 cursor-pointer hover:bg-slate-100 transition-colors ${
-                        isCollapsed ? 'rounded-lg mb-4' : 'rounded-t-lg border-b-0'
-                      } ${
-                        isDragOver ? 'bg-slate-50 border-pastel-blue-300 ring-2 ring-pastel-blue-100' : ''
-                      }`}
-                      style={{
-                        top: `${stickyTop}px`,
-                        height: `${COLUMN_HEADER_HEIGHT}px`,
-                        scrollMarginTop: `${stickyTop}px`
-                      }}
-                      onClick={() => scrollToColumn(column.id, index)}
-                      onDragOver={(e) => handleDragOver(e, column.id)}
-                      onDragLeave={handleDragLeave}
-                      onDrop={(e) => handleDrop(e, column.id)}
+              <div
+                key={column.id}
+                className="contents"
+                onDragOver={(e) => handleDragOver(e, column.id)}
+                onDrop={(e) => handleDrop(e, column.id)}
+              >
+                {/* Column Header */}
+                <div
+                  ref={(el) => { columnRefs.current[column.id] = el; }}
+                  onClick={() => scrollToColumn(column.id, index)}
+                  className={`sticky z-20 backdrop-blur border-y border-slate-200 px-4 py-2 flex items-center justify-between group transition-colors duration-200 cursor-pointer hover:bg-slate-100/95 ${
+                    isDragOver ? 'bg-blue-100 border-blue-300' : 'bg-slate-50/95'
+                  }`}
+                  style={{
+                    top: `${stickyTop}px`,
+                    height: `${COLUMN_HEADER_HEIGHT}px`
+                  }}
+                >
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={(e) => toggleColumn(column.id, e)}
+                      className="p-1 hover:bg-slate-200 rounded text-slate-500 transition-colors"
                     >
-                        <div className="flex items-center gap-2">
-                            <button
-                              onClick={(e) => toggleColumn(column.id, e)}
-                              className="p-1 rounded hover:bg-slate-200 text-slate-500 transition-colors"
-                            >
-                              {isCollapsed ? <HiChevronRight /> : <HiChevronDown />}
-                            </button>
+                      {isCollapsed ? <HiChevronRight /> : <HiChevronDown />}
+                    </button>
+                    <span className="font-medium text-slate-700 text-sm">{column.name}</span>
+                    <span className="text-xs text-slate-400 bg-slate-200 px-2 py-0.5 rounded-full">
+                      {columnCards.length}
+                    </span>
+                  </div>
+
+                  <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    {canEdit && (
+                        <button
+                            onClick={() => {
+                                setCreateCardState({ isOpen: true, columnId: column.id });
+                            }}
+                            className="p-1.5 hover:bg-white hover:shadow-sm rounded text-slate-500 hover:text-pastel-blue-600 transition-all"
+                            title="카드 추가"
+                        >
+                            <HiPlus className="w-4 h-4" />
+                        </button>
+                    )}
+                    <div className="relative">
+                        <button
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                setOpenColumnMenuId(openColumnMenuId === column.id ? null : column.id);
+                            }}
+                            className="p-1.5 hover:bg-white hover:shadow-sm rounded text-slate-500 hover:text-slate-700 transition-all"
+                        >
+                            <HiDotsVertical className="w-4 h-4" />
+                        </button>
+
+                        {openColumnMenuId === column.id && (
                             <div
-                                className="w-3 h-3 rounded-full shadow-sm"
-                                style={{ backgroundColor: column.bgColor || '#cbd5e1' }}
-                            />
-                            <h3 className="font-semibold text-slate-700">{column.name}</h3>
-                            <span className="text-xs text-slate-500 bg-slate-200 px-2 py-0.5 rounded-full">
-                                {columnCards.length}
-                            </span>
-                            {canEdit && (
-                                <button
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        setCreateCardState({ isOpen: true, columnId: column.id });
-                                    }}
-                                    className="p-1 rounded hover:bg-slate-200 text-slate-500 transition-colors ml-1"
-                                >
-                                    <HiPlus />
-                                </button>
-                            )}
-                        </div>
-
-                        {canEdit && (
-                          <div
-                            className="relative flex items-center"
-                            ref={(el) => { columnMenuRefs.current[column.id] = el; }}
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            <button
-                              onClick={() => setOpenColumnMenuId((prev) => prev === column.id ? null : column.id)}
-                              className="p-2 rounded hover:bg-slate-200 text-slate-500 transition-colors"
+                                ref={(el) => { columnMenuRefs.current[column.id] = el; }}
+                                className="absolute right-0 top-full mt-1 w-48 bg-white rounded-lg shadow-xl border border-slate-100 py-1 z-50 animate-in fade-in zoom-in-95 duration-100"
                             >
-                              <HiDotsVertical />
-                            </button>
-
-                            {openColumnMenuId === column.id && (
-                              <div className="absolute right-0 top-full mt-2 w-40 bg-white border border-slate-200 rounded-lg shadow-lg z-50 py-1">
                                 <button
-                                  onClick={() => {
-                                    setEditingColumn(column);
-                                    setOpenColumnMenuId(null);
-                                  }}
-                                  className="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-100 transition"
+                                    onClick={() => {
+                                        setEditingColumn(column);
+                                        setOpenColumnMenuId(null);
+                                    }}
+                                    className="w-full px-4 py-2 text-left text-sm text-slate-600 hover:bg-slate-50 hover:text-pastel-blue-600 transition-colors flex items-center gap-2"
                                 >
-                                  칼럼 수정
+                                    <span>수정</span>
                                 </button>
                                 <button
-                                  onClick={() => handleDeleteColumn(column.id)}
-                                  disabled={isDeletingColumnId === column.id}
-                                  className="w-full text-left px-4 py-2 text-sm text-rose-600 hover:bg-rose-50 transition disabled:opacity-50"
+                                    onClick={() => handleDeleteColumn(column.id)}
+                                    disabled={isDeletingColumnId === column.id}
+                                    className="w-full px-4 py-2 text-left text-sm text-rose-500 hover:bg-rose-50 transition-colors flex items-center gap-2"
                                 >
-                                  {isDeletingColumnId === column.id ? '삭제 중...' : '칼럼 삭제'}
+                                  {isDeletingColumnId === column.id ? '삭제 중...' : '삭제'}
                                 </button>
-                              </div>
-                            )}
-                          </div>
+                            </div>
                         )}
                     </div>
+                  </div>
+                </div>
 
-                    {/* Cards List */}
-                    {!isCollapsed && (
-                      <div
-                          ref={(el) => { columnContentRefs.current[column.id] = el; }}
-                          className={`relative bg-white border border-slate-200 rounded-b-lg shadow-sm mb-4 min-h-[40px] ${
-                            isDragOver ? 'bg-slate-50 border-pastel-blue-300 ring-2 ring-pastel-blue-100' : ''
-                          }`}
-                          onDragOver={(e) => handleDragOver(e, column.id)}
-                          onDragLeave={handleDragLeave}
-                          onDrop={(e) => handleDrop(e, column.id)}
-                      >
-                      {canEdit && isDragOver && (
-                        <div className="pointer-events-none absolute inset-0 rounded-b-lg bg-pastel-blue-50/80 border-2 border-dashed border-pastel-blue-400 text-pastel-blue-700 font-semibold flex items-center justify-center z-10">
-                          여기에 드롭하여 카드 이동
-                        </div>
-                      )}
-                      {loadingColumns[column.id] ? (
-                          <div className="flex justify-center items-center py-8">
-                              <div className="animate-spin h-6 w-6 border-2 border-pastel-blue-500 border-t-transparent rounded-full"></div>
-                          </div>
-                      ) : columnCards.length > 0 ? (
-                          columnCards
-                              .sort((a, b) => a.position - b.position)
-                              .map((card) => (
-                                  <ListCardRow
-                                      key={card.id}
-                                      card={card}
-                                      workspaceId={workspaceId}
-                                      boardId={boardId}
-                                      boardOwnerId={boardOwnerId}
-                                      columnId={column.id}
-                                      canEdit={canEdit}
-                                      onEditCard={(card) => setEditingCard({ card, columnId: column.id })}
-                                      onDropComplete={() => setDragOverColumnId(null)}
-                                  />
-                              ))
-                      ) : (
-                          <div className="text-center py-4 text-slate-400 text-sm italic border-t border-slate-200">
-                              카드가 없습니다
-                          </div>
-                      )}
-
-                      {canEdit && !loadingColumns[column.id] && (
-                          <button
-                              onClick={() => setCreateCardState({ isOpen: true, columnId: column.id })}
-                              className="w-full px-4 py-1 border-2 border-dashed border-slate-300 hover:border-slate-800 text-slate-400 hover:text-slate-800 transition-colors flex items-center justify-center gap-2 text-sm group"
-                          >
-                              <HiPlus className="w-4 h-4" />
-                              <span>카드 추가</span>
-                          </button>
-                      )}
-                      </div>
-                    )}
-                </React.Fragment>
+                {/* Cards */}
+                <div
+                    ref={(el) => { columnContentRefs.current[column.id] = el; }}
+                    className={`transition-all duration-300 ease-in-out overflow-hidden ${
+                        isCollapsed ? 'max-h-0 opacity-0' : 'max-h-[5000px] opacity-100'
+                    } ${isDragOver ? 'bg-blue-100' : ''}`}
+                >
+                  {sortedCards.map((card) => (
+                    <ListCardRow
+                      key={card.id}
+                      card={card}
+                      workspaceId={workspaceId}
+                      boardId={boardId}
+                      boardOwnerId={boardOwnerId}
+                      columnId={column.id}
+                      canEdit={canEdit}
+                      isEditMode={isEditMode}
+                      onRefreshColumn={() => refreshColumn(column.id)}
+                      onEditCard={(fullCard) => setEditingCard({ card: fullCard, columnId: column.id })}
+                      onDropComplete={() => {
+                        // Refresh logic if needed
+                      }}
+                    />
+                  ))}
+                  {columnCards.length === 0 && (
+                    <div className="px-4 py-8 text-center text-slate-400 text-xs italic bg-slate-50/50 border-b border-slate-100">
+                      카드가 없습니다
+                    </div>
+                  )}
+                  {pageState.isLoading && (
+                    <div className="px-4 py-3 text-center text-slate-400 text-xs">
+                      불러오는 중...
+                    </div>
+                  )}
+                  <div
+                    ref={(el) => {
+                      loadMoreRefs.current[column.id] = el;
+                    }}
+                    data-column-id={column.id}
+                    className="h-8"
+                  />
+                </div>
+              </div>
             );
         })}
 

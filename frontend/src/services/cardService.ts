@@ -1,13 +1,26 @@
-import type { Card, CreateCardRequest, UpdateCardRequest } from '@/types/card';
+import type { Card, CardPageResponse, CardSortKey, CreateCardRequest, SortDirection, UpdateCardRequest } from '@/types/card';
 import axiosInstance from '@/utils/axios';
 
 class CardService {
   /**
    * 칼럼의 모든 카드 조회
    */
-  async listCards(workspaceId: number, boardId: number, columnId: number): Promise<Card[]> {
-    const response = await axiosInstance.get<Card[]>(
-      `/workspaces/${workspaceId}/boards/${boardId}/columns/${columnId}/cards`
+  async listCards(
+    workspaceId: number,
+    boardId: number,
+    columnId: number,
+    params?: { page?: number; size?: number; sortBy?: CardSortKey; direction?: SortDirection }
+  ): Promise<CardPageResponse> {
+    const response = await axiosInstance.get<CardPageResponse>(
+      `/workspaces/${workspaceId}/boards/${boardId}/columns/${columnId}/cards`,
+      {
+        params: {
+          page: params?.page ?? 0,
+          size: params?.size ?? 500,
+          sortBy: params?.sortBy ?? 'createdAt',
+          direction: params?.direction ?? 'asc',
+        },
+      }
     );
     return response.data;
   }

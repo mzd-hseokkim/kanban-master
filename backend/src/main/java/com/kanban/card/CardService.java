@@ -9,6 +9,11 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import org.owasp.html.PolicyFactory;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -59,12 +64,19 @@ public class CardService {
     /**
      * 특정 칼럼의 모든 카드 조회 Spec § 5. 기능 요구사항 - FR-06g: 자식 개수 표시
      */
-    public List<CardResponse> getCardsByColumn(Long columnId) {
-        List<Card> cards = cardRepository.findByColumnIdOrderByPosition(columnId);
-        if (cards.isEmpty()) {
-            return List.of();
+    public CardPageResponse getCardsByColumn(Long columnId, int page, int size,
+            CardSortBy sortBy, Sort.Direction direction) {
+        int cappedSize = Math.min(size, 500);
+        Pageable pageable = PageRequest.of(Math.max(page, 0), cappedSize);
+        Page<Card> cardPage =
+                cardRepository.findCardsByColumnWithSort(columnId, pageable, sortBy, direction);
+
+        if (cardPage.isEmpty()) {
+            return CardPageResponse.builder().content(List.of()).page(pageable.getPageNumber())
+                    .size(pageable.getPageSize()).totalElements(0).totalPages(0).last(true).build();
         }
 
+        List<Card> cards = cardPage.getContent();
         Map<Long, List<LabelResponse>> labelsByCardId =
                 getLabelsByCardIds(cards.stream().map(Card::getId).toList());
 
@@ -72,7 +84,7 @@ public class CardService {
         Map<Long, Integer> childCountByCardId =
                 getChildCountByCardIds(cards.stream().map(Card::getId).toList());
 
-        return cards.stream().map(card -> {
+        List<CardResponse> responses = cards.stream().map(card -> {
             CardResponse response =
                     CardResponse.from(card, labelsByCardId.getOrDefault(card.getId(), List.of()));
             // 자식 카드가 있으면 빈 리스트 설정 (개수만 필요)
@@ -82,6 +94,10 @@ public class CardService {
             }
             return enrichWithAssigneeInfo(response);
         }).toList();
+
+        Page<CardResponse> responsePage =
+                new PageImpl<>(responses, pageable, cardPage.getTotalElements());
+        return CardPageResponse.from(responsePage);
     }
 
     /**

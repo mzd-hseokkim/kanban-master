@@ -371,7 +371,7 @@ const CardItemComponent: React.FC<CardItemProps> = ({
         {/* Labels */}
         {card.labels && card.labels.length > 0 && (
           <div className="flex items-center gap-1 flex-wrap mb-2">
-            {card.labels.slice(0, 3).map((label) => {
+            {[...card.labels].sort((a, b) => a.name.localeCompare(b.name)).slice(0, 3).map((label) => {
               const colorToken = label.colorToken || 'pastel-blue-500';
               const colorMap: { [key: string]: string } = {
                 'pastel-blue-500': '#8fb3ff',

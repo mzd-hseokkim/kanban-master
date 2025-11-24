@@ -12,7 +12,7 @@ import org.springframework.stereotype.Repository;
  * 카드(Card) 데이터 접근 계층
  */
 @Repository
-public interface CardRepository extends JpaRepository<Card, Long> {
+public interface CardRepository extends JpaRepository<Card, Long>, CardRepositoryCustom {
 
         /**
          * 특정 칼럼의 모든 카드를 위치 순서대로 조회

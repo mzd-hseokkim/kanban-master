@@ -16,11 +16,10 @@ import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { ActivityPanel } from "./BoardDetailPage/components/ActivityPanel";
 import AnalyticsDashboard from "./BoardDetailPage/components/AnalyticsDashboard";
 import { BoardHeader } from "./BoardDetailPage/components/BoardHeader";
-import { BoardInsightsPanel } from "./BoardDetailPage/components/BoardInsightsPanel";
 import { BoardModals } from "./BoardDetailPage/components/BoardModals";
 import {
-    BoardErrorState,
-    BoardLoadingState,
+  BoardErrorState,
+  BoardLoadingState,
 } from "./BoardDetailPage/components/BoardStateFallbacks";
 import { ColumnsSection } from "./BoardDetailPage/components/ColumnsSection";
 import { ExcelImportModal } from "./BoardDetailPage/components/ExcelImportModal";
@@ -28,9 +27,9 @@ import { ImportProgressPanel } from "./BoardDetailPage/components/ImportProgress
 import { ListView } from "./BoardDetailPage/components/ListView";
 import { MembersModal } from "./BoardDetailPage/components/MembersModal";
 import {
-    useAutoOpenTargets,
-    useBoardData,
-    useOverdueCardCount,
+  useAutoOpenTargets,
+  useBoardData,
+  useOverdueCardCount,
 } from "./BoardDetailPage/hooks";
 
 const BoardDetailPage = () => {
@@ -60,7 +59,6 @@ const BoardDetailPage = () => {
   const [showLabelManager, setShowLabelManager] = useState(false);
   const [showSearchPanel, setShowSearchPanel] = useState(false);
   const [showCalendarModal, setShowCalendarModal] = useState(false);
-  const [showInsightsPanel, setShowInsightsPanel] = useState(false);
   const [showArchivePanel, setShowArchivePanel] = useState(false);
   const [showImportModal, setShowImportModal] = useState(false);
 
@@ -69,6 +67,7 @@ const BoardDetailPage = () => {
   const lastImportState = useRef<ImportJobStartResponse['state'] | null>(null);
   const [isExporting, setIsExporting] = useState(false);
   const [isDownloadingTemplate, setIsDownloadingTemplate] = useState(false);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   // Search Panel State Persistence
   const [searchState, setSearchState] = useState({
@@ -243,7 +242,6 @@ const BoardDetailPage = () => {
         onToggleActivity={() => setShowActivityPanel((prev) => !prev)}
         onToggleMembers={() => setShowMembersPanel((prev) => !prev)}
         onCalendar={() => setShowCalendarModal(true)}
-        onToggleInsights={() => setShowInsightsPanel((prev) => !prev)}
         onToggleArchive={() => setShowArchivePanel(true)}
         onCreateColumn={() => setShowCreateColumnModal(true)}
         onArchiveDrop={handleArchiveDrop}
@@ -255,16 +253,9 @@ const BoardDetailPage = () => {
       />
 
       <main className="flex-1 overflow-hidden flex flex-col">
-        <div
-          className={`transition-all duration-300 ease-in-out overflow-hidden ${
-            showInsightsPanel ? 'max-h-[800px] opacity-100' : 'max-h-0 opacity-0'
-          }`}
-        >
-          <BoardInsightsPanel workspaceId={workspaceNumericId} boardId={boardNumericId} isVisible={showInsightsPanel} />
-        </div>
         <div className="w-full px-4 sm:px-6 lg:px-8 flex-1 overflow-hidden pt-4 pb-4 flex">
           <div className="w-full max-w-[95vw] mx-auto flex flex-1 relative min-h-0 h-full">
-            <div className="flex-1 overflow-auto flex flex-col pr-0 lg:pr-4 h-full">
+            <div ref={scrollContainerRef} className="flex-1 overflow-auto flex flex-col pr-0 lg:pr-4 h-full">
               {viewMode === 'BOARD' ? (
                 <ColumnsSection
                   columns={columns}
@@ -287,9 +278,10 @@ const BoardDetailPage = () => {
                   boardOwnerId={board?.ownerId ?? 0}
                   canEdit={canEdit}
                   onCreateColumn={() => setShowCreateColumnModal(true)}
+                  scrollContainerRef={scrollContainerRef}
                 />
               ) : (
-                <AnalyticsDashboard boardId={boardNumericId} />
+                <AnalyticsDashboard workspaceId={workspaceNumericId} boardId={boardNumericId} />
               )}
             </div>
 

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type DragEvent, type ReactNode } from 'react';
-import { HiArrowLeft, HiCalendar, HiChartBar, HiChartPie, HiChevronDown, HiDownload, HiLightningBolt, HiPlus, HiSearch, HiTag, HiUpload, HiUsers, HiViewBoards, HiViewList } from 'react-icons/hi';
+import { HiArrowLeft, HiCalendar, HiChartBar, HiChevronDown, HiDownload, HiLightningBolt, HiPlus, HiSearch, HiTag, HiUpload, HiUsers, HiViewBoards, HiViewList } from 'react-icons/hi';
 import { MdArchive } from 'react-icons/md';
 
 interface BoardHeaderProps {
@@ -14,7 +14,6 @@ interface BoardHeaderProps {
   onToggleActivity: () => void;
   onToggleMembers: () => void;
   onCalendar: () => void;
-  onToggleInsights: () => void;
   onToggleArchive: () => void;
   onCreateColumn: () => void;
   onArchiveDrop: (cardId: number, columnId: number) => void;
@@ -37,7 +36,6 @@ export const BoardHeader = ({
   onToggleActivity,
   onToggleMembers,
   onCalendar,
-  onToggleInsights,
   onToggleArchive,
   onCreateColumn,
   onArchiveDrop,
@@ -160,11 +158,6 @@ export const BoardHeader = ({
               <span className="hidden md:inline">칼럼 추가</span>
             </button>
           )}
-          <HeaderButton
-            icon={<HiChartPie />}
-            label="인사이트"
-            onClick={onToggleInsights}
-          />
           <div className="relative" ref={menuRef}>
             <button
               type="button"

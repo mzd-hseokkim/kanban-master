@@ -59,6 +59,18 @@ export interface Card {
   childCount?: number;
 }
 
+export type CardSortKey = 'title' | 'priority' | 'startedAt' | 'dueDate' | 'completedAt' | 'createdAt';
+export type SortDirection = 'asc' | 'desc';
+
+export interface CardPageResponse {
+  content: Card[];
+  page: number;
+  size: number;
+  totalElements: number;
+  totalPages: number;
+  last: boolean;
+}
+
 export interface CreateCardRequest {
   title: string;
   description?: string;

@@ -1,11 +1,15 @@
+import { AssigneeSelector } from '@/components/AssigneeSelector';
 import { Avatar } from '@/components/common/Avatar';
 import { ErrorNotification } from '@/components/ErrorNotification';
+import { LabelSelectionModal } from '@/components/label/LabelSelectionModal';
 import { useCard } from '@/context/CardContext';
 import { useDialog } from '@/context/DialogContext';
 import cardService from '@/services/cardService';
+import { labelService } from '@/services/labelService';
 import { Card } from '@/types/card';
 import React, { useMemo, useState } from 'react';
-import { HiCheckCircle } from 'react-icons/hi2';
+import { HiPencil } from 'react-icons/hi';
+import { HiCheckCircle, HiPlay } from 'react-icons/hi2';
 
 interface ListCardRowProps {
   card: Card;
@@ -14,8 +18,10 @@ interface ListCardRowProps {
   boardOwnerId: number;
   columnId: number;
   canEdit: boolean;
+  isEditMode?: boolean;
   onEditCard: (card: Card) => void;
   onDropComplete?: () => void;
+  onRefreshColumn: () => Promise<void>;
 }
 
 export const ListCardRow = ({
@@ -24,15 +30,22 @@ export const ListCardRow = ({
   boardId,
   columnId,
   canEdit,
+  isEditMode = false,
   onEditCard,
   onDropComplete,
+  onRefreshColumn,
 }: ListCardRowProps) => {
-  const { deleteCard, updateCard, loadCards } = useCard();
+  const { deleteCard, updateCard } = useCard();
   const { confirm } = useDialog();
   const [isDeleting, setIsDeleting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [isLoadingRelations, setIsLoadingRelations] = useState(false);
+  const [showLabelModal, setShowLabelModal] = useState(false);
+
+  // Local state for inputs to avoid jitter
+  const [titleInput, setTitleInput] = useState(card.title);
+  const [descInput, setDescInput] = useState(card.description || '');
 
   const handleDelete = async (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -64,7 +77,7 @@ export const ListCardRow = ({
       await updateCard(workspaceId, boardId, columnId, card.id, {
         isCompleted: !card.isCompleted,
       });
-      await loadCards(workspaceId, boardId, columnId);
+      await onRefreshColumn();
     } catch (err) {
       const message = err instanceof Error ? err.message : '카드 상태 변경에 실패했습니다';
       setErrorMessage(message);
@@ -73,7 +86,7 @@ export const ListCardRow = ({
   };
 
   const handleDragStart = (e: React.DragEvent<HTMLDivElement>) => {
-    if (!canEdit) {
+    if (!canEdit || isEditMode) {
       e.preventDefault();
       return;
     }
@@ -90,13 +103,13 @@ export const ListCardRow = ({
   };
 
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
-    if (!canEdit) return;
+    if (!canEdit || isEditMode) return;
     e.preventDefault();
     e.dataTransfer.dropEffect = 'move';
   };
 
   const handleDrop = async (e: React.DragEvent<HTMLDivElement>) => {
-    if (!canEdit) return;
+    if (!canEdit || isEditMode) return;
     const draggedCardId = parseInt(e.dataTransfer.getData('cardId'), 10);
     const sourceColumnId = parseInt(e.dataTransfer.getData('sourceColumnId'), 10);
 
@@ -109,7 +122,7 @@ export const ListCardRow = ({
         await updateCard(workspaceId, boardId, columnId, draggedCardId, {
           position: card.position,
         });
-        await loadCards(workspaceId, boardId, columnId);
+        await onRefreshColumn();
       } catch (err) {
           const message = err instanceof Error ? err.message : '카드 위치 변경에 실패했습니다';
           setErrorMessage(message);
@@ -120,8 +133,10 @@ export const ListCardRow = ({
   };
 
   const handleCardClick = async (e: React.MouseEvent) => {
+    if (isEditMode) return; // Disable modal open in edit mode
+
     const target = e.target as HTMLElement;
-    if (target.closest('button') || target.closest('[role="checkbox"]')) {
+    if (target.closest('button') || target.closest('[role="checkbox"]') || target.closest('input') || target.closest('select')) {
       return;
     }
 
@@ -143,6 +158,37 @@ export const ListCardRow = ({
       console.error('Failed to load card with relations:', err);
     } finally {
       setIsLoadingRelations(false);
+    }
+  };
+
+  const handleUpdateField = async (field: Partial<Card>) => {
+    try {
+      await updateCard(workspaceId, boardId, columnId, card.id, field);
+      await loadCards(workspaceId, boardId, columnId);
+    } catch (err) {
+      console.error('Failed to update card field:', err);
+      setErrorMessage('업데이트에 실패했습니다');
+    }
+  };
+
+  const handleStartCard = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    try {
+        await cardService.startCard(workspaceId, boardId, columnId, card.id);
+        await onRefreshColumn();
+    } catch (err) {
+        console.error('Failed to start card:', err);
+        setErrorMessage('카드를 시작할 수 없습니다');
+    }
+  };
+
+  const handleUpdateLabels = async (labelIds: number[]) => {
+    try {
+        await labelService.assignLabelsToCard(card.id, labelIds);
+        await onRefreshColumn();
+    } catch (err) {
+        console.error('Failed to update labels:', err);
+        setErrorMessage('라벨 업데이트에 실패했습니다');
     }
   };
 
@@ -188,17 +234,22 @@ export const ListCardRow = ({
     return plainText.length > 50 ? plainText.substring(0, 50) + '...' : plainText;
   }, [card.description]);
 
+  const createdLabel = useMemo(() => {
+    if (!card.createdAt) return null;
+    return new Date(card.createdAt).toLocaleDateString('ko-KR', { month: 'numeric', day: 'numeric' });
+  }, [card.createdAt]);
+
   return (
     <>
       <div
-        className={`group grid grid-cols-[40px_minmax(300px,3fr)_100px_120px_minmax(200px,2fr)_100px_100px_100px_150px_40px] gap-4 items-center px-4 py-1 bg-white border-b border-slate-300 hover:bg-slate-50 transition-colors text-sm last:border-b-0 ${
+        className={`group grid grid-cols-[40px_minmax(300px,3fr)_100px_120px_minmax(200px,2fr)_110px_100px_100px_100px_150px_90px] gap-4 items-center px-4 py-1 bg-white border-b border-slate-300 hover:bg-slate-50 transition-colors text-sm last:border-b-0 ${
           isDragging ? 'opacity-50' : ''
-        } ${isLoadingRelations ? 'cursor-wait opacity-70' : canEdit ? 'cursor-pointer' : 'cursor-default'}`}
-        draggable={canEdit && !isLoadingRelations}
-        onDragStart={canEdit && !isLoadingRelations ? handleDragStart : undefined}
-        onDragEnd={canEdit && !isLoadingRelations ? handleDragEnd : undefined}
-        onDragOver={canEdit && !isLoadingRelations ? handleDragOver : undefined}
-        onDrop={canEdit && !isLoadingRelations ? handleDrop : undefined}
+        } ${isLoadingRelations ? 'cursor-wait opacity-70' : canEdit && !isEditMode ? 'cursor-pointer' : 'cursor-default'}`}
+        draggable={canEdit && !isEditMode && !isLoadingRelations}
+        onDragStart={canEdit && !isEditMode && !isLoadingRelations ? handleDragStart : undefined}
+        onDragEnd={canEdit && !isEditMode && !isLoadingRelations ? handleDragEnd : undefined}
+        onDragOver={canEdit && !isEditMode && !isLoadingRelations ? handleDragOver : undefined}
+        onDrop={canEdit && !isEditMode && !isLoadingRelations ? handleDrop : undefined}
         onClick={!isLoadingRelations ? handleCardClick : undefined}
       >
         {/* Checkbox */}
@@ -223,50 +274,122 @@ export const ListCardRow = ({
         </div>
 
         {/* Title */}
-        <div className={`truncate font-medium ${card.isCompleted ? 'text-slate-400 line-through' : 'text-slate-700'}`}>
-          {card.title}
+        <div className="min-w-0">
+            {isEditMode ? (
+                <input
+                    type="text"
+                    value={titleInput}
+                    onChange={(e) => setTitleInput(e.target.value)}
+                    onBlur={() => {
+                        if (titleInput !== card.title) handleUpdateField({ title: titleInput });
+                    }}
+                    onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                            e.currentTarget.blur();
+                        }
+                    }}
+                    className="w-full px-2 py-1 text-sm text-rose-600 border border-slate-200 rounded focus:outline-none focus:border-pastel-blue-400 focus:ring-1 focus:ring-pastel-blue-200"
+                />
+            ) : (
+                <div className={`truncate font-medium ${card.isCompleted ? 'text-slate-400 line-through' : 'text-slate-700'}`}>
+                    {card.title}
+                </div>
+            )}
         </div>
 
         {/* Priority */}
         <div>
-          {card.priority && (
-            <span className={`text-[10px] px-2 py-1 rounded-full border font-medium ${priorityColors[card.priority]}`}>
-              {card.priority}
-            </span>
-          )}
+            {isEditMode ? (
+                <select
+                    value={card.priority || ''}
+                    onChange={(e) => handleUpdateField({ priority: e.target.value })}
+                    className="w-full px-2 py-1 text-xs text-rose-600 border border-slate-200 rounded focus:outline-none focus:border-pastel-blue-400 focus:ring-1 focus:ring-pastel-blue-200 bg-white"
+                >
+                    <option value="">-</option>
+                    <option value="HIGH">High</option>
+                    <option value="MEDIUM">Medium</option>
+                    <option value="LOW">Low</option>
+                </select>
+            ) : (
+                card.priority && (
+                    <span className={`text-[10px] px-2 py-1 rounded-full border font-medium ${priorityColors[card.priority]}`}>
+                    {card.priority}
+                    </span>
+                )
+            )}
         </div>
 
         {/* Labels */}
-        <div className="flex items-center gap-1 flex-wrap">
-          {card.labels && card.labels.slice(0, 2).map((label) => {
-             const colorMap: { [key: string]: string } = {
-              'pastel-blue-500': '#8fb3ff',
-              'pastel-pink-500': '#ffb3e6',
-              'pastel-green-500': '#b3ffc4',
-              'pastel-purple-500': '#d4a5ff',
-              'pastel-yellow-500': '#fff4b3',
-              'pastel-orange-500': '#ffd4b3',
-              'pastel-red-500': '#ffb3b3',
-              'pastel-teal-500': '#b3ffe6',
-            };
-            const bgColor = colorMap[label.colorToken || 'pastel-blue-500'] || '#8fb3ff';
-            return (
-              <span
-                key={label.id}
-                className="w-3 h-3 rounded-full block"
-                style={{ backgroundColor: bgColor }}
-                title={label.name}
-              />
-            );
-          })}
-          {card.labels && card.labels.length > 2 && (
-            <span className="text-[10px] text-slate-400">+{card.labels.length - 2}</span>
-          )}
+        <div className="flex items-center gap-1 flex-wrap min-w-0">
+            {isEditMode ? (
+                <button
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        setShowLabelModal(true);
+                    }}
+                    className="flex items-center gap-1 px-2 py-1 text-xs text-rose-600 border border-slate-200 rounded hover:bg-slate-50"
+                >
+                    <HiPencil className="w-3 h-3" />
+                    <span>{card.labels?.length || 0}</span>
+                </button>
+            ) : (
+                <>
+                    {card.labels && [...card.labels].sort((a, b) => a.name.localeCompare(b.name)).slice(0, 2).map((label) => {
+                        const colorMap: { [key: string]: string } = {
+                        'pastel-blue-500': '#8fb3ff',
+                        'pastel-pink-500': '#ffb3e6',
+                        'pastel-green-500': '#b3ffc4',
+                        'pastel-purple-500': '#d4a5ff',
+                        'pastel-yellow-500': '#fff4b3',
+                        'pastel-orange-500': '#ffd4b3',
+                        'pastel-red-500': '#ffb3b3',
+                        'pastel-teal-500': '#b3ffe6',
+                        };
+                        const bgColor = colorMap[label.colorToken || 'pastel-blue-500'] || '#8fb3ff';
+                        return (
+                        <span
+                            key={label.id}
+                            className="w-3 h-3 rounded-full block flex-shrink-0"
+                            style={{ backgroundColor: bgColor }}
+                            title={label.name}
+                        />
+                        );
+                    })}
+                    {card.labels && card.labels.length > 2 && (
+                        <span className="text-[10px] text-slate-400">+{card.labels.length - 2}</span>
+                    )}
+                </>
+            )}
         </div>
 
         {/* Description */}
-        <div className="truncate text-slate-400 text-xs">
-          {descriptionPreview}
+        <div className="min-w-0">
+            {isEditMode ? (
+                 <input
+                    type="text"
+                    value={descInput}
+                    onChange={(e) => setDescInput(e.target.value)}
+                    onBlur={() => {
+                        if (descInput !== (card.description || '')) handleUpdateField({ description: descInput });
+                    }}
+                    onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                            e.currentTarget.blur();
+                        }
+                    }}
+                    placeholder="설명..."
+                    className="w-full px-2 py-1 text-xs text-rose-600 border border-slate-200 rounded focus:outline-none focus:border-pastel-blue-400 focus:ring-1 focus:ring-pastel-blue-200"
+                />
+            ) : (
+                <div className="truncate text-slate-400 text-xs">
+                    {descriptionPreview}
+                </div>
+            )}
+        </div>
+
+        {/* Created At */}
+        <div className="text-xs text-slate-500">
+          {createdLabel || '-'}
         </div>
 
         {/* Due Date */}
@@ -275,8 +398,18 @@ export const ListCardRow = ({
         </div>
 
         {/* Started At */}
-        <div className="text-xs text-slate-500">
-          {startedLabel || '-'}
+        <div className="text-xs text-slate-500 flex items-center">
+            {isEditMode && !card.startedAt ? (
+                <button
+                    onClick={handleStartCard}
+                    className="flex items-center gap-1 px-2 py-0.5 bg-pastel-blue-100 text-pastel-blue-700 rounded hover:bg-pastel-blue-200 text-[10px] font-medium transition-colors"
+                >
+                    <HiPlay className="w-3 h-3" />
+                    시작
+                </button>
+            ) : (
+                startedLabel || '-'
+            )}
         </div>
 
         {/* Completed At */}
@@ -290,18 +423,29 @@ export const ListCardRow = ({
         </div>
 
         {/* Assignee */}
-        <div className="flex items-center gap-2">
-          {card.assignee && (
-            <>
-              <Avatar avatarUrl={card.assigneeAvatarUrl} userName={card.assignee} size="xs" />
-              <span className="truncate text-xs text-slate-600">{card.assignee}</span>
-            </>
-          )}
+        <div className="min-w-0">
+            {isEditMode ? (
+                <AssigneeSelector
+                    currentAssignee={card.assignee ? { id: card.assigneeId!, name: card.assignee, avatarUrl: card.assigneeAvatarUrl } : null}
+                    onSelect={(user) => {
+                        handleUpdateField({ assigneeId: user ? user.id : -1 });
+                    }}
+                />
+            ) : (
+                <div className="flex items-center gap-2">
+                    {card.assignee && (
+                        <>
+                        <Avatar avatarUrl={card.assigneeAvatarUrl} userName={card.assignee} size="xs" />
+                        <span className="truncate text-xs text-slate-600">{card.assignee}</span>
+                        </>
+                    )}
+                </div>
+            )}
         </div>
 
         {/* Actions */}
         <div className="flex justify-end">
-          {canEdit && (
+          {canEdit && !isEditMode && (
             <button
               onClick={handleDelete}
               disabled={isDeleting}
@@ -319,6 +463,15 @@ export const ListCardRow = ({
           )}
         </div>
       </div>
+
+      {showLabelModal && (
+        <LabelSelectionModal
+            boardId={boardId}
+            selectedLabelIds={card.labels?.map(l => l.id) || []}
+            onChange={handleUpdateLabels}
+            onClose={() => setShowLabelModal(false)}
+        />
+      )}
 
       {errorMessage && (
         <ErrorNotification

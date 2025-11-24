@@ -24,4 +24,9 @@ public class AnalyticsController {
     public ResponseEntity<List<CycleTimeData>> getCycleTime(@PathVariable Long boardId) {
         return ResponseEntity.ok(analyticsService.getCycleTime(boardId));
     }
+
+    @GetMapping("/boards/{boardId}/completed-count")
+    public ResponseEntity<Long> getCompletedTasksCount(@PathVariable Long boardId) {
+        return ResponseEntity.ok(analyticsService.getCompletedTasksCount(boardId));
+    }
 }
