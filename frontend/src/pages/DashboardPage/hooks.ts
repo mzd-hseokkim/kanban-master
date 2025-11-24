@@ -1,9 +1,9 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import cardService from '@/services/cardService';
+import columnService from '@/services/columnService';
 import type { UserProfile } from '@/types/auth';
 import type { Board } from '@/types/board';
 import type { Card } from '@/types/card';
-import columnService from '@/services/columnService';
-import cardService from '@/services/cardService';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
 export type DashboardCard = Card & {
   boardId: number;
@@ -48,7 +48,8 @@ const fetchCardsByColumn = async (workspaceId: number, boards: Board[]) => {
       const columns = await columnService.listColumns(workspaceId, board.id);
       const columnCards = await Promise.all(
         columns.map(async (column) => {
-          const cards = await cardService.listCards(workspaceId, board.id, column.id);
+          const response = await cardService.listCards(workspaceId, board.id, column.id);
+          const cards = response.content;
           return [
             column.id,
             {

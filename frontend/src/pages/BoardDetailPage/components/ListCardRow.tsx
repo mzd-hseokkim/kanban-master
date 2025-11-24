@@ -164,7 +164,7 @@ export const ListCardRow = ({
   const handleUpdateField = async (field: Partial<Card>) => {
     try {
       await updateCard(workspaceId, boardId, columnId, card.id, field);
-      await loadCards(workspaceId, boardId, columnId);
+      await onRefreshColumn();
     } catch (err) {
       console.error('Failed to update card field:', err);
       setErrorMessage('업데이트에 실패했습니다');
@@ -291,7 +291,7 @@ export const ListCardRow = ({
                     className="w-full px-2 py-1 text-sm text-rose-600 border border-slate-200 rounded focus:outline-none focus:border-pastel-blue-400 focus:ring-1 focus:ring-pastel-blue-200"
                 />
             ) : (
-                <div className={`truncate font-medium ${card.isCompleted ? 'text-slate-400 line-through' : 'text-slate-700'}`}>
+                <div className={`truncate font-semibold ${card.isCompleted ? 'text-slate-400 line-through' : 'text-slate-800'}`}>
                     {card.title}
                 </div>
             )}
@@ -381,24 +381,24 @@ export const ListCardRow = ({
                     className="w-full px-2 py-1 text-xs text-rose-600 border border-slate-200 rounded focus:outline-none focus:border-pastel-blue-400 focus:ring-1 focus:ring-pastel-blue-200"
                 />
             ) : (
-                <div className="truncate text-slate-400 text-xs">
+                <div className="truncate text-slate-600 text-xs">
                     {descriptionPreview}
                 </div>
             )}
         </div>
 
         {/* Created At */}
-        <div className="text-xs text-slate-500">
+        <div className="text-xs text-slate-600">
           {createdLabel || '-'}
         </div>
 
         {/* Due Date */}
-        <div className={`text-xs ${isOverdue && !card.isCompleted ? 'text-rose-500 font-medium' : 'text-slate-500'}`}>
+        <div className={`text-xs ${isOverdue && !card.isCompleted ? 'text-rose-600 font-bold' : 'text-slate-600'}`}>
           {dueDateInfo?.dateStr || '-'}
         </div>
 
         {/* Started At */}
-        <div className="text-xs text-slate-500 flex items-center">
+        <div className="text-xs text-slate-600 flex items-center">
             {isEditMode && !card.startedAt ? (
                 <button
                     onClick={handleStartCard}
@@ -413,7 +413,7 @@ export const ListCardRow = ({
         </div>
 
         {/* Completed At */}
-        <div className="text-xs text-slate-500">
+        <div className="text-xs text-slate-600">
           {completedLabel ? (
             <div className="flex items-center gap-1 text-emerald-600">
               <HiCheckCircle className="w-3.5 h-3.5" />
@@ -436,7 +436,7 @@ export const ListCardRow = ({
                     {card.assignee && (
                         <>
                         <Avatar avatarUrl={card.assigneeAvatarUrl} userName={card.assignee} size="xs" />
-                        <span className="truncate text-xs text-slate-600">{card.assignee}</span>
+                        <span className="truncate text-xs text-slate-700 font-medium">{card.assignee}</span>
                         </>
                     )}
                 </div>

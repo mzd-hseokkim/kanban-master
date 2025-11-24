@@ -1,3 +1,5 @@
+import { CommandPalette } from '@/components/common/CommandPalette';
+import { KeyboardShortcutsHelp } from '@/components/common/KeyboardShortcutsHelp';
 import { ConnectionStatusScanner } from '@/components/ConnectionStatusScanner';
 import { Footer } from '@/components/Footer';
 import { GlobalNavBar } from '@/components/GlobalNavBar';
@@ -171,6 +173,8 @@ const App = () => {
               </div>
               {shouldShowAppChrome && <Footer />}
             </div>
+            <CommandPalette />
+            <KeyboardShortcutsHelp />
           </CardProvider>
         </ColumnProvider>
         </BoardProvider>

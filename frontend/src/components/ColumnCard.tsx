@@ -217,7 +217,7 @@ const ColumnCardComponent: React.FC<ColumnCardProps> = ({ column, workspaceId, b
         style={bgStyle}
       >
         {/* 헤더 */}
-        <div className="flex items-center gap-2 p-4 border-b border-white/20">
+        <div className="flex items-center gap-2 p-3 border-b border-white/20">
           {/* 드래그 핸들 아이콘 */}
           {dragHandleProps && (
             <div
@@ -247,22 +247,22 @@ const ColumnCardComponent: React.FC<ColumnCardProps> = ({ column, workspaceId, b
             className={`flex-1 min-w-0 ${dragHandleProps ? 'cursor-grab active:cursor-grabbing' : ''}`}
             {...dragHandleProps}
           >
-            <h3 className="font-bold text-pastel-blue-900">{column.name}</h3>
+            <h3 className="font-semibold text-sm text-slate-700">{column.name}</h3>
             {column.description && (
-              <p className="text-xs text-pastel-blue-600 mt-1">{column.description}</p>
+              <p className="text-[10px] text-slate-600 mt-0.5">{column.description}</p>
             )}
           </div>
 
           {/* 액션 버튼들 (드래그 불가) */}
           {canEdit && (
-            <div className="flex items-center gap-1 flex-shrink-0">
+            <div className="flex items-center gap-0.5 flex-shrink-0">
               {/* 카드 추가 버튼 */}
               <button
                 onClick={() => {
                   setModalKey(prev => prev + 1);
                   setShowCreateCardModal(true);
                 }}
-                className="p-2 hover:bg-white/20 rounded-lg transition text-pastel-blue-900 font-bold text-xl"
+                className="p-1.5 hover:bg-white/20 rounded-lg transition text-pastel-blue-900 font-bold text-lg"
                 title="카드 추가"
               >
                 +
@@ -272,7 +272,7 @@ const ColumnCardComponent: React.FC<ColumnCardProps> = ({ column, workspaceId, b
               <div className="relative" ref={menuRef}>
                 <button
                   onClick={() => setShowMenu(!showMenu)}
-                  className="menu-button p-2 hover:bg-white/20 rounded-lg transition text-pastel-blue-900 font-bold text-xl"
+                  className="menu-button p-1.5 hover:bg-white/20 rounded-lg transition text-pastel-blue-900 font-bold text-lg"
                   disabled={isDeleting}
                 >
                   ⋮
@@ -284,14 +284,14 @@ const ColumnCardComponent: React.FC<ColumnCardProps> = ({ column, workspaceId, b
                         setShowEditColumnModal(true);
                         setShowMenu(false);
                       }}
-                      className="w-full text-left px-4 py-2 text-sm text-pastel-blue-700 hover:bg-white/30 transition"
+                      className="w-full text-left px-3 py-1.5 text-xs text-slate-700 hover:bg-white/30 transition"
                     >
                       ✏️ 수정
                     </button>
                     <button
                       onClick={handleDelete}
                       disabled={isDeleting}
-                      className="w-full text-left px-4 py-2 text-sm text-pastel-pink-600 hover:bg-white/30 transition disabled:opacity-50"
+                      className="w-full text-left px-3 py-1.5 text-xs text-pastel-pink-600 hover:bg-white/30 transition disabled:opacity-50"
                     >
                       {isDeleting ? '삭제 중...' : '🗑️ 삭제'}
                     </button>
@@ -304,7 +304,7 @@ const ColumnCardComponent: React.FC<ColumnCardProps> = ({ column, workspaceId, b
 
         {/* 카드 영역 */}
         <div
-          className={`flex-1 p-4 overflow-y-auto min-h-96 ${dragOverEmpty ? 'bg-white/30' : ''} transition flex flex-col gap-3 w-full`}
+          className={`flex-1 p-3 overflow-y-auto min-h-96 ${dragOverEmpty ? 'bg-white/30' : ''} transition flex flex-col gap-2 w-full`}
           onDragOver={handleCardAreaDragOver}
           onDragLeave={handleCardAreaDragLeave}
           onDrop={handleCardAreaDrop}
@@ -317,7 +317,7 @@ const ColumnCardComponent: React.FC<ColumnCardProps> = ({ column, workspaceId, b
           ) : (
             <>
               {cards[column.id] && cards[column.id].length > 0 && (
-                <div className="space-y-2 w-full">
+                <div className="space-y-1.5 w-full">
                   {[...(cards[column.id] || [])]
                     .sort((a, b) => {
                       const parseDate = (value?: string) => {
@@ -355,7 +355,7 @@ const ColumnCardComponent: React.FC<ColumnCardProps> = ({ column, workspaceId, b
                     setModalKey(prev => prev + 1); // Generate new key for fresh modal instance
                     setShowCreateCardModal(true);
                   }}
-                  className="w-full rounded-2xl border-4 border-dashed border-white/70 bg-white/10 text-pastel-blue-800 font-semibold text-base min-h-28 flex items-center justify-center hover:bg-white/20 hover:border-black transition"
+                  className="w-full rounded-2xl border-4 border-dashed border-white/70 bg-white/10 text-slate-700 font-semibold text-sm min-h-24 flex items-center justify-center hover:bg-white/20 hover:border-black transition"
                 >
                   + 카드 추가
                 </button>

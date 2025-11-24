@@ -269,7 +269,7 @@ export const ListView = ({
       }
     );
 
-    Object.entries(loadMoreRefs.current).forEach(([columnId, el]) => {
+    Object.entries(loadMoreRefs.current).forEach(([_columnId, el]) => {
       if (el) {
         observer.observe(el);
       }
@@ -379,7 +379,7 @@ export const ListView = ({
       )}
       {/* Table Header */}
       <div
-        className="sticky top-0 z-30 bg-white/95 backdrop-blur shadow-sm grid grid-cols-[40px_minmax(300px,3fr)_100px_120px_minmax(200px,2fr)_110px_100px_100px_100px_150px_90px] gap-4 px-4 py-2 items-center text-xs font-semibold text-slate-500 border-b border-slate-200 mb-4 rounded-b-lg"
+        className="sticky top-0 z-30 bg-white/95 shadow-sm grid grid-cols-[40px_minmax(300px,3fr)_100px_120px_minmax(200px,2fr)_110px_100px_100px_100px_150px_90px] gap-4 px-4 py-2 items-center text-xs font-bold text-slate-700 border-b border-slate-200 mb-4 rounded-b-lg"
         style={{ height: `${MAIN_HEADER_HEIGHT}px` }}
       >
         <div className="text-center">완료</div>
@@ -458,7 +458,7 @@ export const ListView = ({
                     >
                       {isCollapsed ? <HiChevronRight /> : <HiChevronDown />}
                     </button>
-                    <span className="font-medium text-slate-700 text-sm">{column.name}</span>
+                    <span className="font-bold text-slate-800 text-sm">{column.name}</span>
                     <span className="text-xs text-slate-400 bg-slate-200 px-2 py-0.5 rounded-full">
                       {columnCards.length}
                     </span>
@@ -539,7 +539,7 @@ export const ListView = ({
                     />
                   ))}
                   {columnCards.length === 0 && (
-                    <div className="px-4 py-8 text-center text-slate-400 text-xs italic bg-slate-50/50 border-b border-slate-100">
+                    <div className="px-4 py-8 text-center text-slate-500 text-xs italic bg-slate-50/50 border-b border-slate-100">
                       카드가 없습니다
                     </div>
                   )}

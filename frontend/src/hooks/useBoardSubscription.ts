@@ -16,7 +16,6 @@ export const useBoardSubscription = (boardId: number | undefined, onEvent: (even
     useEffect(() => {
         if (!client || !isConnected || !boardId) return;
 
-        console.log(`Subscribing to board ${boardId}`);
         const subscription: StompSubscription = client.subscribe(`/topic/board/${boardId}`, (message) => {
             try {
                 const event: BoardEvent = JSON.parse(message.body);
@@ -27,7 +26,6 @@ export const useBoardSubscription = (boardId: number | undefined, onEvent: (even
         });
 
         return () => {
-            console.log(`Unsubscribing from board ${boardId}`);
             subscription.unsubscribe();
         };
     }, [client, isConnected, boardId, onEvent]);

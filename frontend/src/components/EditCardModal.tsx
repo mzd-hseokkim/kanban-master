@@ -8,6 +8,7 @@ import { LabelSelector } from '@/components/label/LabelSelector';
 import ParentCardLink from '@/components/ParentCardLink';
 import { useAuth } from '@/context/AuthContext';
 import { useCard } from '@/context/CardContext';
+import { useKeyboardShortcut } from '@/hooks/useKeyboardShortcut';
 import { useModalAnimation } from '@/hooks/useModalAnimation';
 import cardService from '@/services/cardService';
 import { labelService } from '@/services/labelService';
@@ -298,6 +299,31 @@ export const EditCardModal: React.FC<EditCardModalProps> = ({
         loadWatchStatus();
     }, [currentCard, user]);
 
+    // Keyboard shortcuts
+    // Esc: Close modal
+    useKeyboardShortcut('esc', () => {
+        close();
+    });
+
+    // Cmd/Ctrl + Enter: Submit form
+    useKeyboardShortcut('mod+enter', () => {
+        if (canEdit && title.trim() && !loading) {
+            handleSubmit(new Event('submit') as any);
+        }
+    });
+
+    // Cmd/Ctrl + I: Assign to me
+    useKeyboardShortcut('mod+i', () => {
+        if (canEdit && user && !selectedAssignee) {
+            setSelectedAssignee({
+                id: user.id,
+                name: user.name,
+                email: user.email,
+                avatarUrl: user.avatarUrl || undefined
+            });
+        }
+    }, { preventDefault: true });
+
     // Watch 토글 핸들러
     const handleToggleWatch = async () => {
         if (!currentCard) return;
@@ -399,11 +425,11 @@ export const EditCardModal: React.FC<EditCardModalProps> = ({
                     style={{ maxHeight: '90vh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}
                 >
                     {/* 상단 고정 헤더 영역 */}
-                    <div className="flex-shrink-0 px-8 pt-6 pb-4 border-b border-white/30">
+                    <div className="flex-shrink-0 px-6 pt-5 pb-3 border-b border-white/30">
                         {/* 타이틀과 설명 */}
-                        <div className="mb-4">
-                            <h2 className="text-2xl font-bold text-pastel-blue-900 mb-1">카드 수정</h2>
-                            <p className="text-sm text-pastel-blue-600">카드 정보를 수정하세요</p>
+                        <div className="mb-3">
+                            <h2 className="text-xl font-bold text-slate-800 mb-0.5">카드 수정</h2>
+                            <p className="text-xs text-slate-500">카드 정보를 수정하세요</p>
                         </div>
 
                         {/* 카드 제목 입력 + 액션 버튼들 */}
@@ -511,7 +537,7 @@ export const EditCardModal: React.FC<EditCardModalProps> = ({
                     </div>
 
                     {/* 스크롤 가능한 컨텐츠 영역 */}
-                    <div className="flex-1 overflow-y-auto overflow-x-hidden p-8">
+                    <div className="flex-1 overflow-y-auto overflow-x-hidden p-6">
                         {/* 2열 레이아웃 */}
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
                             {/* 왼쪽 컬럼: 카드 메타데이터 */}
@@ -768,7 +794,7 @@ export const EditCardModal: React.FC<EditCardModalProps> = ({
                 </div>
 
                 {/* 하단 고정 버튼 영역 */}
-                <div className="flex-shrink-0 border-t border-white/30 bg-white/60 backdrop-blur-sm px-8 py-3">
+                <div className="flex-shrink-0 border-t border-white/30 bg-white/60 backdrop-blur-sm px-6 py-3">
                     <div className="flex gap-3 justify-center max-w-md mx-auto">
                         <button
                             type="button"

@@ -3,7 +3,9 @@ import { CollapsibleSection } from '@/components/common/CollapsibleSection';
 import { ErrorNotification } from '@/components/ErrorNotification';
 import { LabelSelector } from '@/components/label/LabelSelector';
 import RichTextEditor from '@/components/RichTextEditor';
+import { useAuth } from '@/context/AuthContext';
 import { useCard } from '@/context/CardContext';
+import { useKeyboardShortcut } from '@/hooks/useKeyboardShortcut';
 import { useModalAnimation } from '@/hooks/useModalAnimation';
 import cardService from '@/services/cardService';
 import { labelService } from '@/services/labelService';
@@ -51,6 +53,7 @@ export const CreateCardModal: React.FC<CreateCardModalProps> = ({
     parentCardId
 }) => {
     const { createCard } = useCard();
+    const { user } = useAuth();
     const { stage, close } = useModalAnimation(onClose);
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
@@ -246,6 +249,31 @@ export const CreateCardModal: React.FC<CreateCardModalProps> = ({
         };
     }, []);
 
+    // Keyboard shortcuts
+    // Esc: Close modal
+    useKeyboardShortcut('esc', () => {
+        close();
+    });
+
+    // Cmd/Ctrl + Enter: Submit form
+    useKeyboardShortcut('mod+enter', () => {
+        if (title.trim() && !loading) {
+            handleSubmit(new Event('submit') as any);
+        }
+    });
+
+    // Cmd/Ctrl + I: Assign to me
+    useKeyboardShortcut('mod+i', () => {
+        if (user && !selectedAssignee) {
+            setSelectedAssignee({
+                id: user.id,
+                name: user.name,
+                email: user.email,
+                avatarUrl: user.avatarUrl || undefined
+            });
+        }
+    }, { preventDefault: true });
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
@@ -305,10 +333,10 @@ export const CreateCardModal: React.FC<CreateCardModalProps> = ({
                     })}
                 >
                     {/* 헤더 */}
-                    <h2 className="text-2xl font-bold text-pastel-blue-900 mb-1">
+                    <h2 className="text-xl font-bold text-slate-800 mb-0.5">
                         {parentCardId ? '🔗 하위 카드 생성' : '카드 생성'}
                     </h2>
-                    <p className="text-sm text-pastel-blue-600 mb-6">
+                    <p className="text-xs text-slate-500 mb-5">
                         {parentCardId ? '부모 카드의 하위 카드를 생성하세요' : '새로운 카드를 생성하세요'}
                     </p>
 

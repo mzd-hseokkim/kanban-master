@@ -275,7 +275,7 @@ const CardItemComponent: React.FC<CardItemProps> = ({
   return (
     <div className="relative w-full group" data-card-id={card.id}>
       <div
-        className={`bg-white rounded-lg shadow-sm border border-pastel-blue-200 p-3 group-hover:shadow-[0_35px_60px_-15px_rgba(0,0,0,0.3)] group-hover:-translate-y-4 group-hover:scale-105 group-hover:z-10 transition-all duration-200 w-full ${
+        className={`bg-white rounded-lg shadow-sm border border-pastel-blue-200 group-hover:border-pastel-blue-800 p-2.5 group-hover:shadow-[0_15px_30px_-5px_rgba(0,0,0,0.5)] group-hover:-translate-y-2 group-hover:scale-[1.02] group-hover:z-10 transition-all duration-200 w-full ${
           isDragging ? 'opacity-50' : ''
         } ${animateOnMount ? 'card-enter' : ''} ${isLoadingRelations ? 'opacity-70 cursor-wait' : !canEdit ? 'cursor-default' : 'cursor-pointer'} ${
           isRecentlyCreated ? 'card-new-glow' : ''
@@ -288,18 +288,18 @@ const CardItemComponent: React.FC<CardItemProps> = ({
         onClick={!isLoadingRelations ? handleCardClick : undefined}
       >
         {/* Title and Menu */}
-        <div className="flex items-start justify-between gap-2 mb-2">
-          <div className="flex items-center gap-2 flex-1 min-w-0">
+        <div className="flex items-start justify-between gap-1.5 mb-1.5">
+          <div className="flex items-center gap-1.5 flex-1 min-w-0">
             {card.bgColor && (
               <div
-                className="w-3 h-6 rounded-sm flex-shrink-0"
+                className="w-2.5 h-5 rounded-sm flex-shrink-0"
                 style={{ backgroundColor: card.bgColor, border: '1px solid rgba(0, 0, 0, 0.15)' }}
                 title="Card color"
               />
             )}
             <div
               role="checkbox"
-              className={`flex-shrink-0 w-6 h-6 rounded border-2 transition flex items-center justify-center ${
+              className={`flex-shrink-0 w-5 h-5 rounded border-2 transition flex items-center justify-center ${
                 canEdit ? 'cursor-pointer' : 'cursor-default'
               } ${
               card.isCompleted
@@ -311,15 +311,15 @@ const CardItemComponent: React.FC<CardItemProps> = ({
               onClick={canEdit ? handleToggleCompletion : undefined}
               title={canEdit ? (card.isCompleted ? '미완료로 표시' : '완료로 표시') : '읽기 전용'}
             >
-              {card.isCompleted && <svg className="w-4 h-4 text-pastel-green-500" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg>}
+              {card.isCompleted && <svg className="w-3.5 h-3.5 text-pastel-green-500" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg>}
             </div>
-            <h4 className={`font-semibold text-sm flex-1 min-w-0 line-clamp-2 transition ${
+            <h4 className={`text-sm flex-1 min-w-0 line-clamp-2 transition ${
               card.isCompleted
-                ? 'text-pastel-blue-400 line-through'
-                : 'text-pastel-blue-900'
+                ? 'text-slate-400 line-through font-medium'
+                : 'text-slate-700 font-bold'
             }`}>{card.title}</h4>
             {card.priority && (
-              <span className={`text-xs px-2 py-0.5 rounded font-medium flex-shrink-0 ${getPriorityClass(card.priority)}`}>
+              <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium flex-shrink-0 ${getPriorityClass(card.priority)}`}>
                 {card.priority}
               </span>
             )}
@@ -331,7 +331,7 @@ const CardItemComponent: React.FC<CardItemProps> = ({
                 disabled={isDeleting}
                 title="카드 삭제"
                 aria-label="카드 삭제"
-                className={`w-7 h-7 inline-flex items-center justify-center rounded-full transition border border-transparent self-start -mt-0.5 ${
+                className={`w-6 h-6 inline-flex items-center justify-center rounded-full transition border border-transparent self-start -mt-0.5 ${
                   isDeleting
                     ? 'text-pastel-pink-300 cursor-not-allowed'
                     : 'text-pastel-pink-600 hover:text-pastel-pink-700 hover:bg-pastel-pink-50 border-pastel-pink-100'
@@ -341,7 +341,7 @@ const CardItemComponent: React.FC<CardItemProps> = ({
                   <span className="text-xs font-medium">삭제 중...</span>
                 ) : (
                   <svg
-                    className="w-3.5 h-3.5"
+                    className="w-3 h-3"
                     viewBox="0 0 24 24"
                     fill="none"
                     stroke="currentColor"
@@ -363,14 +363,14 @@ const CardItemComponent: React.FC<CardItemProps> = ({
 
         {/* Description */}
         {descriptionPreview && (
-          <div className="text-xs text-pastel-blue-600 mb-2 line-clamp-2 whitespace-pre-line">
+          <div className="text-[11px] text-slate-600 mb-1.5 line-clamp-2 whitespace-pre-line">
             {descriptionPreview}
           </div>
         )}
 
         {/* Labels */}
         {card.labels && card.labels.length > 0 && (
-          <div className="flex items-center gap-1 flex-wrap mb-2">
+          <div className="flex items-center gap-1 flex-wrap mb-1.5">
             {[...card.labels].sort((a, b) => a.name.localeCompare(b.name)).slice(0, 3).map((label) => {
               const colorToken = label.colorToken || 'pastel-blue-500';
               const colorMap: { [key: string]: string } = {
@@ -387,7 +387,7 @@ const CardItemComponent: React.FC<CardItemProps> = ({
               return (
                 <span
                   key={label.id}
-                  className="text-xs px-2 py-1 rounded font-medium border border-white/50"
+                  className="text-[10px] px-1.5 py-0.5 rounded font-semibold border border-white/30 text-slate-700"
                   style={{ backgroundColor: bgColor }}
                   title={label.description || label.name}
                 >
@@ -396,7 +396,7 @@ const CardItemComponent: React.FC<CardItemProps> = ({
               );
             })}
             {card.labels.length > 3 && (
-              <span className="text-xs text-pastel-blue-600 font-medium">
+              <span className="text-[10px] text-slate-500 font-medium">
                 +{card.labels.length - 3}
               </span>
             )}
@@ -405,13 +405,13 @@ const CardItemComponent: React.FC<CardItemProps> = ({
 
         {/* Assignee */}
         {card.assignee && (
-          <div className="flex items-center gap-2 mb-2">
+          <div className="flex items-center gap-1.5 mb-1.5">
             <Avatar
               avatarUrl={card.assigneeAvatarUrl}
               userName={card.assignee}
-              size="sm"
+              size="xs"
             />
-            <span className="text-xs text-pastel-blue-700 font-medium">
+            <span className="text-[10px] text-slate-600 font-medium">
               {card.assignee}
             </span>
           </div>
@@ -426,17 +426,17 @@ const CardItemComponent: React.FC<CardItemProps> = ({
             badges.push(
               <div
                 key="due"
-                className={`flex flex-1 min-w-0 items-center justify-center gap-1 text-xs font-semibold px-3 py-1 rounded border ${
+                className={`flex flex-1 min-w-0 items-center justify-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded border ${
                   card.isCompleted
-                    ? 'border-pastel-blue-200 bg-white text-pastel-blue-500'
+                    ? 'border-slate-200 bg-white text-slate-400'
                     : isOverdue
                     ? 'border-pastel-pink-500 bg-pastel-pink-50 text-pastel-pink-700'
                     : isDueSoon
                     ? 'border-pastel-yellow-500 bg-pastel-yellow-50 text-pastel-yellow-700'
-                    : 'border-pastel-blue-200 bg-white text-pastel-blue-600'
+                    : 'border-slate-200 bg-white text-slate-600'
                 }`}
               >
-                <HiCalendar className="w-3.5 h-3.5" />
+                <HiCalendar className="w-3 h-3" />
                 <span className="truncate">{dueDateInfo.dateStr}</span>
                 {!card.isCompleted && isOverdue && ' (지남)'}
                 {!card.isCompleted && isDueSoon && !isOverdue && ` (${dueDateInfo.daysUntilDue}일)`}
@@ -448,9 +448,9 @@ const CardItemComponent: React.FC<CardItemProps> = ({
             badges.push(
               <div
                 key="started"
-                className="flex flex-1 min-w-0 items-center justify-center gap-1 text-[11px] font-semibold px-3 py-1 rounded border border-pastel-blue-200 bg-pastel-blue-50 text-pastel-blue-700"
+                className="flex flex-1 min-w-0 items-center justify-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded border border-pastel-blue-200 bg-pastel-blue-50 text-pastel-blue-700"
               >
-                <HiPlay className="w-3.5 h-3.5" />
+                <HiPlay className="w-3 h-3" />
                 <span className="truncate">시작 {startedLabel}</span>
               </div>
             );
@@ -460,16 +460,16 @@ const CardItemComponent: React.FC<CardItemProps> = ({
             badges.push(
               <div
                 key="completed"
-                className="flex flex-1 min-w-0 items-center justify-center gap-1 text-[11px] font-semibold px-3 py-1 rounded border border-pastel-green-200 bg-pastel-green-50 text-pastel-green-700"
+                className="flex flex-1 min-w-0 items-center justify-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded border border-pastel-green-200 bg-pastel-green-50 text-pastel-green-700"
               >
-                <HiCheckCircle className="w-3.5 h-3.5" />
+                <HiCheckCircle className="w-3 h-3" />
                 <span className="truncate">완료 {completedLabel}</span>
               </div>
             );
           }
 
           return (
-            <div className="flex items-stretch gap-2 mt-1">
+            <div className="flex items-stretch gap-1.5 mt-1">
               {badges}
             </div>
           );
@@ -477,8 +477,8 @@ const CardItemComponent: React.FC<CardItemProps> = ({
 
         {/* 자식 카드 개수 배지 (있는 경우에만 표시) */}
         {card.childCount !== undefined && card.childCount > 0 && (
-          <div className="flex items-center gap-1 mt-2">
-            <div className="flex items-center gap-1 px-2 py-1 rounded bg-pastel-blue-100 text-pastel-blue-700 text-xs font-medium border border-pastel-blue-200">
+          <div className="flex items-center gap-1 mt-1.5">
+            <div className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-pastel-blue-100 text-pastel-blue-700 text-[10px] font-medium border border-pastel-blue-200">
               <span>🔗</span>
               <span>하위 카드 {card.childCount}개</span>
             </div>

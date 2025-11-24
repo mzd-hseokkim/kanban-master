@@ -1,10 +1,12 @@
 import { ArchivedCardsPanel } from "@/components/archive/ArchivedCardsPanel";
+import { CreateCardModal } from "@/components/CreateCardModal";
 import { ErrorNotification } from "@/components/ErrorNotification";
 import { useCard } from "@/context/CardContext";
 import { useColumn } from "@/context/ColumnContext";
 import { useDialog } from "@/context/DialogContext";
 import { useBoardSubscription } from "@/hooks/useBoardSubscription";
 import { useImportProgress } from "@/hooks/useImportProgress";
+import { useKeyboardShortcut } from "@/hooks/useKeyboardShortcut";
 import { usePermissions } from "@/hooks/usePermissions";
 import { usePresenceTransition } from "@/hooks/usePresenceTransition";
 import cardService from "@/services/cardService";
@@ -61,6 +63,7 @@ const BoardDetailPage = () => {
   const [showCalendarModal, setShowCalendarModal] = useState(false);
   const [showArchivePanel, setShowArchivePanel] = useState(false);
   const [showImportModal, setShowImportModal] = useState(false);
+  const [showGlobalCreateCardModal, setShowGlobalCreateCardModal] = useState(false);
 
   const [activeImportJobId, setActiveImportJobId] = useState<string | null>(null);
   const [importFileName, setImportFileName] = useState<string>('엑셀 가져오기');
@@ -137,6 +140,34 @@ const BoardDetailPage = () => {
       refreshColumns(); // Fallback for other events (e.g. BOARD_UPDATED)
     }
   });
+
+  useEffect(() => {
+    const handleOpenCreateCard = () => {
+      if (columns.length > 0) {
+        setShowGlobalCreateCardModal(true);
+      } else {
+        alert('카드를 생성할 수 있는 칼럼이 없습니다.');
+      }
+    };
+
+    window.addEventListener('kanban:open-create-card', handleOpenCreateCard);
+    return () => window.removeEventListener('kanban:open-create-card', handleOpenCreateCard);
+  }, [columns, alert]);
+
+  // Keyboard shortcuts for Board context
+  // C: Create new card
+  useKeyboardShortcut('c', () => {
+    if (columns.length > 0) {
+      setShowGlobalCreateCardModal(true);
+    } else {
+      alert('카드를 생성할 수 있는 칼럼이 없습니다.');
+    }
+  });
+
+  // /: Open search panel in board context
+  useKeyboardShortcut('/', () => {
+    setShowSearchPanel(true);
+  }, { preventDefault: true });
 
   const handleNavigateBack = () => navigate("/boards");
 
@@ -351,6 +382,19 @@ const BoardDetailPage = () => {
           boardId={boardNumericId}
           onClose={() => setShowArchivePanel(false)}
           onRestore={() => refreshColumns()}
+        />
+      )}
+
+      {/* Global Create Card Modal (triggered via Custom Event) */}
+      {showGlobalCreateCardModal && columns.length > 0 && (
+        <CreateCardModal
+          workspaceId={workspaceNumericId}
+          boardId={boardNumericId}
+          columnId={columns[0].id}
+          onClose={() => setShowGlobalCreateCardModal(false)}
+          onSuccess={() => {
+            loadCards(workspaceNumericId, boardNumericId, columns[0].id);
+          }}
         />
       )}
     </div>

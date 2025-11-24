@@ -25,6 +25,47 @@ export default {
           'sans-serif',
         ],
       },
+      spacing: {
+        '0.5': '2px',   // 0.5 unit
+        '1': '4px',     // 1 unit
+        '1.5': '6px',   // 1.5 units
+        '2': '8px',     // 2 units
+        '2.5': '10px',  // 2.5 units
+        '3': '12px',    // 3 units
+        '3.5': '14px',  // 3.5 units
+        '4': '16px',    // 4 units
+        '5': '20px',    // 5 units
+        '6': '24px',    // 6 units
+        '7': '28px',    // 7 units
+        '8': '32px',    // 8 units
+        '9': '36px',    // 9 units
+        '10': '40px',   // 10 units
+        '11': '44px',   // 11 units
+        '12': '48px',   // 12 units
+        '14': '56px',   // 14 units
+        '16': '64px',   // 16 units
+        '20': '80px',   // 20 units
+        '24': '96px',   // 24 units
+        '28': '112px',  // 28 units
+        '32': '128px',  // 32 units
+        '36': '144px',  // 36 units
+        '40': '160px',  // 40 units
+        '44': '176px',  // 44 units
+        '48': '192px',  // 48 units
+        '52': '208px',  // 52 units
+        '56': '224px',  // 56 units
+        '60': '240px',  // 60 units
+        '64': '256px',  // 64 units
+        '72': '288px',  // 72 units
+        '80': '320px',  // 80 units
+        '96': '384px',  // 96 units
+      },
+      textColor: {
+        'heading': 'var(--text-heading)',
+        'body': 'var(--text-body)',
+        'meta': 'var(--text-meta)',
+        'muted': 'var(--text-muted)',
+      },
       colors: {
         // Pastel Cool Color Palette
         pastel: {
