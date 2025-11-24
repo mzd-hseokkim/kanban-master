@@ -1,13 +1,13 @@
 import { useEffect, useRef, useState, type DragEvent, type ReactNode } from 'react';
-import { HiArrowLeft, HiCalendar, HiChartPie, HiChevronDown, HiDownload, HiLightningBolt, HiPlus, HiSearch, HiTag, HiUpload, HiUsers, HiViewBoards, HiViewList } from 'react-icons/hi';
+import { HiArrowLeft, HiCalendar, HiChartBar, HiChartPie, HiChevronDown, HiDownload, HiLightningBolt, HiPlus, HiSearch, HiTag, HiUpload, HiUsers, HiViewBoards, HiViewList } from 'react-icons/hi';
 import { MdArchive } from 'react-icons/md';
 
 interface BoardHeaderProps {
   boardName: string;
   overdueCardCount: number;
   canEdit: boolean;
-  viewMode: 'BOARD' | 'LIST';
-  onViewModeChange: (mode: 'BOARD' | 'LIST') => void;
+  viewMode: 'BOARD' | 'LIST' | 'ANALYTICS';
+  onViewModeChange: (mode: 'BOARD' | 'LIST' | 'ANALYTICS') => void;
   onBack: () => void;
   onSearch: () => void;
   onLabelManager: () => void;
@@ -135,6 +135,17 @@ export const BoardHeader = ({
               title="리스트 뷰"
             >
               <HiViewList className="text-lg" />
+            </button>
+            <button
+              onClick={() => onViewModeChange('ANALYTICS')}
+              className={`p-1.5 rounded-md transition-all ${
+                viewMode === 'ANALYTICS'
+                  ? 'bg-white text-pastel-blue-600 shadow-sm'
+                  : 'text-slate-400 hover:text-slate-600'
+              }`}
+              title="분석 뷰"
+            >
+              <HiChartBar className="text-lg" />
             </button>
           </div>
         </div>

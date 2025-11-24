@@ -7,14 +7,16 @@ import { HiChartPie, HiExclamation } from 'react-icons/hi';
 interface BoardInsightsPanelProps {
   workspaceId: number;
   boardId: number;
-  refreshKey?: number;
+  isVisible: boolean;
 }
 
-export const BoardInsightsPanel: React.FC<BoardInsightsPanelProps> = ({ workspaceId, boardId, refreshKey }) => {
+export const BoardInsightsPanel: React.FC<BoardInsightsPanelProps> = ({ workspaceId, boardId, isVisible }) => {
   const [insights, setInsights] = useState<BoardInsightsResponse | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
+    if (!isVisible) return; // Only fetch when panel is visible
+
     const fetchInsights = async () => {
       try {
         setLoading(true);
@@ -28,7 +30,7 @@ export const BoardInsightsPanel: React.FC<BoardInsightsPanelProps> = ({ workspac
     };
 
     fetchInsights();
-  }, [workspaceId, boardId, refreshKey]);
+  }, [workspaceId, boardId, isVisible]); // Fetch when panel becomes visible
 
   if (loading) {
     return <div className="p-4 text-center text-gray-500">Loading insights...</div>;

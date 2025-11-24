@@ -228,4 +228,10 @@ public interface CardRepository extends JpaRepository<Card, Long> {
                         + "WHERE c.column.board.id = :boardId "
                         + "GROUP BY l.id, l.name, l.colorToken " + "ORDER BY count DESC")
         List<Object[]> findLabelInsightsByBoardId(@Param("boardId") Long boardId);
+
+        @Query("SELECT c FROM Card c WHERE c.column.board.id = :boardId")
+        List<Card> findByBoardId(@Param("boardId") Long boardId);
+
+        @Query("SELECT c FROM Card c WHERE c.column.board.id = :boardId AND c.isCompleted = true")
+        List<Card> findByBoardIdAndIsCompletedTrue(@Param("boardId") Long boardId);
 }

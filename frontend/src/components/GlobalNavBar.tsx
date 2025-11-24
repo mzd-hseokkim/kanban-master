@@ -7,7 +7,7 @@ import type { BoardMember } from '@/types/member';
 import type { InboxItem } from '@/types/notification';
 import type { WatchedCard } from '@/types/watch';
 import React, { useEffect, useRef, useState } from 'react';
-import { HiClipboardList, HiEye, HiInbox, HiViewGrid } from 'react-icons/hi';
+import { HiClipboardList, HiEye, HiInbox, HiShieldCheck, HiViewGrid } from 'react-icons/hi';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { InvitationResponseModal } from './InvitationResponseModal';
 import { SettingsModal } from './SettingsModal';
@@ -332,6 +332,12 @@ export const GlobalNavBar: React.FC = () => {
                                         label="보드"
                                         onClick={handleBoards}
                                         isActive={location.pathname.startsWith('/boards')}
+                                    />
+                                    <NavButton
+                                        icon={<HiShieldCheck className="text-xl" />}
+                                        label="감사 로그"
+                                        onClick={() => navigate('/audit-logs')}
+                                        isActive={location.pathname.startsWith('/audit-logs')}
                                     />
                                 </div>
                             </>

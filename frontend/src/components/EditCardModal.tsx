@@ -422,7 +422,7 @@ export const EditCardModal: React.FC<EditCardModalProps> = ({
                                         }
                                     }}
                                     placeholder="예: 로그인 기능 구현"
-                                    className={`${modalInputClass} pr-12`}
+                                    className={`${modalInputClass} pr-12 ${isCompleted ? 'line-through text-gray-400' : ''}`}
                                     disabled={loading || !canEdit}
                                     readOnly={!canEdit}
                                 />

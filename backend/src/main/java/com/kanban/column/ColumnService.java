@@ -95,6 +95,9 @@ public class ColumnService {
         /**
          * 칼럼 업데이트 (권한 검증 포함)
          */
+        @com.kanban.audit.Auditable(action = com.kanban.audit.AuditAction.UPDATE,
+                        targetType = com.kanban.audit.AuditTargetType.COLUMN,
+                        targetId = "#columnId")
         public ColumnResponse updateColumnWithValidation(Long boardId, Long columnId, String name,
                         String description, String bgColor) {
                 // EDITOR 이상 권한 필요
@@ -143,6 +146,9 @@ public class ColumnService {
         /**
          * 칼럼 위치 업데이트 (권한 검증 포함)
          */
+        @com.kanban.audit.Auditable(action = com.kanban.audit.AuditAction.UPDATE,
+                        targetType = com.kanban.audit.AuditTargetType.COLUMN,
+                        targetId = "#columnId")
         public ColumnResponse updateColumnPositionWithValidation(Long boardId, Long columnId,
                         Integer newPosition, Long userId) {
                 // EDITOR 이상 권한 필요
@@ -195,6 +201,9 @@ public class ColumnService {
         /**
          * 칼럼 삭제 (권한 검증 포함)
          */
+        @com.kanban.audit.Auditable(action = com.kanban.audit.AuditAction.DELETE,
+                        targetType = com.kanban.audit.AuditTargetType.COLUMN,
+                        targetId = "#columnId")
         public void deleteColumnWithValidation(Long boardId, Long columnId, Long userId) {
                 // EDITOR 이상 권한 필요
                 roleValidator.validateRole(boardId, BoardMemberRole.EDITOR);

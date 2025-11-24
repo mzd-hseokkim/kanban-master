@@ -85,4 +85,9 @@ public interface BoardRepository extends JpaRepository<Board, Long> {
         */
        List<Board> findByWorkspaceIdAndNameContainingIgnoreCaseAndStatus(Long workspaceId,
                      String name, BoardStatus status);
+
+       /**
+        * 특정 사용자가 소유한 모든 보드 조회 (감사 로그 권한 체크용)
+        */
+       List<Board> findByOwnerId(Long ownerId);
 }

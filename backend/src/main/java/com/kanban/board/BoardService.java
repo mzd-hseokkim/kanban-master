@@ -37,6 +37,8 @@ public class BoardService {
      */
     @org.springframework.cache.annotation.CacheEvict(value = {"dashboardSummary", "boardInsights"},
             allEntries = true)
+    @com.kanban.audit.Auditable(action = com.kanban.audit.AuditAction.CREATE,
+            targetType = com.kanban.audit.AuditTargetType.BOARD)
     public BoardResponse createBoard(Long workspaceId, Long userId, CreateBoardRequest request) {
         log.debug("Creating board in workspace {} by user {}", workspaceId, userId);
 
@@ -209,6 +211,8 @@ public class BoardService {
      */
     @org.springframework.cache.annotation.CacheEvict(value = {"dashboardSummary", "boardInsights"},
             allEntries = true)
+    @com.kanban.audit.Auditable(action = com.kanban.audit.AuditAction.UPDATE,
+            targetType = com.kanban.audit.AuditTargetType.BOARD, targetId = "#boardId")
     public BoardResponse updateBoard(Long workspaceId, Long boardId, Long userId,
             UpdateBoardRequest request) {
         log.debug("Updating board {} in workspace {} by user {}", boardId, workspaceId, userId);
@@ -256,6 +260,8 @@ public class BoardService {
      */
     @org.springframework.cache.annotation.CacheEvict(value = {"dashboardSummary", "boardInsights"},
             allEntries = true)
+    @com.kanban.audit.Auditable(action = com.kanban.audit.AuditAction.UPDATE,
+            targetType = com.kanban.audit.AuditTargetType.BOARD, targetId = "#boardId")
     public BoardResponse archiveBoard(Long workspaceId, Long boardId, Long userId) {
         log.debug("Archiving board {} in workspace {} by user {}", boardId, workspaceId, userId);
 
@@ -279,6 +285,8 @@ public class BoardService {
      */
     @org.springframework.cache.annotation.CacheEvict(value = {"dashboardSummary", "boardInsights"},
             allEntries = true)
+    @com.kanban.audit.Auditable(action = com.kanban.audit.AuditAction.UPDATE,
+            targetType = com.kanban.audit.AuditTargetType.BOARD, targetId = "#boardId")
     public BoardResponse unarchiveBoard(Long workspaceId, Long boardId, Long userId) {
         log.debug("Unarchiving board {} in workspace {} by user {}", boardId, workspaceId, userId);
 
@@ -302,6 +310,8 @@ public class BoardService {
      */
     @org.springframework.cache.annotation.CacheEvict(value = {"dashboardSummary", "boardInsights"},
             allEntries = true)
+    @com.kanban.audit.Auditable(action = com.kanban.audit.AuditAction.DELETE,
+            targetType = com.kanban.audit.AuditTargetType.BOARD, targetId = "#boardId")
     public void deleteBoard(Long workspaceId, Long boardId, Long userId) {
         log.debug("Deleting board {} in workspace {} by user {}", boardId, workspaceId, userId);
 
@@ -333,6 +343,8 @@ public class BoardService {
      */
     @org.springframework.cache.annotation.CacheEvict(value = {"dashboardSummary", "boardInsights"},
             allEntries = true)
+    @com.kanban.audit.Auditable(action = com.kanban.audit.AuditAction.UPDATE,
+            targetType = com.kanban.audit.AuditTargetType.BOARD, targetId = "#boardId")
     public BoardResponse restoreBoard(Long workspaceId, Long boardId, Long userId) {
         log.debug("Restoring board {} in workspace {} by user {}", boardId, workspaceId, userId);
 

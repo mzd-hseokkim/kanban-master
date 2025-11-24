@@ -9,6 +9,7 @@ import io.github.cdimascio.dotenv.Dotenv;
 @SpringBootApplication
 @EnableConfigurationProperties(JwtProperties.class)
 @org.springframework.cache.annotation.EnableCaching
+@org.springframework.context.annotation.EnableAspectJAutoProxy
 public class KanbanApplication {
 
     public static void main(String[] args) {

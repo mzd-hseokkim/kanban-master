@@ -8,19 +8,20 @@ import { CardProvider } from '@/context/CardContext';
 import { ColumnProvider } from '@/context/ColumnContext';
 import { DialogProvider } from '@/context/DialogContext';
 import { WebSocketProvider } from '@/context/WebSocketContext';
+import AuditLogPage from '@/pages/AuditLogPage';
 import BoardDetailPage from '@/pages/BoardDetailPage';
 import BoardsPage from '@/pages/BoardsPage';
 import ContactPage from '@/pages/ContactPage';
 import DashboardPage from '@/pages/DashboardPage';
 import LoginPage from '@/pages/LoginPage';
 import OAuth2CallbackHandler from '@/pages/OAuth2CallbackHandler';
+import PricingPage from '@/pages/PricingPage';
 import PrivacyPage from '@/pages/PrivacyPage';
 import ProfilePage from '@/pages/ProfilePage';
 import SearchPage from '@/pages/SearchPage';
 import { SignupPage } from '@/pages/SignupPage';
 import TermsPage from '@/pages/TermsPage';
 import { VerifyEmailPage } from '@/pages/VerifyEmailPage';
-import PricingPage from '@/pages/PricingPage';
 import { Fragment, useEffect, useState } from 'react';
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
 
@@ -130,6 +131,14 @@ const App = () => {
         element={(
           <ProtectedRoute>
             <SearchPage />
+          </ProtectedRoute>
+        )}
+      />
+      <Route
+        path="/audit-logs"
+        element={(
+          <ProtectedRoute>
+            <AuditLogPage />
           </ProtectedRoute>
         )}
       />

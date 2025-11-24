@@ -24,6 +24,8 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@com.fasterxml.jackson.annotation.JsonIgnoreProperties({"column", "assignee", "childCards",
+        "cardLabels", "checklistItems", "attachments", "comments", "notificationLogs"})
 public class Card extends BaseEntity {
 
     /**

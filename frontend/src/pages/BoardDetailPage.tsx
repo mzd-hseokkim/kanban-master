@@ -14,6 +14,7 @@ import type { CardSearchResult } from "@/types/search";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { ActivityPanel } from "./BoardDetailPage/components/ActivityPanel";
+import AnalyticsDashboard from "./BoardDetailPage/components/AnalyticsDashboard";
 import { BoardHeader } from "./BoardDetailPage/components/BoardHeader";
 import { BoardInsightsPanel } from "./BoardDetailPage/components/BoardInsightsPanel";
 import { BoardModals } from "./BoardDetailPage/components/BoardModals";
@@ -43,9 +44,9 @@ const BoardDetailPage = () => {
   const { cards, loadCards, handleCardEvent } = useCard();
   const { alert } = useDialog();
 
-  const [viewMode, setViewMode] = useState<'BOARD' | 'LIST'>(() => {
+  const [viewMode, setViewMode] = useState<'BOARD' | 'LIST' | 'ANALYTICS'>(() => {
     const savedMode = localStorage.getItem('boardViewMode');
-    return (savedMode === 'BOARD' || savedMode === 'LIST') ? savedMode : 'BOARD';
+    return (savedMode === 'BOARD' || savedMode === 'LIST' || savedMode === 'ANALYTICS') ? savedMode : 'BOARD';
   });
 
   useEffect(() => {
@@ -60,7 +61,6 @@ const BoardDetailPage = () => {
   const [showSearchPanel, setShowSearchPanel] = useState(false);
   const [showCalendarModal, setShowCalendarModal] = useState(false);
   const [showInsightsPanel, setShowInsightsPanel] = useState(false);
-  const [insightsRefreshKey, setInsightsRefreshKey] = useState(0);
   const [showArchivePanel, setShowArchivePanel] = useState(false);
   const [showImportModal, setShowImportModal] = useState(false);
 
@@ -132,10 +132,8 @@ const BoardDetailPage = () => {
     console.log('Board event received:', event);
     if (event.type.startsWith('COLUMN_')) {
       handleColumnEvent(event);
-      setInsightsRefreshKey(prev => prev + 1); // Trigger insights refresh
     } else if (event.type.startsWith('CARD_')) {
       handleCardEvent(event);
-      setInsightsRefreshKey(prev => prev + 1); // Trigger insights refresh
     } else {
       refreshColumns(); // Fallback for other events (e.g. BOARD_UPDATED)
     }
@@ -262,7 +260,7 @@ const BoardDetailPage = () => {
             showInsightsPanel ? 'max-h-[800px] opacity-100' : 'max-h-0 opacity-0'
           }`}
         >
-          <BoardInsightsPanel workspaceId={workspaceNumericId} boardId={boardNumericId} refreshKey={insightsRefreshKey} />
+          <BoardInsightsPanel workspaceId={workspaceNumericId} boardId={boardNumericId} isVisible={showInsightsPanel} />
         </div>
         <div className="w-full px-4 sm:px-6 lg:px-8 flex-1 overflow-hidden pt-4 pb-4 flex">
           <div className="w-full max-w-[95vw] mx-auto flex flex-1 relative min-h-0 h-full">
@@ -280,7 +278,7 @@ const BoardDetailPage = () => {
                   autoOpenColumnId={effectiveAutoOpenColumnId}
                   onAutoOpenHandled={handleInlineAutoOpenHandled}
                 />
-              ) : (
+              ) : viewMode === 'LIST' ? (
                 <ListView
                   columns={columns}
                   cards={cards}
@@ -290,6 +288,8 @@ const BoardDetailPage = () => {
                   canEdit={canEdit}
                   onCreateColumn={() => setShowCreateColumnModal(true)}
                 />
+              ) : (
+                <AnalyticsDashboard boardId={boardNumericId} />
               )}
             </div>
 

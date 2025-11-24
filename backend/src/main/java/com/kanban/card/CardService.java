@@ -9,6 +9,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import org.owasp.html.PolicyFactory;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
@@ -22,6 +23,8 @@ import com.kanban.column.BoardColumn;
 import com.kanban.column.ColumnRepository;
 import com.kanban.exception.CardHasChildrenException;
 import com.kanban.exception.ResourceNotFoundException;
+import com.kanban.history.CardChangedEvent;
+import com.kanban.history.CardChangedEvent.CardChange;
 import com.kanban.label.CardLabel;
 import com.kanban.label.CardLabelRepository;
 import com.kanban.label.dto.LabelResponse;
@@ -29,6 +32,7 @@ import com.kanban.notification.domain.NotificationType;
 import com.kanban.user.UserRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+
 
 /**
  * 카드 비즈니스 로직 서비스
@@ -50,6 +54,7 @@ public class CardService {
     private final com.kanban.notification.service.NotificationService notificationService;
     private final com.kanban.watch.CardWatchService cardWatchService;
     private final com.kanban.notification.NotificationLogRepository notificationLogRepository;
+    private final ApplicationEventPublisher eventPublisher;
 
     /**
      * 특정 칼럼의 모든 카드 조회 Spec § 5. 기능 요구사항 - FR-06g: 자식 개수 표시
@@ -126,6 +131,8 @@ public class CardService {
     /**
      * 카드 생성 (권한 검증 포함)
      */
+    @com.kanban.audit.Auditable(action = com.kanban.audit.AuditAction.CREATE,
+            targetType = com.kanban.audit.AuditTargetType.CARD)
     public CardResponse createCardWithValidation(Long boardId, Long columnId,
             CreateCardRequest request, Long userId) {
         // EDITOR 이상 권한 필요
@@ -211,14 +218,24 @@ public class CardService {
             }
         }
 
+        // History
+        List<CardChange> changes = new java.util.ArrayList<>();
+        changes.add(new CardChange("LIFECYCLE", null, "CREATED"));
+        changes.add(new CardChange("COLUMN", null, String.valueOf(column.getId())));
+        publishHistory(savedCard.getId(), column.getBoard().getId(), userId, changes);
+
         return response;
     }
 
     /**
      * 카드 수정 (권한 검증 포함)
      */
+    @com.kanban.audit.Auditable(action = com.kanban.audit.AuditAction.UPDATE,
+            targetType = com.kanban.audit.AuditTargetType.CARD, targetId = "#cardId")
     public CardResponse updateCardWithValidation(Long boardId, Long columnId, Long cardId,
             UpdateCardRequest request, Long userId) {
+        log.info("########## updateCardWithValidation CALLED - cardId={}, request={}", cardId,
+                request);
         // EDITOR 이상 권한 필요
         roleValidator.validateRole(boardId, BoardMemberRole.EDITOR);
 
@@ -243,6 +260,13 @@ public class CardService {
         // 담당자 변경 감지 및 알림을 위한 기존 담당자 ID 저장
         Long oldAssigneeId = card.getAssignee() != null ? card.getAssignee().getId() : null;
         boolean wasCompleted = card.getIsCompleted();
+
+        // History tracking - capture old values
+        String originalDescription = card.getDescription();
+        String originalPriority = card.getPriority();
+        java.time.LocalDate originalDueDate = card.getDueDate();
+        Long originalColumnId = card.getColumn().getId();
+        boolean originalCompleted = Boolean.TRUE.equals(card.getIsCompleted());
 
         if (request.getTitle() != null) {
             card.setTitle(request.getTitle());
@@ -398,12 +422,49 @@ public class CardService {
         String changeMessage = buildChangeMessage(request, originalTitle, isMoved);
         cardWatchService.notifyWatchers(cardId, changeMessage, userId);
 
+        // History
+        List<CardChange> historyChanges = new java.util.ArrayList<>();
+        if (request.getTitle() != null && !request.getTitle().equals(originalTitle)) {
+            historyChanges.add(new CardChange("TITLE", originalTitle, request.getTitle()));
+        }
+        if (request.getDescription() != null
+                && !request.getDescription().equals(originalDescription)) {
+            historyChanges.add(new CardChange("DESCRIPTION", "CHANGED", "CHANGED"));
+        }
+        if (request.getPriority() != null && !request.getPriority().equals(originalPriority)) {
+            historyChanges.add(new CardChange("PRIORITY", originalPriority, request.getPriority()));
+        }
+        if (assigneeChanged) {
+            historyChanges.add(new CardChange("ASSIGNEE",
+                    oldAssigneeId != null ? String.valueOf(oldAssigneeId) : null,
+                    newAssigneeId != null && newAssigneeId != -1 ? String.valueOf(newAssigneeId)
+                            : null));
+        }
+        if (request.getDueDate() != null && !request.getDueDate().equals(originalDueDate)) {
+            historyChanges.add(new CardChange("DUE_DATE",
+                    originalDueDate != null ? originalDueDate.toString() : null,
+                    request.getDueDate().toString()));
+        }
+        if (completionStatusChanged) {
+            historyChanges.add(
+                    new CardChange("COMPLETION", originalCompleted ? "COMPLETED" : "INCOMPLETE",
+                            markedCompleted ? "COMPLETED" : "INCOMPLETE"));
+        }
+        if (isMoved) {
+            historyChanges.add(new CardChange("COLUMN", String.valueOf(originalColumnId),
+                    String.valueOf(request.getColumnId())));
+        }
+        publishHistory(updatedCard.getId(), card.getColumn().getBoard().getId(), userId,
+                historyChanges);
+
         return response;
     }
 
     /**
      * 카드 삭제 (권한 검증 포함)
      */
+    @com.kanban.audit.Auditable(action = com.kanban.audit.AuditAction.DELETE,
+            targetType = com.kanban.audit.AuditTargetType.CARD, targetId = "#cardId")
     public void deleteCardWithValidation(Long boardId, Long columnId, Long cardId, Long userId) {
         // EDITOR 이상 권한 필요
         roleValidator.validateRole(boardId, BoardMemberRole.EDITOR);
@@ -447,11 +508,17 @@ public class CardService {
                 com.kanban.notification.event.BoardEvent.EventType.CARD_DELETED.name(),
                 card.getColumn().getBoard().getId(), Map.of("cardId", cardId, "action", "deleted"),
                 userId, System.currentTimeMillis()));
+
+        // History
+        List<CardChange> changes = List.of(new CardChange("LIFECYCLE", "CREATED", "DELETED"));
+        publishHistory(cardId, card.getColumn().getBoard().getId(), userId, changes);
     }
 
     /**
      * 카드 시작 처리 (startedAt 설정, 진행 상태로 전환)
      */
+    @com.kanban.audit.Auditable(action = com.kanban.audit.AuditAction.UPDATE,
+            targetType = com.kanban.audit.AuditTargetType.CARD, targetId = "#cardId")
     public CardResponse startCardWithValidation(Long boardId, Long columnId, Long cardId,
             Long userId) {
         roleValidator.validateRole(boardId, BoardMemberRole.EDITOR);
@@ -602,6 +669,8 @@ public class CardService {
     /**
      * 카드 아카이브 (권한 검증 포함)
      */
+    @com.kanban.audit.Auditable(action = com.kanban.audit.AuditAction.UPDATE,
+            targetType = com.kanban.audit.AuditTargetType.CARD, targetId = "#cardId")
     public CardResponse archiveCard(Long boardId, Long columnId, Long cardId, Long userId) {
         roleValidator.validateRole(boardId, BoardMemberRole.EDITOR);
         return archiveCardInternal(columnId, cardId, userId);
@@ -636,12 +705,18 @@ public class CardService {
                 com.kanban.notification.event.BoardEvent.EventType.CARD_UPDATED.name(),
                 card.getColumn().getBoard().getId(), response, userId, System.currentTimeMillis()));
 
+        // History
+        List<CardChange> changes = List.of(new CardChange("STATUS", "ACTIVE", "ARCHIVED"));
+        publishHistory(archived.getId(), card.getColumn().getBoard().getId(), userId, changes);
+
         return response;
     }
 
     /**
      * 카드 아카이브 복구 (권한 검증 포함)
      */
+    @com.kanban.audit.Auditable(action = com.kanban.audit.AuditAction.UPDATE,
+            targetType = com.kanban.audit.AuditTargetType.CARD, targetId = "#cardId")
     public CardResponse unarchiveCard(Long boardId, Long cardId, Long userId) {
         roleValidator.validateRole(boardId, BoardMemberRole.EDITOR);
         return unarchiveCardInternal(cardId, userId);
@@ -675,6 +750,10 @@ public class CardService {
         redisPublisher.publish(new com.kanban.notification.event.BoardEvent(
                 com.kanban.notification.event.BoardEvent.EventType.CARD_UPDATED.name(),
                 card.getColumn().getBoard().getId(), response, userId, System.currentTimeMillis()));
+
+        // History
+        List<CardChange> changes = List.of(new CardChange("STATUS", "ARCHIVED", "ACTIVE"));
+        publishHistory(unarchived.getId(), card.getColumn().getBoard().getId(), userId, changes);
 
         return response;
     }
@@ -741,6 +820,11 @@ public class CardService {
                 card.getColumn().getBoard().getId(),
                 Map.of("cardId", cardId, "action", "permanently_deleted"), userId,
                 System.currentTimeMillis()));
+
+        // History
+        List<CardChange> changes =
+                List.of(new CardChange("LIFECYCLE", "ARCHIVED", "DELETED_PERMANENTLY"));
+        publishHistory(cardId, card.getColumn().getBoard().getId(), userId, changes);
     }
 
     private void processMentions(String content, Card card, Long authorId) {
@@ -800,5 +884,11 @@ public class CardService {
                 log.info("[MENTION] Skipping self-mention for user ID: {}", userId);
             }
         }
+    }
+
+    private void publishHistory(Long cardId, Long boardId, Long userId, List<CardChange> changes) {
+        if (changes.isEmpty())
+            return;
+        eventPublisher.publishEvent(new CardChangedEvent(cardId, boardId, userId, changes));
     }
 }
