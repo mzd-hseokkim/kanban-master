@@ -57,6 +57,11 @@ export interface Card {
   childCards?: ChildCardSummary[];
   // FR-06g: 자식 카드 개수 (CardItem에서 배지 표시용)
   childCount?: number;
+
+  // Sprint Feature
+  sprintId?: number;
+  storyPoints?: number;
+  originalCardId?: number;
 }
 
 export type CardSortKey = 'title' | 'priority' | 'startedAt' | 'dueDate' | 'completedAt' | 'createdAt';

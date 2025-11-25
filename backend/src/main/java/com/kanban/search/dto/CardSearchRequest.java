@@ -60,4 +60,9 @@ public class CardSearchRequest {
      * 부모 카드가 없는 카드만 조회 (부모 카드 선택 시 사용)
      */
     private Boolean parentCardIdIsNull;
+
+    /**
+     * 스프린트 ID 필터
+     */
+    private Long sprintId;
 }

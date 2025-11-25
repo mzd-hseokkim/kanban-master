@@ -58,6 +58,16 @@ public class CardResponse {
     private List<ChildCardSummaryDTO> childCards;
 
     /**
+     * 스프린트 ID
+     */
+    private Long sprintId;
+
+    /**
+     * 스토리 포인트
+     */
+    private Integer storyPoints;
+
+    /**
      * Card 엔티티를 CardResponse로 변환
      */
     public static CardResponse from(Card card) {
@@ -75,7 +85,8 @@ public class CardResponse {
                 .isArchived(card.getIsArchived()).archivedAt(card.getArchivedAt())
                 .createdAt(card.getCreatedAt()).updatedAt(card.getUpdatedAt()).labels(labels)
                 .parentCardId(card.getParentCard() != null ? card.getParentCard().getId() : null)
-                .build();
+                .sprintId(card.getSprint() != null ? card.getSprint().getId() : null)
+                .storyPoints(card.getStoryPoints()).build();
     }
 
     /**
@@ -93,6 +104,8 @@ public class CardResponse {
                 .isArchived(card.getIsArchived()).archivedAt(card.getArchivedAt())
                 .createdAt(card.getCreatedAt()).updatedAt(card.getUpdatedAt()).labels(labels)
                 .parentCardId(card.getParentCard() != null ? card.getParentCard().getId() : null)
-                .parentCard(parentCard).childCards(childCards).build();
+                .parentCard(parentCard).childCards(childCards)
+                .sprintId(card.getSprint() != null ? card.getSprint().getId() : null)
+                .storyPoints(card.getStoryPoints()).build();
     }
 }

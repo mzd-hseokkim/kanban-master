@@ -23,4 +23,7 @@ public class UpdateBoardRequest {
 
     @Size(max = 30, message = "아이콘은 30자 이하여야 합니다")
     private String icon;
+
+    @Size(max = 20, message = "모드는 20자 이하여야 합니다")
+    private String mode; // KANBAN or SPRINT
 }

@@ -11,6 +11,7 @@ import com.kanban.comment.Comment;
 import com.kanban.entity.BaseEntity;
 import com.kanban.label.CardLabel;
 import com.kanban.notification.NotificationLog;
+import com.kanban.sprint.Sprint;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -110,7 +111,30 @@ public class Card extends BaseEntity {
     /**
      * 아카이브 시각
      */
+    /**
+     * 아카이브 시각
+     */
     private LocalDateTime archivedAt;
+
+    /**
+     * 스프린트 (Sprint 엔티티와의 관계)
+     */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "sprint_id")
+    private Sprint sprint;
+
+    /**
+     * 스토리 포인트
+     */
+    @Column(name = "story_points")
+    private Integer storyPoints;
+
+    /**
+     * 원본 카드 (롤오버 시 이전 스프린트의 카드)
+     */
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "original_card_id")
+    private Card originalCard;
 
     // Spec § 6. 백엔드 규격 - 데이터베이스 스키마 확장
     // FR-06a: 부모-자식 관계 데이터 모델

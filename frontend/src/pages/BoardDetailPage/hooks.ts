@@ -44,7 +44,11 @@ export const useBoardData = (
     void loadBoard();
   }, [loadBoard]);
 
-  return { board, loading, error, reloadBoard: loadBoard };
+  const updateBoardLocally = useCallback((updatedBoard: Board) => {
+    setBoard(updatedBoard);
+  }, []);
+
+  return { board, loading, error, reloadBoard: loadBoard, updateBoardLocally };
 };
 
 export const useOverdueCardCount = (columns: Column[] | null | undefined, cards: Record<number, Card[]>) => {

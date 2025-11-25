@@ -234,4 +234,70 @@ public interface CardRepository extends JpaRepository<Card, Long>, CardRepositor
 
         @Query("SELECT c FROM Card c WHERE c.column.board.id = :boardId AND c.isCompleted = true")
         List<Card> findByBoardIdAndIsCompletedTrue(@Param("boardId") Long boardId);
+
+        /**
+         * 스프린트에 속한 카드 조회
+         */
+        List<Card> findBySprintId(Long sprintId);
+
+        /**
+         * 보드의 백로그 카드 조회 (스프린트 미할당)
+         */
+        @Query("SELECT c FROM Card c WHERE c.column.board.id = :boardId AND c.sprint IS NULL AND c.isArchived = false")
+        List<Card> findBacklogCardsByBoardId(@Param("boardId") Long boardId);
+
+        /**
+         * 스프린트 내 미완료 카드 조회 (롤오버 대상)
+         */
+        List<Card> findBySprintIdAndIsCompletedFalse(Long sprintId);
+
+        /**
+         * 스프린트 내 완료된 카드 조회
+         */
+        List<Card> findBySprintIdAndIsCompletedTrue(Long sprintId);
+
+        /**
+         * 여러 스프린트의 카드 개수를 한 번에 조회 (N+1 문제 방지)
+         */
+        @Query("SELECT c.sprint.id, COUNT(c) FROM Card c WHERE c.sprint.id IN :sprintIds GROUP BY c.sprint.id")
+        List<Object[]> countBySprintIds(@Param("sprintIds") List<Long> sprintIds);
+
+        /**
+         * 스프린트 ID로 카드 개수를 Map으로 반환하는 기본 메서드
+         */
+        default java.util.Map<Long, Long> countCardsBySprintIds(List<Long> sprintIds) {
+                if (sprintIds == null || sprintIds.isEmpty()) {
+                        return java.util.Collections.emptyMap();
+                }
+                return countBySprintIds(sprintIds).stream()
+                                .collect(java.util.stream.Collectors.toMap(row -> (Long) row[0],
+                                                row -> (Long) row[1]));
+        }
+
+        /**
+         * 스프린트별 스토리 포인트 합계와 완료 포인트 합계를 한 번에 조회
+         */
+        @Query("SELECT c.sprint.id, "
+                        + "SUM(COALESCE(c.storyPoints, 0)), "
+                        + "SUM(CASE WHEN c.isCompleted = true THEN COALESCE(c.storyPoints, 0) ELSE 0 END) "
+                        + "FROM Card c WHERE c.sprint.id IN :sprintIds GROUP BY c.sprint.id")
+        List<Object[]> sumPointsBySprintIds(@Param("sprintIds") List<Long> sprintIds);
+
+        /**
+         * 스프린트별 포인트 요약 Map 반환
+         */
+        default java.util.Map<Long, PointSummary> sumPointsBySprintIdsMap(List<Long> sprintIds) {
+                if (sprintIds == null || sprintIds.isEmpty()) {
+                        return java.util.Collections.emptyMap();
+                }
+                return sumPointsBySprintIds(sprintIds).stream().collect(java.util.stream.Collectors
+                                .toMap(row -> (Long) row[0], row -> new PointSummary(
+                                                ((Long) row[1]).intValue(), ((Long) row[2]).intValue())));
+        }
+
+        /**
+         * 스프린트 포인트 합계 DTO
+         */
+        record PointSummary(int totalPoints, int completedPoints) {
+        }
 }

@@ -3,10 +3,37 @@ import { EditCardModal } from '@/components/EditCardModal';
 import { ErrorNotification } from '@/components/ErrorNotification';
 import { useCard } from '@/context/CardContext';
 import { useDialog } from '@/context/DialogContext';
+import { useSprint } from '@/context/SprintContext';
 import cardService from '@/services/cardService';
 import { Card } from '@/types/card';
 import React, { useEffect, useMemo, useState } from 'react';
 import { HiCalendar, HiCheckCircle, HiPlay } from 'react-icons/hi2';
+
+const SprintBadge = ({ sprintId }: { sprintId: number }) => {
+  const { sprints } = useSprint();
+  const sprint = sprints.find(s => s.id === sprintId);
+
+  if (!sprint) return null;
+
+  // Format name to "S-{number}" or first 3 chars
+  const displayName = useMemo(() => {
+    const match = sprint.name.match(/(\d+)/);
+    return match ? `S-${match[0]}` : sprint.name.substring(0, 3).toUpperCase();
+  }, [sprint.name]);
+
+  return (
+    <div
+      className={`flex-shrink-0 flex items-center justify-center px-1.5 h-5 rounded text-[10px] font-bold border-none ${
+        sprint.status === 'ACTIVE'
+          ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-md shadow-purple-500/20'
+          : 'bg-slate-600 text-white'
+      }`}
+      title={sprint.name}
+    >
+      {displayName}
+    </div>
+  );
+};
 
 interface CardItemProps {
   card: Card;
@@ -313,6 +340,7 @@ const CardItemComponent: React.FC<CardItemProps> = ({
             >
               {card.isCompleted && <svg className="w-3.5 h-3.5 text-pastel-green-500" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg>}
             </div>
+            {card.sprintId && <SprintBadge sprintId={card.sprintId} />}
             <h4 className={`text-sm flex-1 min-w-0 line-clamp-2 transition ${
               card.isCompleted
                 ? 'text-slate-400 line-through font-medium'
@@ -484,6 +512,8 @@ const CardItemComponent: React.FC<CardItemProps> = ({
             </div>
           </div>
         )}
+
+
       </div>
 
       {/* Edit Card Modal */}

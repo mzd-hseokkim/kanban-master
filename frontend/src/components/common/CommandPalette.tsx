@@ -4,7 +4,7 @@ import { modalOverlayClass, modalPanelClass } from '@/styles/modalStyles';
 import { Command } from 'cmdk';
 import { useEffect, useState } from 'react';
 import { BiSearch } from 'react-icons/bi';
-import { BsKanban, BsSun } from 'react-icons/bs';
+import { BsKanban } from 'react-icons/bs';
 import { FiLogOut, FiSettings } from 'react-icons/fi';
 import { HiOutlinePlus, HiShieldCheck } from 'react-icons/hi';
 import { RiDashboardLine } from 'react-icons/ri';
@@ -116,15 +116,6 @@ const CommandPaletteModal = ({ onClose }: { onClose: () => void }) => {
                             >
                                 <FiSettings className="mr-2 h-4 w-4 text-slate-500 group-aria-selected:text-indigo-600" />
                                 Settings
-                            </Command.Item>
-                            <Command.Item
-                                onSelect={() => runCommand(() => {
-                                    console.log('Toggle Theme');
-                                })}
-                                className="group flex cursor-pointer select-none items-center rounded-lg px-2 py-2 text-sm text-slate-700 aria-selected:bg-indigo-500/10 aria-selected:text-indigo-700"
-                            >
-                                <BsSun className="mr-2 h-4 w-4 text-slate-500 group-aria-selected:text-indigo-600" />
-                                Change Theme
                             </Command.Item>
                             <Command.Item
                                 onSelect={() => runCommand(() => logout())}

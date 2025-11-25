@@ -1,14 +1,20 @@
 import { ArchivedCardsPanel } from "@/components/archive/ArchivedCardsPanel";
 import { CreateCardModal } from "@/components/CreateCardModal";
 import { ErrorNotification } from "@/components/ErrorNotification";
+import { CreateSprintModal } from "@/components/sprint/CreateSprintModal";
+import { EnableSprintModal } from "@/components/sprint/EnableSprintModal";
+import { PlanningView } from "@/components/sprint/PlanningView";
+import { SprintHeader } from "@/components/sprint/SprintHeader";
 import { useCard } from "@/context/CardContext";
 import { useColumn } from "@/context/ColumnContext";
 import { useDialog } from "@/context/DialogContext";
+import { useSprint } from "@/context/SprintContext";
 import { useBoardSubscription } from "@/hooks/useBoardSubscription";
 import { useImportProgress } from "@/hooks/useImportProgress";
 import { useKeyboardShortcut } from "@/hooks/useKeyboardShortcut";
 import { usePermissions } from "@/hooks/usePermissions";
 import { usePresenceTransition } from "@/hooks/usePresenceTransition";
+import { boardService } from "@/services/boardService";
 import cardService from "@/services/cardService";
 import excelService from "@/services/excelService";
 import type { ImportJobStartResponse } from "@/types/excel";
@@ -44,14 +50,19 @@ const BoardDetailPage = () => {
   const { columns, loading: columnsLoading, loadColumns, handleColumnEvent } = useColumn();
   const { cards, loadCards, handleCardEvent } = useCard();
   const { alert } = useDialog();
+  const { loadSprints, activeSprint, createSprint } = useSprint();
 
-  const [viewMode, setViewMode] = useState<'BOARD' | 'LIST' | 'ANALYTICS'>(() => {
+  const [viewMode, setViewMode] = useState<'BOARD' | 'LIST' | 'ANALYTICS' | 'PLANNING'>(() => {
     const savedMode = localStorage.getItem('boardViewMode');
-    return (savedMode === 'BOARD' || savedMode === 'LIST' || savedMode === 'ANALYTICS') ? savedMode : 'BOARD';
+    // Only restore BOARD or LIST from localStorage
+    return (savedMode === 'BOARD' || savedMode === 'LIST') ? savedMode : 'BOARD';
   });
 
   useEffect(() => {
-    localStorage.setItem('boardViewMode', viewMode);
+    // Only save BOARD or LIST to localStorage
+    if (viewMode === 'BOARD' || viewMode === 'LIST') {
+      localStorage.setItem('boardViewMode', viewMode);
+    }
   }, [viewMode]);
 
   const [showCreateColumnModal, setShowCreateColumnModal] = useState(false);
@@ -64,6 +75,9 @@ const BoardDetailPage = () => {
   const [showArchivePanel, setShowArchivePanel] = useState(false);
   const [showImportModal, setShowImportModal] = useState(false);
   const [showGlobalCreateCardModal, setShowGlobalCreateCardModal] = useState(false);
+  const [showEnableSprintModal, setShowEnableSprintModal] = useState(false);
+  const [showCreateSprintModal, setShowCreateSprintModal] = useState(false);
+  const [sprintRefreshTrigger, setSprintRefreshTrigger] = useState(0); // SprintHeader 갱신용
 
   const [activeImportJobId, setActiveImportJobId] = useState<string | null>(null);
   const [importFileName, setImportFileName] = useState<string>('엑셀 가져오기');
@@ -89,7 +103,7 @@ const BoardDetailPage = () => {
 
   const activityPanelTransition = usePresenceTransition(showActivityPanel);
 
-  const { board, loading, error } = useBoardData(
+  const { board, loading, error, reloadBoard, updateBoardLocally } = useBoardData(
     workspaceId,
     boardId,
     loadColumns,
@@ -136,6 +150,8 @@ const BoardDetailPage = () => {
       handleColumnEvent(event);
     } else if (event.type.startsWith('CARD_')) {
       handleCardEvent(event);
+      // 카드 이벤트 발생 시 SprintHeader 갱신
+      setSprintRefreshTrigger(prev => prev + 1);
     } else {
       refreshColumns(); // Fallback for other events (e.g. BOARD_UPDATED)
     }
@@ -153,6 +169,13 @@ const BoardDetailPage = () => {
     window.addEventListener('kanban:open-create-card', handleOpenCreateCard);
     return () => window.removeEventListener('kanban:open-create-card', handleOpenCreateCard);
   }, [columns, alert]);
+
+  // Load sprints whenever boardId is valid, to show sprint badges in all views
+  useEffect(() => {
+    if (hasValidNumericIds) {
+      loadSprints(boardNumericId);
+    }
+  }, [boardNumericId, hasValidNumericIds, loadSprints]);
 
   // Keyboard shortcuts for Board context
   // C: Create new card
@@ -245,6 +268,42 @@ const BoardDetailPage = () => {
     refreshImportStatus();
   }, [refreshImportStatus]);
 
+  // Sprint activation handler
+  const handleEnableSprint = useCallback(async () => {
+    if (!hasValidNumericIds || !board) return;
+
+    try {
+      // Optimistic update - update UI immediately
+      updateBoardLocally?.({ ...board, mode: 'SPRINT' });
+      setViewMode('PLANNING'); // Switch to Planning view immediately
+
+      // Then sync with server in background
+      const updatedBoard = await boardService.enableSprint(workspaceNumericId, boardNumericId);
+      console.log('Sprint activated successfully:', updatedBoard);
+
+      // Update with server response to ensure consistency
+      updateBoardLocally?.(updatedBoard);
+    } catch (error) {
+      console.error('Sprint activation error:', error);
+      // Rollback on error
+      updateBoardLocally?.(board);
+      await alert(`Sprint 활성화에 실패했습니다: ${error instanceof Error ? error.message : '알 수 없는 오류'}`);
+      throw error; // Propagate to prevent modal opening
+    }
+  }, [hasValidNumericIds, workspaceNumericId, boardNumericId, alert, board, updateBoardLocally]);
+
+  // Sprint creation handler
+  const handleCreateSprint = useCallback(async (data: any) => {
+    if (!hasValidNumericIds) return;
+
+    try {
+      await createSprint(boardNumericId, data);
+      alert('Sprint가 생성되었습니다!');
+    } catch (error) {
+      throw error; // Propagate to modal
+    }
+  }, [hasValidNumericIds, boardNumericId, createSprint, alert]);
+
   if (loading) {
     return <BoardLoadingState />;
   }
@@ -281,12 +340,24 @@ const BoardDetailPage = () => {
         onImport={() => setShowImportModal(true)}
         isExporting={isExporting}
         isDownloadingTemplate={isDownloadingTemplate}
+        boardMode={board.mode}
+        onEnableSprint={() => setShowEnableSprintModal(true)}
       />
+
+      {/* Sprint Header - only show in Sprint mode with active sprint */}
+      {board.mode === 'SPRINT' && activeSprint && (
+        <SprintHeader boardId={boardNumericId} refreshTrigger={sprintRefreshTrigger} />
+      )}
 
       <main className="flex-1 overflow-hidden flex flex-col">
         <div className="w-full px-4 sm:px-6 lg:px-8 flex-1 overflow-hidden pt-4 pb-4 flex">
           <div className="w-full max-w-[95vw] mx-auto flex flex-1 relative min-h-0 h-full">
-            <div ref={scrollContainerRef} className="flex-1 overflow-auto flex flex-col pr-0 lg:pr-4 h-full">
+            <div
+              ref={scrollContainerRef}
+              className={`flex-1 flex flex-col pr-0 lg:pr-4 h-full min-w-0 ${
+                viewMode === 'BOARD' ? 'columns-scroll-area' : 'overflow-auto'
+              }`}
+            >
               {viewMode === 'BOARD' ? (
                 <ColumnsSection
                   columns={columns}
@@ -310,6 +381,11 @@ const BoardDetailPage = () => {
                   canEdit={canEdit}
                   onCreateColumn={() => setShowCreateColumnModal(true)}
                   scrollContainerRef={scrollContainerRef}
+                />
+              ) : viewMode === 'PLANNING' ? (
+                <PlanningView
+                  boardId={boardNumericId}
+                  onCreateSprint={() => setShowCreateSprintModal(true)}
                 />
               ) : (
                 <AnalyticsDashboard workspaceId={workspaceNumericId} boardId={boardNumericId} />
@@ -397,6 +473,33 @@ const BoardDetailPage = () => {
           }}
         />
       )}
+
+      {/* Enable Sprint Modal */}
+      <EnableSprintModal
+        isOpen={showEnableSprintModal}
+        boardId={boardNumericId}
+        boardName={board.name}
+        onClose={() => setShowEnableSprintModal(false)}
+        onConfirm={async () => {
+          try {
+            await handleEnableSprint();
+            setShowEnableSprintModal(false);
+            // Suggest creating first sprint
+            setShowCreateSprintModal(true);
+          } catch (error) {
+            // Error already handled in handleEnableSprint
+            // Don't close modal or open create sprint modal
+          }
+        }}
+      />
+
+      {/* Create Sprint Modal */}
+      <CreateSprintModal
+        isOpen={showCreateSprintModal}
+        boardId={boardNumericId}
+        onClose={() => setShowCreateSprintModal(false)}
+        onSubmit={handleCreateSprint}
+      />
     </div>
   );
 };

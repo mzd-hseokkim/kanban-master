@@ -165,6 +165,37 @@ select:not(.borderless-input):not(:focus) {
     .text-pastel-orange-800 { color: #9a3412; }
 }
 
+/* 칼럼 영역 가로 스크롤바를 항상 표시 (Mac 등 자동 숨김 방지) */
+.columns-scroll-area {
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-gutter: stable;
+}
+
+.columns-scroll-area::-webkit-scrollbar {
+    height: 12px;
+}
+
+.columns-scroll-area::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.06);
+    border-radius: 9999px;
+}
+
+.columns-scroll-area::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.35);
+    border-radius: 9999px;
+    border: 2px solid rgba(15, 23, 42, 0.4);
+}
+
+.columns-scroll-area::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.55);
+}
+
+.columns-scroll-area {
+    scrollbar-color: rgba(255, 255, 255, 0.35) rgba(255, 255, 255, 0.06);
+    scrollbar-width: thin;
+}
+
 .page-transition-wrapper {
     position: absolute;
     inset: 0;

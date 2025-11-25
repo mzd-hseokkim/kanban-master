@@ -43,7 +43,13 @@ export const ColumnProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     const { type, payload } = event;
     switch (type) {
       case 'COLUMN_CREATED':
-        setColumns(prev => [...prev, payload]);
+        // 동일 ID 중복 추가 방지 (웹소켓/로컬 생성 이벤트 동시 도착 대비)
+        setColumns(prev => {
+          const exists = prev.some(col => col.id === payload.id);
+          return exists
+            ? prev.map(col => (col.id === payload.id ? payload : col))
+            : [...prev, payload];
+        });
         break;
       case 'COLUMN_UPDATED':
         setColumns(prev => prev.map(col => col.id === payload.id ? payload : col));
@@ -73,7 +79,13 @@ export const ColumnProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       try {
         setError(null);
         const newColumn = await columnService.createColumn(workspaceId, boardId, request);
-        setColumns(prev => [...prev, newColumn]);
+        // 웹소켓 이벤트와 중복으로 들어오는 경우를 대비해 upsert 처리
+        setColumns(prev => {
+          const exists = prev.some(col => col.id === newColumn.id);
+          return exists
+            ? prev.map(col => (col.id === newColumn.id ? newColumn : col))
+            : [...prev, newColumn];
+        });
         return newColumn;
       } catch (err) {
         const message = err instanceof Error ? err.message : '칼럼 생성에 실패했습니다';

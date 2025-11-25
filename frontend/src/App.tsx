@@ -9,6 +9,7 @@ import { BoardProvider } from '@/context/BoardContext';
 import { CardProvider } from '@/context/CardContext';
 import { ColumnProvider } from '@/context/ColumnContext';
 import { DialogProvider } from '@/context/DialogContext';
+import { SprintProvider } from '@/context/SprintContext';
 import { WebSocketProvider } from '@/context/WebSocketContext';
 import AuditLogPage from '@/pages/AuditLogPage';
 import BoardDetailPage from '@/pages/BoardDetailPage';
@@ -154,6 +155,7 @@ const App = () => {
         <BoardProvider>
         <ColumnProvider>
           <CardProvider>
+            <SprintProvider>
             <div className="min-h-screen bg-gradient-pastel flex flex-col">
               <ConnectionStatusScanner />
               {shouldShowAppChrome && <GlobalNavBar />}
@@ -175,6 +177,7 @@ const App = () => {
             </div>
             <CommandPalette />
             <KeyboardShortcutsHelp />
+            </SprintProvider>
           </CardProvider>
         </ColumnProvider>
         </BoardProvider>

@@ -1,13 +1,13 @@
 import { useEffect, useRef, useState, type DragEvent, type ReactNode } from 'react';
-import { HiArrowLeft, HiCalendar, HiChartBar, HiChevronDown, HiDownload, HiLightningBolt, HiPlus, HiSearch, HiTag, HiUpload, HiUsers, HiViewBoards, HiViewList } from 'react-icons/hi';
+import { HiArrowLeft, HiCalendar, HiChartBar, HiChevronDown, HiClipboardList, HiDownload, HiLightningBolt, HiPlus, HiSearch, HiTag, HiUpload, HiUsers, HiViewBoards, HiViewList } from 'react-icons/hi';
 import { MdArchive } from 'react-icons/md';
 
 interface BoardHeaderProps {
   boardName: string;
   overdueCardCount: number;
   canEdit: boolean;
-  viewMode: 'BOARD' | 'LIST' | 'ANALYTICS';
-  onViewModeChange: (mode: 'BOARD' | 'LIST' | 'ANALYTICS') => void;
+  viewMode: 'BOARD' | 'LIST' | 'ANALYTICS' | 'PLANNING';
+  onViewModeChange: (mode: 'BOARD' | 'LIST' | 'ANALYTICS' | 'PLANNING') => void;
   onBack: () => void;
   onSearch: () => void;
   onLabelManager: () => void;
@@ -22,6 +22,8 @@ interface BoardHeaderProps {
   onImport: () => void;
   isExporting?: boolean;
   isDownloadingTemplate?: boolean;
+  boardMode?: 'KANBAN' | 'SPRINT';
+  onEnableSprint?: () => void;
 }
 
 export const BoardHeader = ({
@@ -43,6 +45,9 @@ export const BoardHeader = ({
   onExportBoard,
   onImport,
   isExporting,
+  isDownloadingTemplate,
+  boardMode,
+  onEnableSprint,
 }: BoardHeaderProps) => {
   const [isArchiveDropTarget, setIsArchiveDropTarget] = useState(false);
   const [isExcelMenuOpen, setIsExcelMenuOpen] = useState(false);
@@ -86,6 +91,7 @@ export const BoardHeader = ({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  // Debug: Log boardMode
   return (
     <header className="bg-white/90 backdrop-blur-md border-b border-slate-200/50 flex-shrink-0 transition-colors duration-300 relative z-[120]">
       <div className="w-full max-w-[95vw] mx-auto py-4 px-4 sm:px-6 lg:px-8 flex items-center justify-between">
@@ -102,6 +108,19 @@ export const BoardHeader = ({
 
           <div className="flex items-center gap-3">
             <h1 className="text-2xl font-bold text-slate-900 tracking-tight">{boardName}</h1>
+
+            {/* Sprint Activation Button - next to board title */}
+            {boardMode !== 'SPRINT' && onEnableSprint && (
+              <button
+                onClick={onEnableSprint}
+                className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-semibold text-xs shadow-md shadow-purple-500/20 hover:from-purple-500 hover:to-indigo-500 transition-all duration-200"
+                title="Sprint 모드 활성화"
+              >
+                <HiLightningBolt className="text-sm" />
+                <span>Sprint 활성화</span>
+              </button>
+            )}
+
             {overdueCardCount > 0 && (
               <span className="inline-flex items-center justify-center px-2.5 py-0.5 rounded-full bg-rose-100 border border-rose-200 text-rose-600 text-xs font-bold shadow-sm">
                 지연 {overdueCardCount}
@@ -110,6 +129,36 @@ export const BoardHeader = ({
           </div>
 
           <div className="h-6 w-px bg-slate-200 mx-2" />
+
+          {/* Sprint Planning Button - Management Feature (Toggle) */}
+          {boardMode === 'SPRINT' && (
+            <>
+              <button
+                onClick={() => {
+                  if (viewMode === 'PLANNING') {
+                    // PLANNING 모드에서 토글하면 저장된 뷰로 돌아가기
+                    const savedMode = localStorage.getItem('boardViewMode');
+                    const targetMode = savedMode === 'LIST' ? 'LIST' : 'BOARD';
+                    onViewModeChange(targetMode as 'BOARD' | 'LIST');
+                  } else {
+                    // BOARD/LIST 모드에서 토글하면 PLANNING으로 전환
+                    onViewModeChange('PLANNING');
+                  }
+                }}
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-lg font-semibold text-sm transition-all duration-200 ${
+                  viewMode === 'PLANNING'
+                    ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-md shadow-purple-500/20'
+                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                }`}
+                title={viewMode === 'PLANNING' ? '보드로 돌아가기' : '스프린트 계획'}
+              >
+                <HiClipboardList className="text-base" />
+                <span>스프린트 관리</span>
+              </button>
+
+              <div className="h-6 w-px bg-slate-200 mx-2" />
+            </>
+          )}
 
           <div className="flex bg-slate-100 p-1 rounded-lg">
             <button
@@ -134,17 +183,6 @@ export const BoardHeader = ({
             >
               <HiViewList className="text-lg" />
             </button>
-            <button
-              onClick={() => onViewModeChange('ANALYTICS')}
-              className={`p-1.5 rounded-md transition-all ${
-                viewMode === 'ANALYTICS'
-                  ? 'bg-white text-pastel-blue-600 shadow-sm'
-                  : 'text-slate-400 hover:text-slate-600'
-              }`}
-              title="분석 뷰"
-            >
-              <HiChartBar className="text-lg" />
-            </button>
           </div>
         </div>
 
@@ -158,6 +196,21 @@ export const BoardHeader = ({
               <span className="hidden md:inline">칼럼 추가</span>
             </button>
           )}
+
+          {/* Analytics Button - Analysis Feature */}
+          <button
+            onClick={() => onViewModeChange('ANALYTICS')}
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg font-semibold text-sm transition-all duration-200 ${
+              viewMode === 'ANALYTICS'
+                ? 'bg-gradient-to-r from-blue-600 to-cyan-600 text-white shadow-md shadow-blue-500/20'
+                : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+            }`}
+            title="분석 대시보드"
+          >
+            <HiChartBar className="text-base" />
+            <span>분석</span>
+          </button>
+
           <div className="relative" ref={menuRef}>
             <button
               type="button"

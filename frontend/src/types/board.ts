@@ -25,6 +25,8 @@ export interface Board {
   canEdit?: boolean;
   /** 현재 사용자가 관리 권한이 있는지 (MANAGER 또는 Owner) */
   canManage?: boolean;
+  /** 보드 모드 (KANBAN | SPRINT) */
+  mode?: 'KANBAN' | 'SPRINT';
 }
 
 export interface CreateBoardRequest {

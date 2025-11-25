@@ -4,12 +4,30 @@ import { ErrorNotification } from '@/components/ErrorNotification';
 import { LabelSelectionModal } from '@/components/label/LabelSelectionModal';
 import { useCard } from '@/context/CardContext';
 import { useDialog } from '@/context/DialogContext';
+import { useSprint } from '@/context/SprintContext';
 import cardService from '@/services/cardService';
 import { labelService } from '@/services/labelService';
 import { Card } from '@/types/card';
 import React, { useMemo, useState } from 'react';
 import { HiPencil } from 'react-icons/hi';
 import { HiCheckCircle, HiPlay } from 'react-icons/hi2';
+
+const SprintBadge = ({ sprintId }: { sprintId: number }) => {
+  const { sprints } = useSprint();
+  const sprint = sprints.find(s => s.id === sprintId);
+
+  if (!sprint) return null;
+
+  return (
+    <div className={`flex-shrink-0 flex items-center justify-center px-1.5 h-5 rounded text-[10px] font-bold border-none ${
+      sprint.status === 'ACTIVE'
+        ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-md shadow-purple-500/20'
+        : 'bg-slate-600 text-white'
+    }`}>
+      <span>{sprint.name}</span>
+    </div>
+  );
+};
 
 interface ListCardRowProps {
   card: Card;
@@ -291,8 +309,11 @@ export const ListCardRow = ({
                     className="w-full px-2 py-1 text-sm text-rose-600 border border-slate-200 rounded focus:outline-none focus:border-pastel-blue-400 focus:ring-1 focus:ring-pastel-blue-200"
                 />
             ) : (
-                <div className={`truncate font-semibold ${card.isCompleted ? 'text-slate-400 line-through' : 'text-slate-800'}`}>
-                    {card.title}
+                <div className="flex items-center gap-2 min-w-0">
+                    {card.sprintId && <SprintBadge sprintId={card.sprintId} />}
+                    <span className={`truncate font-semibold ${card.isCompleted ? 'text-slate-400 line-through' : 'text-slate-800'}`}>
+                        {card.title}
+                    </span>
                 </div>
             )}
         </div>

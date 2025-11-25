@@ -1,26 +1,22 @@
 package com.kanban.board;
 
-import com.kanban.entity.BaseEntity;
-import com.kanban.user.User;
-import com.kanban.workspace.Workspace;
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import jakarta.persistence.*;
-import lombok.*;
-
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.kanban.entity.BaseEntity;
+import com.kanban.user.User;
+import com.kanban.workspace.Workspace;
+import jakarta.persistence.*;
+import lombok.*;
 
 @Entity
-@Table(
-    name = "boards",
-    indexes = {
-        @Index(name = "idx_boards_workspace_id", columnList = "workspace_id"),
-        @Index(name = "idx_boards_owner_id", columnList = "owner_id"),
-        @Index(name = "idx_boards_status", columnList = "status"),
-        @Index(name = "idx_boards_updated_at", columnList = "updated_at")
-    }
-)
+@Table(name = "boards",
+        indexes = {@Index(name = "idx_boards_workspace_id", columnList = "workspace_id"),
+                @Index(name = "idx_boards_owner_id", columnList = "owner_id"),
+                @Index(name = "idx_boards_status", columnList = "status"),
+                @Index(name = "idx_boards_updated_at", columnList = "updated_at")})
 @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 @Getter
 @Setter
@@ -58,6 +54,10 @@ public class Board extends BaseEntity {
     @Builder.Default
     private BoardStatus status = BoardStatus.ACTIVE;
 
+    @Column(length = 20)
+    @Builder.Default
+    private String mode = "KANBAN"; // KANBAN or SPRINT
+
     @Column
     private LocalDateTime deletedAt;
 
@@ -67,8 +67,10 @@ public class Board extends BaseEntity {
     @Column(nullable = false)
     private LocalDateTime updatedAt;
 
-    @OneToMany(mappedBy = "board", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "board", cascade = CascadeType.ALL, orphanRemoval = true,
+            fetch = FetchType.LAZY)
     @Builder.Default
+    @JsonIgnore
     private List<com.kanban.column.BoardColumn> columns = new ArrayList<>();
 
     @PrePersist

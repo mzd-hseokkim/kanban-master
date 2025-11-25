@@ -1,5 +1,5 @@
-import axiosInstance from '@/utils/axios';
 import type { Board, CreateBoardRequest, UpdateBoardRequest } from '@/types/board';
+import axiosInstance from '@/utils/axios';
 
 export const boardService = {
   /**
@@ -94,6 +94,17 @@ export const boardService = {
   async restoreBoard(workspaceId: number, boardId: number): Promise<Board> {
     const response = await axiosInstance.post<Board>(
       `/workspaces/${workspaceId}/boards/${boardId}/restore`
+    );
+    return response.data;
+  },
+
+  /**
+   * Sprint 모드 활성화 (one-way, 되돌릴 수 없음)
+   */
+  async enableSprint(workspaceId: number, boardId: number): Promise<Board> {
+    const response = await axiosInstance.patch<Board>(
+      `/workspaces/${workspaceId}/boards/${boardId}`,
+      { mode: 'SPRINT' }
     );
     return response.data;
   },

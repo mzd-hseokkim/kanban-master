@@ -62,6 +62,22 @@ public class CardService {
     private final ApplicationEventPublisher eventPublisher;
 
     /**
+     * Priority 기반 StoryPoints 자동 계산
+     * HIGH -> 5, MEDIUM -> 3, LOW -> 1, null -> 1
+     */
+    private Integer calculateStoryPoints(String priority) {
+        if (priority == null) {
+            return 1;
+        }
+        return switch (priority) {
+            case "HIGH" -> 5;
+            case "MEDIUM" -> 3;
+            case "LOW" -> 1;
+            default -> 1;
+        };
+    }
+
+    /**
      * 특정 칼럼의 모든 카드 조회 Spec § 5. 기능 요구사항 - FR-06g: 자식 개수 표시
      */
     public CardPageResponse getCardsByColumn(Long columnId, int page, int size,
@@ -187,10 +203,14 @@ public class CardService {
         // 현재 칼럼의 카드 개수를 조회하여 position 설정
         int nextPosition = cardRepository.countByColumnId(columnId);
 
+        // Priority 기반 StoryPoints 자동 계산
+        Integer storyPoints = calculateStoryPoints(request.getPriority());
+
         Card card = Card.builder().column(column).title(request.getTitle())
                 .description(sanitizeHtml(request.getDescription())).position(nextPosition)
                 .bgColor(request.getBgColor()).priority(request.getPriority())
-                .dueDate(request.getDueDate()).parentCard(parentCard).build();
+                .dueDate(request.getDueDate()).parentCard(parentCard)
+                .storyPoints(storyPoints).build();
 
         if (request.getAssigneeId() != null) {
             com.kanban.user.User assignee = userRepository.findById(request.getAssigneeId())
@@ -298,6 +318,8 @@ public class CardService {
         }
         if (request.getPriority() != null) {
             card.setPriority(request.getPriority());
+            // Priority 변경 시 StoryPoints도 자동 업데이트
+            card.setStoryPoints(calculateStoryPoints(request.getPriority()));
         }
         if (request.getAssigneeId() != null) {
             // -1 means unassign

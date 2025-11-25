@@ -147,7 +147,7 @@ export const ColumnsSection = ({
   const columnIds = sortedColumns.map((col) => col.id);
 
   return (
-    <div className="flex-1 overflow-auto h-full">
+    <div className="flex-1 h-full">
       <DndContext
         sensors={sensors}
         collisionDetection={closestCenter}

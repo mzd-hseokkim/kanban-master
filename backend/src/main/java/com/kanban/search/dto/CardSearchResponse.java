@@ -37,4 +37,5 @@ public class CardSearchResponse {
     private List<LabelResponse> labels;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    private Integer storyPoints; // 스토리 포인트
 }

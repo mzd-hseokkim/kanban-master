@@ -92,6 +92,11 @@ public class SearchService {
             predicates.add(cb.isNull(card.get("parentCard")));
         }
 
+        // 스프린트 ID 필터
+        if (request.getSprintId() != null) {
+            predicates.add(cb.equal(card.get("sprint").get("id"), request.getSprintId()));
+        }
+
         query.where(predicates.toArray(new Predicate[0]));
         query.orderBy(cb.desc(card.get("updatedAt")));
 
@@ -170,6 +175,11 @@ public class SearchService {
             predicates.add(cb.isNull(card.get("parentCard")));
         }
 
+        // 스프린트 ID 필터
+        if (request.getSprintId() != null) {
+            predicates.add(cb.equal(card.get("sprint").get("id"), request.getSprintId()));
+        }
+
         query.where(predicates.toArray(new Predicate[0]));
         query.orderBy(cb.desc(card.get("updatedAt")));
 
@@ -234,6 +244,7 @@ public class SearchService {
                 .assigneeId(card.getAssignee() != null ? card.getAssignee().getId() : null)
                 .dueDate(card.getDueDate()).isCompleted(card.getIsCompleted())
                 .startedAt(card.getStartedAt()).completedAt(card.getCompletedAt()).labels(labels)
-                .createdAt(card.getCreatedAt()).updatedAt(card.getUpdatedAt()).build();
+                .createdAt(card.getCreatedAt()).updatedAt(card.getUpdatedAt())
+                .storyPoints(card.getStoryPoints()).build();
     }
 }
