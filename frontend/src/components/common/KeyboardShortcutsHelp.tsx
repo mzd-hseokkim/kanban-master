@@ -68,26 +68,32 @@ const KeyboardShortcutsModal = ({ onClose }: { onClose: () => void }) => {
                                 {section.category}
                             </h3>
                             <div className="space-y-2">
-                                {section.items.map((item, itemIdx) => (
-                                    <div
-                                        key={itemIdx}
-                                        className="flex items-center justify-between py-2 px-3 rounded-lg bg-white/30 hover:bg-white/50 transition-colors"
-                                    >
-                                        <span className="text-sm text-pastel-blue-900">{item.description}</span>
-                                        <div className="flex items-center gap-1">
-                                            {item.keys.map((key, keyIdx) => (
-                                                <span key={keyIdx} className="flex items-center gap-1">
-                                                    <kbd className="px-2 py-1 text-xs font-semibold text-pastel-blue-700 bg-white border border-pastel-blue-200 rounded shadow-sm">
-                                                        {key}
-                                                    </kbd>
-                                                    {keyIdx < item.keys.length - 1 && (
-                                                        <span className="text-pastel-blue-400">+</span>
-                                                    )}
-                                                </span>
-                                            ))}
+                                {section.items.map((item) => {
+                                    const itemKey = `${section.category}-${item.description}-${item.keys.join('+')}`;
+                                    return (
+                                        <div
+                                            key={itemKey}
+                                            className="flex items-center justify-between py-2 px-3 rounded-lg bg-white/30 hover:bg-white/50 transition-colors"
+                                        >
+                                            <span className="text-sm text-pastel-blue-900">{item.description}</span>
+                                            <div className="flex items-center gap-1">
+                                                {item.keys.map((key, keyIdx) => {
+                                                    const shortcutKey = `${itemKey}-${key}-${keyIdx}`;
+                                                    return (
+                                                        <span key={shortcutKey} className="flex items-center gap-1">
+                                                            <kbd className="px-2 py-1 text-xs font-semibold text-pastel-blue-700 bg-white border border-pastel-blue-200 rounded shadow-sm">
+                                                                {key}
+                                                            </kbd>
+                                                            {keyIdx < item.keys.length - 1 && (
+                                                                <span className="text-pastel-blue-400">+</span>
+                                                            )}
+                                                        </span>
+                                                    );
+                                                })}
+                                            </div>
                                         </div>
-                                    </div>
-                                ))}
+                                    );
+                                })}
                             </div>
                         </div>
                     ))}

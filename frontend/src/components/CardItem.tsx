@@ -11,15 +11,16 @@ import { HiCalendar, HiCheckCircle, HiPlay } from 'react-icons/hi2';
 
 const SprintBadge = ({ sprintId }: { sprintId: number }) => {
   const { sprints } = useSprint();
-  const sprint = sprints.find(s => s.id === sprintId);
-
-  if (!sprint) return null;
+  const sprint = sprints.find((s) => s.id === sprintId);
 
   // Format name to "S-{number}" or first 3 chars
   const displayName = useMemo(() => {
+    if (!sprint) return '';
     const match = sprint.name.match(/(\d+)/);
     return match ? `S-${match[0]}` : sprint.name.substring(0, 3).toUpperCase();
-  }, [sprint.name]);
+  }, [sprint]);
+
+  if (!sprint) return null;
 
   return (
     <div

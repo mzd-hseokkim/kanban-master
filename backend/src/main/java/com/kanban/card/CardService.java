@@ -1,5 +1,6 @@
 package com.kanban.card;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.List;
@@ -60,6 +61,13 @@ public class CardService {
     private final com.kanban.watch.CardWatchService cardWatchService;
     private final com.kanban.notification.NotificationLogRepository notificationLogRepository;
     private final ApplicationEventPublisher eventPublisher;
+
+    private static final String CHANGE_FIELD_LIFECYCLE = "LIFECYCLE";
+    private static final String STATUS_CREATED = "CREATED";
+    private static final String STATUS_DELETED = "DELETED";
+    private static final String STATUS_ARCHIVED = "ARCHIVED";
+    private static final String STATUS_ACTIVE = "ACTIVE";
+    private static final String STATUS_DELETED_PERMANENTLY = "DELETED_PERMANENTLY";
 
     /**
      * Priority 기반 StoryPoints 자동 계산
@@ -240,8 +248,8 @@ public class CardService {
         if (savedCard.getAssignee() != null) {
             // 본인이 본인을 할당한 경우는 알림 제외
             if (!savedCard.getAssignee().getId().equals(userId)) {
-                System.out.println("Creating notification for user (createCard): "
-                        + savedCard.getAssignee().getId());
+                log.info("Creating notification for user (createCard): {}",
+                        savedCard.getAssignee().getId());
                 Long workspaceId = column.getBoard().getWorkspace().getId();
                 notificationService.createNotification(savedCard.getAssignee().getId(),
                         com.kanban.notification.domain.NotificationType.CARD_ASSIGNMENT,
@@ -249,14 +257,13 @@ public class CardService {
                         "/boards/" + workspaceId + "/" + column.getBoard().getId() + "?cardId="
                                 + savedCard.getId() + "&columnId=" + column.getId());
             } else {
-                System.out.println(
-                        "Skipping notification (createCard): Self-assignment by user " + userId);
+                log.info("Skipping notification (createCard): Self-assignment by user {}", userId);
             }
         }
 
         // History
         List<CardChange> changes = new java.util.ArrayList<>();
-        changes.add(new CardChange("LIFECYCLE", null, "CREATED"));
+        changes.add(new CardChange(CHANGE_FIELD_LIFECYCLE, null, STATUS_CREATED));
         changes.add(new CardChange("COLUMN", null, String.valueOf(column.getId())));
         publishHistory(savedCard.getId(), column.getBoard().getId(), userId, changes);
 
@@ -287,30 +294,40 @@ public class CardService {
         Card card = cardRepository.findByIdAndColumnId(cardId, columnId)
                 .orElseThrow(() -> new ResourceNotFoundException("Card not found"));
 
-        String originalTitle = card.getTitle();
-        boolean isMoved = false;
-        boolean parentRelationRemoved = false;
-        boolean completionStatusChanged = false;
-        boolean markedCompleted = false;
+        UpdateContext context = new UpdateContext(card, request);
 
-        // 담당자 변경 감지 및 알림을 위한 기존 담당자 ID 저장
-        Long oldAssigneeId = card.getAssignee() != null ? card.getAssignee().getId() : null;
-        boolean wasCompleted = card.getIsCompleted();
+        applyFieldUpdates(card, request, userId, context);
+        boolean isMoved = handleColumnChange(columnId, request, card, context);
 
-        // History tracking - capture old values
-        String originalDescription = card.getDescription();
-        String originalPriority = card.getPriority();
-        java.time.LocalDate originalDueDate = card.getDueDate();
-        Long originalColumnId = card.getColumn().getId();
-        boolean originalCompleted = Boolean.TRUE.equals(card.getIsCompleted());
+        Card updatedCard = cardRepository.save(card);
 
+        recordActivity(cardId, userId, context, isMoved, updatedCard);
+
+        List<LabelResponse> labels = cardLabelRepository.findByCardId(updatedCard.getId()).stream()
+                .map(cardLabel -> LabelResponse.from(cardLabel.getLabel())).toList();
+        CardResponse response = enrichWithAssigneeInfo(CardResponse.from(updatedCard, labels));
+        publishBoardEvent(card, userId, isMoved, response);
+
+        notifyAssigneeIfNeeded(userId, context, updatedCard);
+
+        String changeMessage = buildChangeMessage(request, context.originalTitle, isMoved);
+        cardWatchService.notifyWatchers(cardId, changeMessage, userId);
+
+        List<CardChange> historyChanges = buildHistoryChanges(request, context, isMoved);
+        publishHistory(updatedCard.getId(), card.getColumn().getBoard().getId(), userId,
+                historyChanges);
+
+        return response;
+    }
+
+    private void applyFieldUpdates(Card card, UpdateCardRequest request, Long userId,
+            UpdateContext context) {
         if (request.getTitle() != null) {
             card.setTitle(request.getTitle());
         }
         if (request.getDescription() != null) {
             String sanitizedDescription = sanitizeHtml(request.getDescription());
             card.setDescription(sanitizedDescription);
-            // 멘션 처리
             processMentions(sanitizedDescription, card, userId);
         }
         if (request.getBgColor() != null) {
@@ -318,11 +335,15 @@ public class CardService {
         }
         if (request.getPriority() != null) {
             card.setPriority(request.getPriority());
-            // Priority 변경 시 StoryPoints도 자동 업데이트
             card.setStoryPoints(calculateStoryPoints(request.getPriority()));
         }
+        updateAssignee(card, request, context);
+        updateDueDate(card, request);
+        handleCompletionStatus(card, request, context);
+    }
+
+    private void updateAssignee(Card card, UpdateCardRequest request, UpdateContext context) {
         if (request.getAssigneeId() != null) {
-            // -1 means unassign
             if (request.getAssigneeId() == -1) {
                 card.setAssignee(null);
             } else {
@@ -331,79 +352,81 @@ public class CardService {
                 card.setAssignee(assignee);
             }
         }
-        if (request.getDueDate() != null) {
-            // 마감일이 변경된 경우, 기존 알림 발송 기록 삭제 (재발송을 위해)
-            if (!request.getDueDate().equals(card.getDueDate())) {
-                notificationLogRepository.deleteByCardAndNotificationType(card,
-                        com.kanban.notification.domain.NotificationType.DUE_DATE_IMMINENT);
-            }
-            card.setDueDate(request.getDueDate());
-        }
-        if (request.getIsCompleted() != null) {
-            card.setIsCompleted(request.getIsCompleted());
-            completionStatusChanged = !request.getIsCompleted().equals(wasCompleted);
-            markedCompleted = Boolean.TRUE.equals(request.getIsCompleted());
-            if (markedCompleted && card.getCompletedAt() == null) {
-                card.setCompletedAt(LocalDateTime.now());
-            }
-            if (!markedCompleted) {
-                card.setCompletedAt(null);
-            }
-        }
+        context.assigneeChanged = determineAssigneeChange(context.oldAssigneeId, context.newAssigneeId);
+    }
 
-        Long newAssigneeId = request.getAssigneeId();
-        // Check if assignee changed (considering nulls and -1 for unassign)
-        boolean assigneeChanged = false;
-        if (newAssigneeId != null) {
-            if (newAssigneeId == -1) {
-                assigneeChanged = oldAssigneeId != null;
-            } else {
-                assigneeChanged = !newAssigneeId.equals(oldAssigneeId);
-            }
+    private boolean determineAssigneeChange(Long oldAssigneeId, Long newAssigneeId) {
+        if (newAssigneeId == null) {
+            return false;
         }
+        if (newAssigneeId == -1) {
+            return oldAssigneeId != null;
+        }
+        return !newAssigneeId.equals(oldAssigneeId);
+    }
 
+    private void updateDueDate(Card card, UpdateCardRequest request) {
+        if (request.getDueDate() == null) {
+            return;
+        }
+        if (!request.getDueDate().equals(card.getDueDate())) {
+            notificationLogRepository.deleteByCardAndNotificationType(card,
+                    NotificationType.DUE_DATE_IMMINENT);
+        }
+        card.setDueDate(request.getDueDate());
+    }
 
-        // 다른 컬럼으로 이동하는 경우
+    private void handleCompletionStatus(Card card, UpdateCardRequest request,
+            UpdateContext context) {
+        if (request.getIsCompleted() == null) {
+            return;
+        }
+        card.setIsCompleted(request.getIsCompleted());
+        context.completionStatusChanged = !request.getIsCompleted().equals(context.wasCompleted);
+        context.markedCompleted = Boolean.TRUE.equals(request.getIsCompleted());
+        if (context.markedCompleted && card.getCompletedAt() == null) {
+            card.setCompletedAt(LocalDateTime.now());
+        }
+        if (!context.markedCompleted) {
+            card.setCompletedAt(null);
+        }
+    }
+
+    private boolean handleColumnChange(Long columnId, UpdateCardRequest request, Card card,
+            UpdateContext context) {
         if (request.getColumnId() != null && !request.getColumnId().equals(columnId)) {
             BoardColumn newColumn = columnRepository.findById(request.getColumnId())
                     .orElseThrow(() -> new ResourceNotFoundException("Target column not found"));
 
-            // FR-06i: 자식 카드가 다른 컬럼으로 이동 시 부모 관계 해제
             if (card.getParentCard() != null) {
                 card.setParentCard(null);
-                parentRelationRemoved = true;
+                context.parentRelationRemoved = true;
             }
 
-            // 기존 컬럼에서 position 업데이트
             cardRepository.updatePositionsFrom(columnId, card.getPosition() + 1, -1);
 
-            // 새 컬럼으로 이동
             card.setColumn(newColumn);
-            isMoved = true;
 
-            // 새 컬럼에서의 position 설정
             if (request.getPosition() != null) {
-                // 새 컬럼에서 해당 position 이상의 카드들 뒤로 밀기
                 cardRepository.updatePositionsFrom(request.getColumnId(), request.getPosition(), 1);
                 card.setPosition(request.getPosition());
             } else {
-                // position 지정 없으면 끝에 추가
                 int nextPosition = cardRepository.countByColumnId(request.getColumnId());
                 card.setPosition(nextPosition);
             }
-        } else {
-            // 같은 컬럼 내 위치 변경 처리
-            if (request.getPosition() != null
-                    && !request.getPosition().equals(card.getPosition())) {
-                handleCardPositionChange(columnId, card, request.getPosition());
-            }
+            return true;
         }
 
-        Card updatedCard = cardRepository.save(card);
+        if (request.getPosition() != null && !request.getPosition().equals(card.getPosition())) {
+            handleCardPositionChange(columnId, card, request.getPosition());
+        }
+        return false;
+    }
 
-        // 활동 기록
-        if (completionStatusChanged) {
-            if (markedCompleted) {
+    private void recordActivity(Long cardId, Long userId, UpdateContext context, boolean isMoved,
+            Card updatedCard) {
+        if (context.completionStatusChanged) {
+            if (context.markedCompleted) {
                 activityService.recordActivity(ActivityScopeType.CARD, cardId,
                         ActivityEventType.CARD_COMPLETED, userId,
                         "\"" + updatedCard.getTitle() + "\" 카드가 완료되었습니다");
@@ -412,90 +435,121 @@ public class CardService {
                         ActivityEventType.CARD_REOPENED, userId,
                         "\"" + updatedCard.getTitle() + "\" 카드가 다시 진행 중으로 전환되었습니다");
             }
-        } else if (isMoved) {
-            String moveMessage = "\"" + originalTitle + "\" 카드가 이동되었습니다";
-            if (parentRelationRemoved) {
+            return;
+        }
+
+        if (isMoved) {
+            String moveMessage = "\"" + context.originalTitle + "\" 카드가 이동되었습니다";
+            if (context.parentRelationRemoved) {
                 moveMessage += " (부모 관계 해제됨)";
             }
             activityService.recordActivity(ActivityScopeType.CARD, cardId,
                     ActivityEventType.CARD_MOVED, userId, moveMessage);
-        } else {
-            activityService.recordActivity(ActivityScopeType.CARD, cardId,
-                    ActivityEventType.CARD_UPDATED, userId,
-                    "\"" + updatedCard.getTitle() + "\" 카드가 업데이트되었습니다");
+            return;
         }
 
-        // Redis 이벤트 발행 (라벨 포함)
+        activityService.recordActivity(ActivityScopeType.CARD, cardId,
+                ActivityEventType.CARD_UPDATED, userId,
+                "\"" + updatedCard.getTitle() + "\" 카드가 업데이트되었습니다");
+    }
+
+    private void publishBoardEvent(Card card, Long userId, boolean isMoved, CardResponse response) {
         String eventType =
                 isMoved ? com.kanban.notification.event.BoardEvent.EventType.CARD_MOVED.name()
                         : com.kanban.notification.event.BoardEvent.EventType.CARD_UPDATED.name();
 
-        List<LabelResponse> labels = cardLabelRepository.findByCardId(updatedCard.getId()).stream()
-                .map(cardLabel -> LabelResponse.from(cardLabel.getLabel())).toList();
-        CardResponse response = enrichWithAssigneeInfo(CardResponse.from(updatedCard, labels));
         redisPublisher.publish(new com.kanban.notification.event.BoardEvent(eventType,
                 card.getColumn().getBoard().getId(), response, userId, System.currentTimeMillis()));
+    }
 
-        // 담당자 변경 알림
-        if (assigneeChanged && newAssigneeId != null && newAssigneeId != -1) {
-            // 본인이 본인을 할당한 경우는 알림 제외
-            if (!newAssigneeId.equals(userId)) {
-                System.out.println("Creating notification for user: " + newAssigneeId);
-                Long workspaceId = card.getColumn().getBoard().getWorkspace().getId();
-                notificationService.createNotification(newAssigneeId,
-                        com.kanban.notification.domain.NotificationType.CARD_ASSIGNMENT,
-                        "카드 \"" + updatedCard.getTitle() + "\"에 할당되었습니다.",
-                        "/boards/" + workspaceId + "/" + card.getColumn().getBoard().getId()
-                                + "?cardId=" + updatedCard.getId() + "&columnId="
-                                + card.getColumn().getId());
-            } else {
-                System.out.println("Skipping notification: Self-assignment by user " + userId);
-            }
-        } else {
-            System.out.println("Notification condition failed: changed=" + assigneeChanged
-                    + ", newId=" + newAssigneeId + ", oldId=" + oldAssigneeId);
+    private void notifyAssigneeIfNeeded(Long userId, UpdateContext context, Card updatedCard) {
+        if (!context.assigneeChanged || context.newAssigneeId == null
+                || context.newAssigneeId == -1) {
+            log.debug("Notification skipped: changed={}, newId={}", context.assigneeChanged,
+                    context.newAssigneeId);
+            return;
         }
 
-        // Watch 중인 사용자들에게 알림
-        String changeMessage = buildChangeMessage(request, originalTitle, isMoved);
-        cardWatchService.notifyWatchers(cardId, changeMessage, userId);
+        if (context.newAssigneeId.equals(userId)) {
+            log.debug("Skipping notification: Self-assignment by user {}", userId);
+            return;
+        }
 
-        // History
+        Long workspaceId = updatedCard.getColumn().getBoard().getWorkspace().getId();
+        notificationService.createNotification(context.newAssigneeId,
+                NotificationType.CARD_ASSIGNMENT,
+                "카드 \"" + updatedCard.getTitle() + "\"에 할당되었습니다.",
+                "/boards/" + workspaceId + "/" + updatedCard.getColumn().getBoard().getId()
+                        + "?cardId=" + updatedCard.getId() + "&columnId="
+                        + updatedCard.getColumn().getId());
+    }
+
+    private List<CardChange> buildHistoryChanges(UpdateCardRequest request, UpdateContext context,
+            boolean isMoved) {
         List<CardChange> historyChanges = new java.util.ArrayList<>();
-        if (request.getTitle() != null && !request.getTitle().equals(originalTitle)) {
-            historyChanges.add(new CardChange("TITLE", originalTitle, request.getTitle()));
+        if (request.getTitle() != null && !request.getTitle().equals(context.originalTitle)) {
+            historyChanges.add(new CardChange("TITLE", context.originalTitle, request.getTitle()));
         }
         if (request.getDescription() != null
-                && !request.getDescription().equals(originalDescription)) {
+                && !request.getDescription().equals(context.originalDescription)) {
             historyChanges.add(new CardChange("DESCRIPTION", "CHANGED", "CHANGED"));
         }
-        if (request.getPriority() != null && !request.getPriority().equals(originalPriority)) {
-            historyChanges.add(new CardChange("PRIORITY", originalPriority, request.getPriority()));
+        if (request.getPriority() != null
+                && !request.getPriority().equals(context.originalPriority)) {
+            historyChanges
+                    .add(new CardChange("PRIORITY", context.originalPriority, request.getPriority()));
         }
-        if (assigneeChanged) {
+        if (context.assigneeChanged) {
             historyChanges.add(new CardChange("ASSIGNEE",
-                    oldAssigneeId != null ? String.valueOf(oldAssigneeId) : null,
-                    newAssigneeId != null && newAssigneeId != -1 ? String.valueOf(newAssigneeId)
+                    context.oldAssigneeId != null ? String.valueOf(context.oldAssigneeId) : null,
+                    context.newAssigneeId != null && context.newAssigneeId != -1
+                            ? String.valueOf(context.newAssigneeId)
                             : null));
         }
-        if (request.getDueDate() != null && !request.getDueDate().equals(originalDueDate)) {
+        if (request.getDueDate() != null
+                && !request.getDueDate().equals(context.originalDueDate)) {
             historyChanges.add(new CardChange("DUE_DATE",
-                    originalDueDate != null ? originalDueDate.toString() : null,
+                    context.originalDueDate != null ? context.originalDueDate.toString() : null,
                     request.getDueDate().toString()));
         }
-        if (completionStatusChanged) {
-            historyChanges.add(
-                    new CardChange("COMPLETION", originalCompleted ? "COMPLETED" : "INCOMPLETE",
-                            markedCompleted ? "COMPLETED" : "INCOMPLETE"));
+        if (context.completionStatusChanged) {
+            historyChanges.add(new CardChange("COMPLETION",
+                    context.originalCompleted ? "COMPLETED" : "INCOMPLETE",
+                    context.markedCompleted ? "COMPLETED" : "INCOMPLETE"));
         }
         if (isMoved) {
-            historyChanges.add(new CardChange("COLUMN", String.valueOf(originalColumnId),
+            historyChanges.add(new CardChange("COLUMN", String.valueOf(context.originalColumnId),
                     String.valueOf(request.getColumnId())));
         }
-        publishHistory(updatedCard.getId(), card.getColumn().getBoard().getId(), userId,
-                historyChanges);
+        return historyChanges;
+    }
 
-        return response;
+    private static class UpdateContext {
+        private final String originalTitle;
+        private final String originalDescription;
+        private final String originalPriority;
+        private final LocalDate originalDueDate;
+        private final Long originalColumnId;
+        private final boolean originalCompleted;
+        private final Long oldAssigneeId;
+        private final boolean wasCompleted;
+        private final Long newAssigneeId;
+        private boolean parentRelationRemoved;
+        private boolean completionStatusChanged;
+        private boolean markedCompleted;
+        private boolean assigneeChanged;
+
+        UpdateContext(Card card, UpdateCardRequest request) {
+            this.originalTitle = card.getTitle();
+            this.originalDescription = card.getDescription();
+            this.originalPriority = card.getPriority();
+            this.originalDueDate = card.getDueDate();
+            this.originalColumnId = card.getColumn().getId();
+            this.originalCompleted = Boolean.TRUE.equals(card.getIsCompleted());
+            this.oldAssigneeId = card.getAssignee() != null ? card.getAssignee().getId() : null;
+            this.wasCompleted = Boolean.TRUE.equals(card.getIsCompleted());
+            this.newAssigneeId = request.getAssigneeId();
+        }
     }
 
     /**
@@ -548,7 +602,8 @@ public class CardService {
                 userId, System.currentTimeMillis()));
 
         // History
-        List<CardChange> changes = List.of(new CardChange("LIFECYCLE", "CREATED", "DELETED"));
+        List<CardChange> changes =
+                List.of(new CardChange(CHANGE_FIELD_LIFECYCLE, STATUS_CREATED, STATUS_DELETED));
         publishHistory(cardId, card.getColumn().getBoard().getId(), userId, changes);
     }
 
@@ -744,7 +799,8 @@ public class CardService {
                 card.getColumn().getBoard().getId(), response, userId, System.currentTimeMillis()));
 
         // History
-        List<CardChange> changes = List.of(new CardChange("STATUS", "ACTIVE", "ARCHIVED"));
+        List<CardChange> changes =
+                List.of(new CardChange("STATUS", STATUS_ACTIVE, STATUS_ARCHIVED));
         publishHistory(archived.getId(), card.getColumn().getBoard().getId(), userId, changes);
 
         return response;
@@ -790,7 +846,8 @@ public class CardService {
                 card.getColumn().getBoard().getId(), response, userId, System.currentTimeMillis()));
 
         // History
-        List<CardChange> changes = List.of(new CardChange("STATUS", "ARCHIVED", "ACTIVE"));
+        List<CardChange> changes =
+                List.of(new CardChange("STATUS", STATUS_ARCHIVED, STATUS_ACTIVE));
         publishHistory(unarchived.getId(), card.getColumn().getBoard().getId(), userId, changes);
 
         return response;
@@ -799,7 +856,7 @@ public class CardService {
     /**
      * 아카이브된 카드 조회 (보드 단위)
      */
-    public List<CardResponse> getArchivedCards(Long boardId, Long userId) {
+    public List<CardResponse> getArchivedCards(Long boardId) {
         // VIEWER 이상 권한 필요
         roleValidator.validateRole(boardId, BoardMemberRole.VIEWER);
 
@@ -860,8 +917,8 @@ public class CardService {
                 System.currentTimeMillis()));
 
         // History
-        List<CardChange> changes =
-                List.of(new CardChange("LIFECYCLE", "ARCHIVED", "DELETED_PERMANENTLY"));
+        List<CardChange> changes = List.of(new CardChange(CHANGE_FIELD_LIFECYCLE, STATUS_ARCHIVED,
+                STATUS_DELETED_PERMANENTLY));
         publishHistory(cardId, card.getColumn().getBoard().getId(), userId, changes);
     }
 
@@ -871,8 +928,7 @@ public class CardService {
 
         log.info("[MENTION] Processing mentions for card description: {}", content);
 
-        // Pattern: <span class="mention" data-user-id="userId">... (@ or &#64; or &commat;)
-        // HTML sanitizer may encode @ as &#64; or &commat;
+        // Mentions are encoded spans: <span class="mention" data-user-id="userId">...</span>
         Pattern pattern = Pattern.compile("<span[^>]+data-user-id=\"(\\d+)\"[^>]*>");
         Matcher matcher = pattern.matcher(content);
         Set<Long> mentionedUserIds = new HashSet<>();
@@ -902,8 +958,6 @@ public class CardService {
                 log.info("[MENTION] Looking up user with ID: {}", userId);
                 userRepository.findById(userId).ifPresentOrElse(user -> {
                     String message = String.format("%s님이 카드 설명에서 회원님을 언급했습니다.", author.getName());
-                    // Fixed URL format:
-                    // /boards/{workspaceId}/{boardId}?cardId={cardId}&columnId={columnId}
                     String url = String.format("/boards/%d/%d?cardId=%d&columnId=%d",
                             card.getColumn().getBoard().getWorkspace().getId(),
                             card.getColumn().getBoard().getId(), card.getId(),

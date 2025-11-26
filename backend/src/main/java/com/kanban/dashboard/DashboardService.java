@@ -2,7 +2,6 @@ package com.kanban.dashboard;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.stream.Collectors;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
@@ -42,15 +41,15 @@ public class DashboardService {
                                 .countUnassignedHighPriorityByWorkspaceId(workspaceId);
 
                 // Boards by overdue (Top 5)
-                List<Object[]> boardsByOverdueRaw = cardRepository
-                                .findBoardsByOverdueCount(workspaceId, today, PageRequest.of(0, 5));
-                List<DashboardSummaryResponse.BoardOverdueSummary> boardsByOverdue =
-                                boardsByOverdueRaw.stream().map(
-                                                obj -> DashboardSummaryResponse.BoardOverdueSummary
-                                                                .builder().boardId((Long) obj[0])
-                                                                .boardName((String) obj[1])
-                                                                .overdue((Long) obj[2]).build())
-                                                .collect(Collectors.toList());
+        List<Object[]> boardsByOverdueRaw = cardRepository
+                        .findBoardsByOverdueCount(workspaceId, today, PageRequest.of(0, 5));
+        List<DashboardSummaryResponse.BoardOverdueSummary> boardsByOverdue =
+                        boardsByOverdueRaw.stream().map(
+                                        obj -> DashboardSummaryResponse.BoardOverdueSummary
+                                                        .builder().boardId((Long) obj[0])
+                                                        .boardName((String) obj[1])
+                                                        .overdue((Long) obj[2]).build())
+                                        .toList();
 
                 // Recent activity (last 7 days)
                 LocalDateTime sevenDaysAgo = now.minusDays(7);
@@ -76,14 +75,14 @@ public class DashboardService {
                 java.time.LocalDate dueSoonLimit = today.plusDays(2);
 
                 // Column Insights
-                List<Object[]> columnStats = cardRepository.findColumnInsightsByBoardId(boardId,
-                                today, dueSoonLimit);
-                List<BoardInsightsResponse.ColumnInsight> byColumn = columnStats.stream()
-                                .map(obj -> BoardInsightsResponse.ColumnInsight.builder()
-                                                .columnId((Long) obj[0]).name((String) obj[1])
-                                                .total((Long) obj[2]).overdue((Long) obj[3])
-                                                .dueSoon((Long) obj[4]).build())
-                                .collect(Collectors.toList());
+        List<Object[]> columnStats = cardRepository.findColumnInsightsByBoardId(boardId,
+                        today, dueSoonLimit);
+        List<BoardInsightsResponse.ColumnInsight> byColumn = columnStats.stream()
+                        .map(obj -> BoardInsightsResponse.ColumnInsight.builder()
+                                        .columnId((Long) obj[0]).name((String) obj[1])
+                                        .total((Long) obj[2]).overdue((Long) obj[3])
+                                        .dueSoon((Long) obj[4]).build())
+                        .toList();
 
                 // Completion Stats
                 List<Object[]> completionStatsRaw =
@@ -124,29 +123,29 @@ public class DashboardService {
                 }
 
                 // Assignee Insights
-                List<Object[]> assigneeInsightsRaw =
-                                cardRepository.findAssigneeInsightsByBoardId(boardId, today);
-                List<BoardInsightsResponse.AssigneeInsight> byAssignee = assigneeInsightsRaw
-                                .stream()
-                                .map(obj -> BoardInsightsResponse.AssigneeInsight.builder()
-                                                .assigneeId((Long) obj[0]).name((String) obj[1])
-                                                .total((Long) obj[2]).overdue((Long) obj[3])
-                                                .completed((Long) obj[4]).build())
-                                .collect(Collectors.toList());
+        List<Object[]> assigneeInsightsRaw =
+                        cardRepository.findAssigneeInsightsByBoardId(boardId, today);
+        List<BoardInsightsResponse.AssigneeInsight> byAssignee = assigneeInsightsRaw
+                        .stream()
+                        .map(obj -> BoardInsightsResponse.AssigneeInsight.builder()
+                                        .assigneeId((Long) obj[0]).name((String) obj[1])
+                                        .total((Long) obj[2]).overdue((Long) obj[3])
+                                        .completed((Long) obj[4]).build())
+                        .toList();
 
                 // No Due Date
                 long noDueDate = cardRepository
                                 .countByBoardIdAndDueDateIsNullAndIsCompletedFalse(boardId);
 
                 // Label Insights
-                List<Object[]> labelInsightsRaw =
-                                cardRepository.findLabelInsightsByBoardId(boardId);
-                List<BoardInsightsResponse.LabelInsight> byLabel = labelInsightsRaw.stream()
-                                .map(obj -> BoardInsightsResponse.LabelInsight.builder()
-                                                .labelId((Long) obj[0]).name((String) obj[1])
-                                                .colorToken((String) obj[2]).count((Long) obj[3])
-                                                .build())
-                                .collect(Collectors.toList());
+        List<Object[]> labelInsightsRaw =
+                        cardRepository.findLabelInsightsByBoardId(boardId);
+        List<BoardInsightsResponse.LabelInsight> byLabel = labelInsightsRaw.stream()
+                        .map(obj -> BoardInsightsResponse.LabelInsight.builder()
+                                        .labelId((Long) obj[0]).name((String) obj[1])
+                                        .colorToken((String) obj[2]).count((Long) obj[3])
+                                        .build())
+                        .toList();
 
                 return BoardInsightsResponse.builder().byColumn(byColumn)
                                 .completion(BoardInsightsResponse.CompletionStats.builder()

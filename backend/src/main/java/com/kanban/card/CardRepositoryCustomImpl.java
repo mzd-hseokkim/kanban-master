@@ -20,6 +20,9 @@ import jakarta.persistence.criteria.Root;
 @Repository
 public class CardRepositoryCustomImpl implements CardRepositoryCustom {
 
+    private static final String FIELD_IS_ARCHIVED = "isArchived";
+    private static final String FIELD_PRIORITY = "priority";
+
     @PersistenceContext
     private EntityManager entityManager;
 
@@ -31,8 +34,8 @@ public class CardRepositoryCustomImpl implements CardRepositoryCustom {
         // Content query
         CriteriaQuery<Card> query = cb.createQuery(Card.class);
         Root<Card> root = query.from(Card.class);
-        Predicate notArchived = cb.or(cb.isFalse(root.get("isArchived")),
-                cb.isNull(root.get("isArchived")));
+        Predicate notArchived =
+                cb.or(cb.isFalse(root.get(FIELD_IS_ARCHIVED)), cb.isNull(root.get(FIELD_IS_ARCHIVED)));
         Predicate predicate = cb.and(cb.equal(root.get("column").get("id"), columnId),
                 notArchived);
         query.where(predicate);
@@ -48,8 +51,8 @@ public class CardRepositoryCustomImpl implements CardRepositoryCustom {
         Root<Card> countRoot = countQuery.from(Card.class);
         countQuery.select(cb.count(countRoot));
         countQuery.where(cb.and(cb.equal(countRoot.get("column").get("id"), columnId),
-                cb.or(cb.isFalse(countRoot.get("isArchived")),
-                        cb.isNull(countRoot.get("isArchived")))));
+                cb.or(cb.isFalse(countRoot.get(FIELD_IS_ARCHIVED)),
+                        cb.isNull(countRoot.get(FIELD_IS_ARCHIVED)))));
         Long total = entityManager.createQuery(countQuery).getSingleResult();
 
         return new PageImpl<>(cards, pageable, total);
@@ -66,9 +69,9 @@ public class CardRepositoryCustomImpl implements CardRepositoryCustom {
                 int nullFallback =
                         direction == Sort.Direction.ASC ? Integer.MAX_VALUE : Integer.MIN_VALUE;
                 Expression<Integer> priorityWeight = cb.<Integer>selectCase()
-                        .when(cb.equal(root.get("priority"), "HIGH"), 3)
-                        .when(cb.equal(root.get("priority"), "MEDIUM"), 2)
-                        .when(cb.equal(root.get("priority"), "LOW"), 1)
+                        .when(cb.equal(root.get(FIELD_PRIORITY), "HIGH"), 3)
+                        .when(cb.equal(root.get(FIELD_PRIORITY), "MEDIUM"), 2)
+                        .when(cb.equal(root.get(FIELD_PRIORITY), "LOW"), 1)
                         .otherwise(nullFallback);
                 orders.add(direction == Sort.Direction.ASC ? cb.asc(priorityWeight)
                         : cb.desc(priorityWeight));

@@ -1,6 +1,5 @@
 package com.kanban.auth.security;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -16,6 +15,8 @@ import com.kanban.auth.oauth2.CustomOAuth2UserService;
 import com.kanban.auth.oauth2.OAuth2AuthenticationFailureHandler;
 import com.kanban.auth.oauth2.OAuth2AuthenticationSuccessHandler;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.lang.Nullable;
 
 /**
  * Spring Security 설정 Spec § 6. 백엔드 규격 - SecurityConfig FR-06a: Google OAuth2 로그인
@@ -23,35 +24,22 @@ import lombok.RequiredArgsConstructor;
 @Configuration
 @EnableMethodSecurity
 @RequiredArgsConstructor
+@Slf4j
 public class SecurityConfig {
 
         private final JwtAuthenticationFilter jwtAuthenticationFilter;
         private final RestAuthenticationEntryPoint authenticationEntryPoint;
 
-        @Autowired(required = false)
-        private CustomOAuth2UserService customOAuth2UserService;
-
-        @Autowired(required = false)
-        private OAuth2AuthenticationSuccessHandler oAuth2AuthenticationSuccessHandler;
-
-        @Autowired(required = false)
-        private OAuth2AuthenticationFailureHandler oAuth2AuthenticationFailureHandler;
-
-        @Autowired(required = false)
-        private ClientRegistrationRepository clientRegistrationRepository;
-
         @Bean
-        public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-                // OAuth2 설정 디버깅
-                System.out.println("=== OAuth2 Configuration Debug ===");
-                System.out.println("ClientRegistrationRepository: "
-                                + (clientRegistrationRepository != null ? "FOUND" : "NULL"));
-                System.out.println("CustomOAuth2UserService: "
-                                + (customOAuth2UserService != null ? "FOUND" : "NULL"));
-                System.out.println("OAuth2AuthenticationSuccessHandler: "
-                                + (oAuth2AuthenticationSuccessHandler != null ? "FOUND" : "NULL"));
-                System.out.println("OAuth2AuthenticationFailureHandler: "
-                                + (oAuth2AuthenticationFailureHandler != null ? "FOUND" : "NULL"));
+        public SecurityFilterChain securityFilterChain(HttpSecurity http,
+                        @Nullable CustomOAuth2UserService customOAuth2UserService,
+                        @Nullable OAuth2AuthenticationSuccessHandler successHandler,
+                        @Nullable OAuth2AuthenticationFailureHandler failureHandler,
+                        @Nullable ClientRegistrationRepository clientRegistrationRepository)
+                        throws Exception {
+                log.debug("OAuth2 configuration - clients: {}, userService: {}, successHandler: {}, failureHandler: {}",
+                                clientRegistrationRepository != null, customOAuth2UserService != null,
+                                successHandler != null, failureHandler != null);
 
                 http.csrf(csrf -> csrf.disable())
                                 .sessionManagement(session -> session.sessionCreationPolicy(
@@ -78,16 +66,15 @@ public class SecurityConfig {
 
                 // OAuth2 설정이 있을 때만 활성화
                 if (clientRegistrationRepository != null && customOAuth2UserService != null
-                                && oAuth2AuthenticationSuccessHandler != null
-                                && oAuth2AuthenticationFailureHandler != null) {
-                        System.out.println("✅ OAuth2 Login ENABLED");
+                                && successHandler != null && failureHandler != null) {
+                        log.info("OAuth2 login enabled");
                         // Spec § 6. 백엔드 규격 - SecurityConfig OAuth2 로그인 활성화
                         http.oauth2Login(oauth2 -> oauth2.userInfoEndpoint(
                                         userInfo -> userInfo.userService(customOAuth2UserService))
-                                        .successHandler(oAuth2AuthenticationSuccessHandler)
-                                        .failureHandler(oAuth2AuthenticationFailureHandler));
+                                        .successHandler(successHandler)
+                                        .failureHandler(failureHandler));
                 } else {
-                        System.out.println("❌ OAuth2 Login DISABLED - Missing required beans");
+                        log.info("OAuth2 login disabled - missing required beans");
                 }
 
                 http.addFilterBefore(jwtAuthenticationFilter,

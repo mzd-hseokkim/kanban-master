@@ -48,13 +48,13 @@ export const BoardModals = ({
   return (
     <>
       {showCreateColumnModal && (
-        <CreateColumnModal
-          workspaceId={workspaceId}
-          boardId={boardId}
-          onClose={onCloseCreateColumn}
-          onSuccess={() => void refreshColumns()}
-        />
-      )}
+          <CreateColumnModal
+            workspaceId={workspaceId}
+            boardId={boardId}
+            onClose={onCloseCreateColumn}
+            onSuccess={() => refreshColumns()}
+          />
+        )}
 
       {showInviteModal && (
         <InviteMemberModal

@@ -21,6 +21,8 @@ import lombok.RequiredArgsConstructor;
 @Transactional
 public class SprintService {
 
+    private static final String SPRINT_NOT_FOUND_MESSAGE = "Sprint not found";
+
     private final SprintRepository sprintRepository;
     private final BoardRepository boardRepository;
     private final CardRepository cardRepository;
@@ -45,7 +47,7 @@ public class SprintService {
 
     public SprintDto startSprint(Long sprintId) {
         Sprint sprint = sprintRepository.findById(sprintId)
-                .orElseThrow(() -> new ResourceNotFoundException("Sprint not found"));
+                .orElseThrow(() -> new ResourceNotFoundException(SPRINT_NOT_FOUND_MESSAGE));
 
         // Check if there is already an active sprint for this board
         sprintRepository.findFirstByBoardIdAndStatus(sprint.getBoard().getId(), SprintStatus.ACTIVE)
@@ -65,7 +67,7 @@ public class SprintService {
 
     public SprintDto completeSprint(Long sprintId) {
         Sprint sprint = sprintRepository.findById(sprintId)
-                .orElseThrow(() -> new ResourceNotFoundException("Sprint not found"));
+                .orElseThrow(() -> new ResourceNotFoundException(SPRINT_NOT_FOUND_MESSAGE));
 
         if (sprint.getStatus() != SprintStatus.ACTIVE) {
             throw new IllegalStateException("Only active sprints can be completed.");
@@ -161,7 +163,7 @@ public class SprintService {
         List<Sprint> sprints = sprintRepository.findByBoardIdOrderByStartDateDesc(boardId);
 
         // 모든 스프린트의 카드 개수를 한 번에 조회 (N+1 문제 방지)
-        List<Long> sprintIds = sprints.stream().map(Sprint::getId).collect(Collectors.toList());
+        List<Long> sprintIds = sprints.stream().map(Sprint::getId).toList();
         Map<Long, Long> cardCountMap = cardRepository.countCardsBySprintIds(sprintIds);
 
         // 모든 스프린트의 포인트 합계를 한 번에 조회 (스냅샷 없을 때 사용)
@@ -198,12 +200,12 @@ public class SprintService {
                         latestSnapshotMap.get(sprint.getId()),
                         pointsMap.get(sprint.getId())
                 ))
-                .collect(Collectors.toList());
+                .toList();
     }
 
     public List<CardResponse> getBacklog(Long boardId) {
         return cardRepository.findBacklogCardsByBoardId(boardId).stream().map(CardResponse::from)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     public List<SprintSnapshot> getBurndown(Long sprintId) {
@@ -228,12 +230,12 @@ public class SprintService {
                     if (snapshots.isEmpty())
                         return 0;
                     return snapshots.get(snapshots.size() - 1).getCompletedPoints();
-                }).collect(Collectors.toList());
+                }).toList();
     }
 
     public void assignCardsToSprint(Long sprintId, List<Long> cardIds) {
         Sprint sprint = sprintRepository.findById(sprintId)
-                .orElseThrow(() -> new ResourceNotFoundException("Sprint not found"));
+                .orElseThrow(() -> new ResourceNotFoundException(SPRINT_NOT_FOUND_MESSAGE));
 
         List<Card> cards = cardRepository.findAllById(cardIds);
         for (Card card : cards) {
@@ -259,14 +261,6 @@ public class SprintService {
                 .startDate(sprint.getStartDate()).endDate(sprint.getEndDate())
                 .status(sprint.getStatus()).goalText(sprint.getGoalText())
                 .capacity(sprint.getCapacity()).boardId(sprint.getBoard().getId()).build();
-    }
-
-    private SprintDto toDtoWithCardCount(Sprint sprint, Integer cardCount) {
-        return SprintDto.builder().id(sprint.getId()).name(sprint.getName())
-                .startDate(sprint.getStartDate()).endDate(sprint.getEndDate())
-                .status(sprint.getStatus()).goalText(sprint.getGoalText())
-                .capacity(sprint.getCapacity()).boardId(sprint.getBoard().getId())
-                .cardCount(cardCount).build();
     }
 
     private SprintDto toDtoWithCardCountAndPoints(Sprint sprint, Integer cardCount, SprintSnapshot snapshot,

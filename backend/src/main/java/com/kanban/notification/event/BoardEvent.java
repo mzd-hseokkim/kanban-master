@@ -13,7 +13,7 @@ import lombok.NoArgsConstructor;
 public class BoardEvent implements Serializable {
     private String type; // e.g., "BOARD_UPDATED", "CARD_MOVED"
     private Long boardId;
-    private Object payload; // The actual data changed (optional or specific DTO)
+    private transient Object payload; // The actual data changed (optional or specific DTO)
     private Long triggeredByUserId;
     private long timestamp;
 

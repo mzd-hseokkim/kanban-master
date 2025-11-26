@@ -68,9 +68,9 @@ public class CommentService {
                 // 권한 검증: 보드 멤버 (VIEWER 이상)
                 roleValidator.validateRole(boardId, BoardMemberRole.VIEWER);
 
-                // 카드 존재 확인
-                cardRepository.findById(cardId).orElseThrow(
-                                () -> new ResourceNotFoundException("Card not found: " + cardId));
+                if (!cardRepository.existsById(cardId)) {
+                        throw new ResourceNotFoundException("Card not found: " + cardId);
+                }
 
                 // 댓글 조회 (최신순)
                 Page<Comment> comments =
@@ -267,8 +267,7 @@ public class CommentService {
 
                 log.info("[MENTION] Processing mentions for content: {}", content);
 
-                // Pattern: <span class="mention" data-user-id="userId">... (@ or &#64; or &commat;)
-                // HTML sanitizer may encode @ as &#64; or &commat;
+        // Mentions are encoded spans: <span class="mention" data-user-id="userId">...</span>
                 Pattern pattern = Pattern.compile("<span[^>]+data-user-id=\"(\\d+)\"[^>]*>");
                 Matcher matcher = pattern.matcher(content);
                 Set<Long> mentionedUserIds = new HashSet<>();
@@ -297,8 +296,6 @@ public class CommentService {
                                 userRepository.findById(userId).ifPresentOrElse(user -> {
                                         String message = String.format("%s님이 댓글에서 회원님을 언급했습니다.",
                                                         author.getName());
-                                        // Fixed URL format:
-                                        // /boards/{workspaceId}/{boardId}?cardId={cardId}&columnId={columnId}
                                         String url = String.format(
                                                         "/boards/%d/%d?cardId=%d&columnId=%d",
                                                         card.getColumn().getBoard().getWorkspace()

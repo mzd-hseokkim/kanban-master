@@ -1,7 +1,6 @@
 package com.kanban.goal;
 
 import java.util.List;
-import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.kanban.board.Board;
@@ -37,7 +36,7 @@ public class GoalService {
 
     public List<GoalDto> getGoals(Long boardId) {
         return goalRepository.findByBoardId(boardId).stream().map(this::toDto)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     public GoalDto updateProgress(Long goalId, Integer progress) {

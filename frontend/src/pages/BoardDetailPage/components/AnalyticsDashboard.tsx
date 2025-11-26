@@ -12,6 +12,7 @@ import {
     Scatter,
     ScatterChart,
     Tooltip,
+    TooltipProps,
     XAxis, YAxis,
     ZAxis
 } from 'recharts';
@@ -21,6 +22,24 @@ interface AnalyticsDashboardProps {
     workspaceId: number;
     boardId: number;
 }
+
+const CycleTooltip: React.FC<TooltipProps<number, string>> = ({ active, payload }) => {
+    if (active && payload && payload.length) {
+        const data = payload[0].payload as CycleTimeData;
+        return (
+            <div className="bg-white p-3 border border-gray-200 shadow-lg rounded-lg">
+                <p className="font-semibold text-gray-800">{data.title}</p>
+                <p className="text-sm text-gray-600">
+                    Cycle Time: <span className="font-medium text-blue-600">{data.cycleTimeDays} days</span>
+                </p>
+                <p className="text-xs text-gray-500 mt-1">
+                    Completed: {new Date(data.completedAt).toLocaleDateString()}
+                </p>
+            </div>
+        );
+    }
+    return null;
+};
 
 const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ workspaceId, boardId }) => {
     const [burndownData, setBurndownData] = useState<BurndownDataPoint[]>([]);
@@ -289,22 +308,7 @@ const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ workspaceId, bo
                                         tick={{ fontSize: 12 }}
                                     />
                                     <ZAxis dataKey="title" name="Card" />
-                                    <Tooltip
-                                        cursor={{ strokeDasharray: '3 3' }}
-                                        content={({ active, payload }) => {
-                                            if (active && payload && payload.length) {
-                                                const data = payload[0].payload;
-                                                return (
-                                                    <div className="bg-white p-3 border border-gray-200 shadow-lg rounded-lg">
-                                                        <p className="font-semibold text-gray-800">{data.title}</p>
-                                                        <p className="text-sm text-gray-600">Cycle Time: <span className="font-medium text-blue-600">{data.cycleTimeDays} days</span></p>
-                                                        <p className="text-xs text-gray-500 mt-1">Completed: {new Date(data.completedAt).toLocaleDateString()}</p>
-                                                    </div>
-                                                );
-                                            }
-                                            return null;
-                                        }}
-                                    />
+                                    <Tooltip cursor={{ strokeDasharray: '3 3' }} content={<CycleTooltip />} />
                                     <Scatter name="Tasks" data={cycleTimeData} fill="#10b981" />
                                 </ScatterChart>
                             </ResponsiveContainer>

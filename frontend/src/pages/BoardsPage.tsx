@@ -34,6 +34,46 @@ export const BoardsPage = () => {
     }
   }, [selectedWorkspaceId, loadBoards]);
 
+  const renderBoardContent = () => {
+    if (loading) {
+      return (
+        <div className="flex items-center justify-center h-64">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-pastel-blue-600"></div>
+        </div>
+      );
+    }
+
+    if (boards.length === 0) {
+      return (
+        <div className="glass rounded-2xl p-12 shadow-glass-lg text-center">
+          <p className="text-xl text-pastel-blue-400 mb-6">아직 보드가 없습니다</p>
+          <button
+            onClick={() => setShowCreateModal(true)}
+            className="px-6 py-3 rounded-lg bg-pastel-blue-500 text-white font-semibold hover:bg-pastel-blue-600 transition"
+          >
+            첫 보드 만들기
+          </button>
+        </div>
+      );
+    }
+
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {boards.map((board) => (
+          <BoardCard
+            key={board.id}
+            board={board}
+            workspaceId={selectedWorkspaceId}
+            onSaveAsTemplate={(currentBoard) => {
+              setSelectedBoard(currentBoard);
+              setShowSaveAsTemplate(true);
+            }}
+          />
+        ))}
+      </div>
+    );
+  };
+
   if (!selectedWorkspaceId) {
     return (
       <div className="h-full bg-gradient-pastel flex items-center justify-center">
@@ -84,40 +124,12 @@ export const BoardsPage = () => {
             </div>
           )}
 
-          {loading ? (
-            <div className="flex items-center justify-center h-64">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-pastel-blue-600"></div>
-            </div>
-          ) : boards.length === 0 ? (
-            <div className="glass rounded-2xl p-12 shadow-glass-lg text-center">
-              <p className="text-xl text-pastel-blue-400 mb-6">아직 보드가 없습니다</p>
-              <button
-                onClick={() => setShowCreateModal(true)}
-                className="px-6 py-3 rounded-lg bg-pastel-blue-500 text-white font-semibold hover:bg-pastel-blue-600 transition"
-              >
-                첫 보드 만들기
-              </button>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {boards.map(board => (
-                <BoardCard
-                  key={board.id}
-                  board={board}
-                  workspaceId={selectedWorkspaceId}
-                  onSaveAsTemplate={(board) => {
-                    setSelectedBoard(board);
-                    setShowSaveAsTemplate(true);
-                  }}
-                />
-              ))}
-            </div>
-          )}
+          {renderBoardContent()}
         </div>
       </main>
 
       {/* Create Board Modal */}
-      {showCreateModal && selectedWorkspaceId && (
+      {showCreateModal && Boolean(selectedWorkspaceId) && (
         <CreateBoardModal
           workspaceId={selectedWorkspaceId}
           onClose={() => {
@@ -129,7 +141,7 @@ export const BoardsPage = () => {
       )}
 
       {/* Template Gallery */}
-      {showTemplateGallery && selectedWorkspaceId && (
+      {showTemplateGallery && Boolean(selectedWorkspaceId) && (
         <TemplateGallery
           workspaceId={selectedWorkspaceId}
           onClose={() => setShowTemplateGallery(false)}
@@ -142,7 +154,7 @@ export const BoardsPage = () => {
       )}
 
       {/* Save As Template Modal */}
-      {showSaveAsTemplate && selectedBoard && selectedWorkspaceId && (
+      {showSaveAsTemplate && selectedBoard && Boolean(selectedWorkspaceId) && (
         <SaveAsTemplateModal
           workspaceId={selectedWorkspaceId}
           boardId={selectedBoard.id}

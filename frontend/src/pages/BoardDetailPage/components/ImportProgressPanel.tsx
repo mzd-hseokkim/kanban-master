@@ -73,8 +73,8 @@ export const ImportProgressPanel = ({
               <span>실패한 행</span>
             </div>
             <ul className="text-xs text-rose-700 space-y-1 max-h-32 overflow-auto">
-              {status.errors.slice(0, 5).map((error, idx) => (
-                <li key={`${error.rowNumber}-${idx}`}>
+              {status.errors.slice(0, 5).map((error) => (
+                <li key={`${error.rowNumber}-${error.message}`}>
                   #{error.rowNumber}: {error.message}
                 </li>
               ))}

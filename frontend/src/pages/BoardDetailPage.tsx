@@ -103,7 +103,7 @@ const BoardDetailPage = () => {
 
   const activityPanelTransition = usePresenceTransition(showActivityPanel);
 
-  const { board, loading, error, reloadBoard, updateBoardLocally } = useBoardData(
+  const { board, loading, error, updateBoardLocally } = useBoardData(
     workspaceId,
     boardId,
     loadColumns,

@@ -8,6 +8,9 @@ import org.springframework.security.core.context.SecurityContextHolder;
  */
 public class SecurityUtil {
 
+    private SecurityUtil() {
+    }
+
     /**
      * 현재 인증된 사용자의 ID를 반환
      * 테스트 환경에서는 "1"을 기본값으로 반환
@@ -20,41 +23,9 @@ public class SecurityUtil {
             return 1L;
         }
 
-        try {
-            // Principal이 User 엔티티인 경우
-            if (authentication.getPrincipal() instanceof com.kanban.user.User) {
-                return ((com.kanban.user.User) authentication.getPrincipal()).getId();
-            }
-
-            // Principal이 Long (userId)인 경우
-            if (authentication.getPrincipal() instanceof Long) {
-                return (Long) authentication.getPrincipal();
-            }
-
-            // Principal이 String (username)인 경우는 파싱 시도
-            if (authentication.getPrincipal() instanceof String) {
-                String principal = (String) authentication.getPrincipal();
-                try {
-                    return Long.parseLong(principal);
-                } catch (NumberFormatException e) {
-                    return 1L;  // 기본값
-                }
-            }
-
-            // Principal이 UserDetails인 경우
-            if (authentication.getPrincipal() instanceof org.springframework.security.core.userdetails.UserDetails) {
-                String username = ((org.springframework.security.core.userdetails.UserDetails) authentication.getPrincipal()).getUsername();
-                try {
-                    return Long.parseLong(username);
-                } catch (NumberFormatException e) {
-                    return 1L;  // 기본값
-                }
-            }
-        } catch (Exception e) {
-            return 1L;  // 기본값
-        }
-
-        return 1L;  // 기본값
+        Object principal = authentication.getPrincipal();
+        Long resolvedId = extractUserId(principal);
+        return resolvedId != null ? resolvedId : 1L;
     }
 
     /**
@@ -63,5 +34,29 @@ public class SecurityUtil {
     public static boolean isAuthenticated() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         return authentication != null && authentication.isAuthenticated();
+    }
+
+    private static Long extractUserId(Object principal) {
+        if (principal instanceof com.kanban.user.User user) {
+            return user.getId();
+        }
+        if (principal instanceof Long id) {
+            return id;
+        }
+        if (principal instanceof String principalString) {
+            return parseLongSafely(principalString);
+        }
+        if (principal instanceof org.springframework.security.core.userdetails.UserDetails userDetails) {
+            return parseLongSafely(userDetails.getUsername());
+        }
+        return null;
+    }
+
+    private static Long parseLongSafely(String value) {
+        try {
+            return Long.parseLong(value);
+        } catch (NumberFormatException e) {
+            return null;
+        }
     }
 }

@@ -24,6 +24,8 @@ import static org.springframework.http.HttpStatus.UNAUTHORIZED;
 @RequiredArgsConstructor
 public class AuthController {
 
+    private static final String LOGIN_REQUIRED_MESSAGE = "인증 정보가 없습니다. 다시 로그인해주세요.";
+
     private final AuthService authService;
     private final UserIdentityService userIdentityService;
     private final JwtProperties jwtProperties;
@@ -53,7 +55,7 @@ public class AuthController {
     @GetMapping("/me")
     public UserProfileResponse me(@AuthenticationPrincipal com.kanban.user.User user) {
         if (user == null) {
-            throw new ResponseStatusException(UNAUTHORIZED, "인증 정보가 없습니다. 다시 로그인해주세요.");
+            throw new ResponseStatusException(UNAUTHORIZED, LOGIN_REQUIRED_MESSAGE);
         }
         return authService.me(user.getId());
     }
@@ -68,7 +70,7 @@ public class AuthController {
     public ResponseEntity<java.util.List<UserIdentityResponse>> getUserIdentities(
             @AuthenticationPrincipal com.kanban.user.User user) {
         if (user == null) {
-            throw new ResponseStatusException(UNAUTHORIZED, "인증 정보가 없습니다. 다시 로그인해주세요.");
+            throw new ResponseStatusException(UNAUTHORIZED, LOGIN_REQUIRED_MESSAGE);
         }
         java.util.List<UserIdentityResponse> identities = userIdentityService.getUserIdentities(user.getId());
         return ResponseEntity.ok(identities);
@@ -86,7 +88,7 @@ public class AuthController {
             @AuthenticationPrincipal com.kanban.user.User user,
             @PathVariable Long identityId) {
         if (user == null) {
-            throw new ResponseStatusException(UNAUTHORIZED, "인증 정보가 없습니다. 다시 로그인해주세요.");
+            throw new ResponseStatusException(UNAUTHORIZED, LOGIN_REQUIRED_MESSAGE);
         }
         userIdentityService.unlinkIdentity(user.getId(), identityId);
         return ResponseEntity.noContent().build();

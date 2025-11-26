@@ -9,6 +9,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+import java.util.regex.Pattern;
 
 /**
  * 이메일 발송 유틸리티 클래스
@@ -26,6 +27,8 @@ public class EmailUtil {
 
     @Value("${mailersend.from.name}")
     private String fromName;
+
+    private static final Pattern HTML_TAG_PATTERN = Pattern.compile("<[^>]*>");
 
     /**
      * 기본 이메일을 발송합니다.
@@ -92,11 +95,12 @@ public class EmailUtil {
         if (html == null) {
             return "";
         }
-        return html.replaceAll("<[^>]*>", "")
-                   .replaceAll("&nbsp;", " ")
-                   .replaceAll("&amp;", "&")
-                   .replaceAll("&lt;", "<")
-                   .replaceAll("&gt;", ">")
-                   .trim();
+        return HTML_TAG_PATTERN.matcher(html)
+                .replaceAll("")
+                .replace("&nbsp;", " ")
+                .replace("&amp;", "&")
+                .replace("&lt;", "<")
+                .replace("&gt;", ">")
+                .trim();
     }
 }

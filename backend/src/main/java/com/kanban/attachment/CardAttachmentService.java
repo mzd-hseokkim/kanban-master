@@ -2,7 +2,6 @@ package com.kanban.attachment;
 
 import java.io.IOException;
 import java.util.List;
-import java.util.stream.Collectors;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -18,6 +17,8 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 @Transactional
 public class CardAttachmentService {
+
+    private static final String ATTACHMENT_NOT_FOUND = "Attachment not found";
 
     private final CardAttachmentRepository attachmentRepository;
     private final CardRepository cardRepository;
@@ -50,7 +51,7 @@ public class CardAttachmentService {
      */
     public List<AttachmentResponse> getAttachments(Long cardId) {
         return attachmentRepository.findByCardId(cardId).stream().map(AttachmentResponse::from)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     /**
@@ -58,7 +59,7 @@ public class CardAttachmentService {
      */
     public Resource downloadAttachment(Long attachmentId) throws IOException {
         CardAttachment attachment = attachmentRepository.findById(attachmentId)
-                .orElseThrow(() -> new ResourceNotFoundException("Attachment not found"));
+                .orElseThrow(() -> new ResourceNotFoundException(ATTACHMENT_NOT_FOUND));
 
         return fileStorageService.load(attachment.getStoredFileName());
     }
@@ -68,7 +69,7 @@ public class CardAttachmentService {
      */
     public CardAttachment getAttachment(Long attachmentId) {
         return attachmentRepository.findById(attachmentId)
-                .orElseThrow(() -> new ResourceNotFoundException("Attachment not found"));
+                .orElseThrow(() -> new ResourceNotFoundException(ATTACHMENT_NOT_FOUND));
     }
 
     /**
@@ -76,7 +77,7 @@ public class CardAttachmentService {
      */
     public void deleteAttachment(Long attachmentId) throws IOException {
         CardAttachment attachment = attachmentRepository.findById(attachmentId)
-                .orElseThrow(() -> new ResourceNotFoundException("Attachment not found"));
+                .orElseThrow(() -> new ResourceNotFoundException(ATTACHMENT_NOT_FOUND));
 
         // 스토리지에서 삭제
         fileStorageService.delete(attachment.getStoredFileName());

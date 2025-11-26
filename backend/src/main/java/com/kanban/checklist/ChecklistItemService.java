@@ -1,7 +1,6 @@
 package com.kanban.checklist;
 
 import java.util.List;
-import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import com.kanban.card.Card;
 import com.kanban.card.CardRepository;
@@ -18,6 +17,8 @@ import lombok.RequiredArgsConstructor;
 @Transactional
 public class ChecklistItemService {
 
+    private static final String CHECKLIST_NOT_FOUND = "Checklist item not found";
+
     private final ChecklistItemRepository checklistItemRepository;
     private final CardRepository cardRepository;
 
@@ -26,7 +27,7 @@ public class ChecklistItemService {
      */
     public List<ChecklistItemResponse> getChecklistItems(Long cardId) {
         List<ChecklistItem> items = checklistItemRepository.findByCardIdOrderByPosition(cardId);
-        return items.stream().map(ChecklistItemResponse::from).collect(Collectors.toList());
+        return items.stream().map(ChecklistItemResponse::from).toList();
     }
 
     /**
@@ -64,7 +65,7 @@ public class ChecklistItemService {
     public ChecklistItemResponse updateChecklistItem(Long itemId,
             UpdateChecklistItemRequest request) {
         ChecklistItem item = checklistItemRepository.findById(itemId)
-                .orElseThrow(() -> new ResourceNotFoundException("Checklist item not found"));
+                .orElseThrow(() -> new ResourceNotFoundException(CHECKLIST_NOT_FOUND));
 
         if (request.getContent() != null) {
             item.setContent(request.getContent());
@@ -83,7 +84,7 @@ public class ChecklistItemService {
      */
     public void deleteChecklistItem(Long itemId) {
         ChecklistItem item = checklistItemRepository.findById(itemId)
-                .orElseThrow(() -> new ResourceNotFoundException("Checklist item not found"));
+                .orElseThrow(() -> new ResourceNotFoundException(CHECKLIST_NOT_FOUND));
 
         Long cardId = item.getCard().getId();
         int deletedPosition = item.getPosition();
@@ -101,7 +102,7 @@ public class ChecklistItemService {
     public ChecklistItemResponse reorderChecklistItem(Long itemId,
             ReorderChecklistItemRequest request) {
         ChecklistItem item = checklistItemRepository.findById(itemId)
-                .orElseThrow(() -> new ResourceNotFoundException("Checklist item not found"));
+                .orElseThrow(() -> new ResourceNotFoundException(CHECKLIST_NOT_FOUND));
 
         int oldPosition = item.getPosition();
         int newPosition = request.getNewPosition();

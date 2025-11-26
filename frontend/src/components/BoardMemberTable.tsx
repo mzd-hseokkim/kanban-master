@@ -1,7 +1,7 @@
 import { Avatar } from "@/components/common/Avatar";
 import { useDialog } from "@/context/DialogContext";
 import { memberService } from "@/services/memberService";
-import type { BoardMember, BoardMemberRole } from "@/types/member";
+import type { BoardMember, BoardMemberRole, InvitationStatus } from "@/types/member";
 import { useEffect, useState } from "react";
 import { FiTrash2 } from "react-icons/fi";
 
@@ -21,6 +21,150 @@ const roleLabel: Record<BoardMemberRole, string> = {
   VIEWER: "보기",
   EDITOR: "편집",
   MANAGER: "관리",
+};
+
+const GRID_TEMPLATES = {
+  withActions:
+    "grid-cols-[minmax(0,1.5fr)_minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,0.5fr)]",
+  readOnly:
+    "grid-cols-[minmax(0,1.5fr)_minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)]",
+} as const;
+
+const statusBadgeStyles: Record<InvitationStatus, { label: string; className: string }> = {
+  PENDING: { label: "초대 대기중", className: "bg-yellow-100 text-yellow-800" },
+  DECLINED: { label: "거절됨", className: "bg-red-100 text-red-800" },
+  EXPIRED: { label: "만료됨", className: "bg-gray-100 text-gray-800" },
+  ACCEPTED: { label: "활동 중", className: "bg-green-100 text-green-800" },
+};
+
+const formatAvatarUrl = (avatarUrl?: string | null) => {
+  if (!avatarUrl) return null;
+  return avatarUrl.startsWith("http")
+    ? avatarUrl
+    : `${import.meta.env.VITE_API_URL}${avatarUrl}`;
+};
+
+interface BoardMemberRowProps {
+  member: BoardMember;
+  canManage: boolean;
+  gridTemplate: string;
+  loading: boolean;
+  changingRole: number | null;
+  removingMember: number | null;
+  onRoleChange: (memberId: number, newRole: BoardMemberRole) => Promise<void>;
+  onRemove: (memberId: number) => Promise<void>;
+}
+
+const StatusBadge = ({ status }: { status: InvitationStatus }) => {
+  const statusInfo = statusBadgeStyles[status];
+
+  return (
+    <span
+      className={`inline-block px-2 py-1 text-xs rounded whitespace-nowrap ${statusInfo.className}`}
+    >
+      {statusInfo.label}
+    </span>
+  );
+};
+
+const BoardMemberRow = ({
+  member,
+  canManage,
+  gridTemplate,
+  loading,
+  changingRole,
+  removingMember,
+  onRoleChange,
+  onRemove,
+}: BoardMemberRowProps) => {
+  const avatarUrl = formatAvatarUrl(member.avatarUrl);
+
+  const renderRoleControl = () => {
+    if (!canManage) {
+      return (
+        <span
+          className={`inline-block px-2 py-1 text-xs rounded font-medium ${roleBadgeColor[member.role]}`}
+        >
+          {roleLabel[member.role]}
+        </span>
+      );
+    }
+
+    return (
+      <select
+        value={member.role}
+        onChange={(e) => onRoleChange(member.userId, e.target.value as BoardMemberRole)}
+        disabled={changingRole === member.userId || loading}
+        className={`w-full px-2 py-1 text-xs rounded font-medium border border-gray-300 cursor-pointer ${
+          roleBadgeColor[member.role]
+        } disabled:opacity-50`}
+      >
+        <option value="VIEWER">{roleLabel.VIEWER}</option>
+        <option value="EDITOR">{roleLabel.EDITOR}</option>
+        <option value="MANAGER">{roleLabel.MANAGER}</option>
+      </select>
+    );
+  };
+
+  return (
+    <div
+      className={`grid ${gridTemplate} gap-4 border-b border-gray-100 px-4 py-2 items-center hover:bg-blue-50 transition-colors`}
+    >
+      <div className="col-span-1 flex items-center gap-2">
+        <Avatar avatarUrl={avatarUrl} userName={member.userName} size="sm" />
+        <span className="text-xs text-gray-900 font-medium truncate">
+          {member.userName}
+        </span>
+      </div>
+
+      <div className="col-span-1 text-xs text-gray-600 truncate" title={member.userEmail}>
+        {member.userEmail}
+      </div>
+
+      <div className="col-span-1">{renderRoleControl()}</div>
+
+      <div className="col-span-1">
+        <StatusBadge status={member.invitationStatus} />
+      </div>
+
+      {canManage && (
+        <div className="col-span-1 flex justify-end">
+          <button
+            onClick={() => onRemove(member.userId)}
+            disabled={removingMember === member.userId || loading}
+            className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 disabled:opacity-50 rounded-md transition-colors flex items-center justify-center"
+            title="멤버 제거"
+          >
+            {removingMember === member.userId ? (
+              <svg
+                className="w-4 h-4 animate-spin"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <circle
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  fill="none"
+                />
+                <path
+                  d="M12 2a10 10 0 0110 10"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  fill="none"
+                />
+              </svg>
+            ) : (
+              <FiTrash2 className="w-4 h-4" />
+            )}
+          </button>
+        </div>
+      )}
+    </div>
+  );
 };
 
 export const BoardMemberTable = ({
@@ -86,9 +230,9 @@ export const BoardMemberTable = ({
   };
 
   const handleRemoveMember = async (memberId: number) => {
-    const confirmed = await confirm('이 멤버를 제거하시겠습니까?', {
-      confirmText: '제거',
-      cancelText: '취소',
+    const confirmed = await confirm("이 멤버를 제거하시겠습니까?", {
+      confirmText: "제거",
+      cancelText: "취소",
       isDestructive: true,
     });
 
@@ -108,8 +252,6 @@ export const BoardMemberTable = ({
     }
   };
 
-
-
   if (error && members.length === 0) {
     return (
       <div className="flex items-center justify-center p-4 text-red-600">
@@ -117,6 +259,8 @@ export const BoardMemberTable = ({
       </div>
     );
   }
+
+  const gridTemplate = canManage ? GRID_TEMPLATES.withActions : GRID_TEMPLATES.readOnly;
 
   return (
     <div className="flex flex-col h-full bg-white rounded-lg border border-gray-200">
@@ -135,7 +279,7 @@ export const BoardMemberTable = ({
           <div className="w-full">
             {/* Table Header */}
             <div
-              className={`grid ${canManage ? "grid-cols-[minmax(0,1.5fr)_minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,0.5fr)]" : "grid-cols-[minmax(0,1.5fr)_minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)]"} gap-4 bg-gray-50 border-b border-gray-200 px-4 py-3 text-xs font-medium text-gray-700 sticky top-0`}
+              className={`grid ${gridTemplate} gap-4 bg-gray-50 border-b border-gray-200 px-4 py-3 text-xs font-medium text-gray-700 sticky top-0`}
             >
               <div className="col-span-1">이름</div>
               <div className="col-span-1">이메일</div>
@@ -148,115 +292,17 @@ export const BoardMemberTable = ({
 
             {/* Table Body */}
             {members.map((member) => (
-              <div
+              <BoardMemberRow
                 key={member.userId}
-                className={`grid ${canManage ? "grid-cols-[minmax(0,1.5fr)_minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,0.5fr)]" : "grid-cols-[minmax(0,1.5fr)_minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)]"} gap-4 border-b border-gray-100 px-4 py-2 items-center hover:bg-blue-50 transition-colors`}
-              >
-                {/* Name with Avatar */}
-                <div className="col-span-1 flex items-center gap-2">
-                  <Avatar
-                    avatarUrl={member.avatarUrl ? (member.avatarUrl.startsWith('http') ? member.avatarUrl : `${import.meta.env.VITE_API_URL}${member.avatarUrl}`) : null}
-                    userName={member.userName}
-                    size="sm"
-                  />
-                  <span className="text-xs text-gray-900 font-medium truncate">
-                    {member.userName}
-                  </span>
-                </div>
-
-                {/* Email */}
-                <div className="col-span-1 text-xs text-gray-600 truncate" title={member.userEmail}>
-                  {member.userEmail}
-                </div>
-
-                {/* Role */}
-                <div className="col-span-1">
-                  {canManage ? (
-                    <select
-                      value={member.role}
-                      onChange={(e) =>
-                        handleRoleChange(
-                          member.userId,
-                          e.target.value as BoardMemberRole,
-                        )
-                      }
-                      disabled={changingRole === member.userId || loading}
-                      className={`w-full px-2 py-1 text-xs rounded font-medium border border-gray-300 cursor-pointer ${
-                        roleBadgeColor[member.role]
-                      } disabled:opacity-50`}
-                    >
-                      <option value="VIEWER">{roleLabel.VIEWER}</option>
-                      <option value="EDITOR">{roleLabel.EDITOR}</option>
-                      <option value="MANAGER">{roleLabel.MANAGER}</option>
-                    </select>
-                  ) : (
-                    <span
-                      className={`inline-block px-2 py-1 text-xs rounded font-medium ${roleBadgeColor[member.role]}`}
-                    >
-                      {roleLabel[member.role]}
-                    </span>
-                  )}
-                </div>
-
-                {/* Status */}
-                <div className="col-span-1">
-                  {member.invitationStatus === "PENDING" ? (
-                    <span className="inline-block px-2 py-1 text-xs bg-yellow-100 text-yellow-800 rounded whitespace-nowrap">
-                      초대 대기중
-                    </span>
-                  ) : member.invitationStatus === "DECLINED" ? (
-                    <span className="inline-block px-2 py-1 text-xs bg-red-100 text-red-800 rounded whitespace-nowrap">
-                      거절됨
-                    </span>
-                  ) : member.invitationStatus === "EXPIRED" ? (
-                    <span className="inline-block px-2 py-1 text-xs bg-gray-100 text-gray-800 rounded whitespace-nowrap">
-                      만료됨
-                    </span>
-                  ) : (
-                    <span className="inline-block px-2 py-1 text-xs bg-green-100 text-green-800 rounded whitespace-nowrap">
-                      활동 중
-                    </span>
-                  )}
-                </div>
-
-                {/* Action */}
-                {canManage && (
-                  <div className="col-span-1 flex justify-end">
-                    <button
-                      onClick={() => handleRemoveMember(member.userId)}
-                      disabled={removingMember === member.userId || loading}
-                      className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 disabled:opacity-50 rounded-md transition-colors flex items-center justify-center"
-                      title="멤버 제거"
-                    >
-                      {removingMember === member.userId ? (
-                        <svg
-                          className="w-4 h-4 animate-spin"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <circle
-                            cx="12"
-                            cy="12"
-                            r="10"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            fill="none"
-                          />
-                          <path
-                            d="M12 2a10 10 0 0110 10"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            fill="none"
-                          />
-                        </svg>
-                      ) : (
-                        <FiTrash2 className="w-4 h-4" />
-                      )}
-                    </button>
-                  </div>
-                )}
-              </div>
+                member={member}
+                canManage={canManage}
+                gridTemplate={gridTemplate}
+                loading={loading}
+                changingRole={changingRole}
+                removingMember={removingMember}
+                onRoleChange={handleRoleChange}
+                onRemove={handleRemoveMember}
+              />
             ))}
           </div>
         )}

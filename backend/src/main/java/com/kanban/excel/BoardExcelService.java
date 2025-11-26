@@ -13,7 +13,11 @@ import java.time.format.DateTimeParseException;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
+import javax.xml.XMLConstants;
+import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParserFactory;
+import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
+import org.apache.poi.openxml4j.exceptions.OpenXML4JException;
 import org.apache.poi.openxml4j.opc.OPCPackage;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
@@ -39,6 +43,9 @@ import org.springframework.web.server.ResponseStatusException;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.InputSource;
 import org.xml.sax.XMLReader;
+import org.xml.sax.SAXException;
+import org.xml.sax.SAXNotRecognizedException;
+import org.xml.sax.SAXNotSupportedException;
 import com.kanban.board.Board;
 import com.kanban.board.BoardRepository;
 import com.kanban.board.member.BoardMemberRole;
@@ -139,10 +146,7 @@ public class BoardExcelService {
                         new org.apache.poi.xssf.streaming.SXSSFWorkbook(200)) {
             Sheet sheet = workbook
                     .createSheet(WorkbookUtil.createSafeSheetName(board.getName() + "-export"));
-            Row header = sheet.createRow(0);
-            for (int i = 0; i < HEADER_TITLES.size(); i++) {
-                header.createCell(i).setCellValue(HEADER_TITLES.get(i));
-            }
+            writeHeaderRow(sheet);
 
             AtomicInteger rowIndex = new AtomicInteger(1);
             for (BoardColumn column : columns) {
@@ -153,42 +157,13 @@ public class BoardExcelService {
                         loadChecklists(cards.stream().map(Card::getId).toList());
 
                 if (cards.isEmpty()) {
-                    Row row = sheet.createRow(rowIndex.getAndIncrement());
-                    row.createCell(0).setCellValue(column.getName());
-                    row.createCell(1).setCellValue(column.getPosition());
+                    writeEmptyColumnRow(sheet.createRow(rowIndex.getAndIncrement()), column);
                     continue;
                 }
 
                 for (Card card : cards) {
-                    Row row = sheet.createRow(rowIndex.getAndIncrement());
-                    row.createCell(0).setCellValue(column.getName());
-                    row.createCell(1).setCellValue(column.getPosition());
-                    row.createCell(2).setCellValue(card.getTitle());
-                    row.createCell(3).setCellValue(card.getPosition());
-                    row.createCell(4).setCellValue(
-                            card.getDescription() == null ? "" : card.getDescription());
-                    row.createCell(5).setCellValue(
-                            String.join(";", labelsByCard.getOrDefault(card.getId(), List.of())));
-                    row.createCell(6).setCellValue(
-                            card.getAssignee() != null ? card.getAssignee().getEmail() : "");
-                    if (card.getDueDate() != null) {
-                        row.createCell(7).setCellValue(ISO_INSTANT.format(
-                                card.getDueDate().atStartOfDay().toInstant(ZoneOffset.UTC)));
-                    }
-                    List<ChecklistItem> items =
-                            checklistByCard.getOrDefault(card.getId(), Collections.emptyList());
-                    row.createCell(8).setCellValue(items.stream().map(ChecklistItem::getContent)
-                            .toList().stream().reduce((a, b) -> a + ";" + b).orElse(""));
-                    row.createCell(9)
-                            .setCellValue(items.stream()
-                                    .map(item -> Boolean.TRUE.equals(item.getIsChecked()) ? "true"
-                                            : "false")
-                                    .toList().stream().reduce((a, b) -> a + ";" + b).orElse(""));
-                    row.createCell(10)
-                            .setCellValue(card.getPriority() == null ? "" : card.getPriority());
-                    if (card.getParentCard() != null) {
-                        row.createCell(11).setCellValue(card.getParentCard().getTitle());
-                    }
+                    writeCardRow(sheet.createRow(rowIndex.getAndIncrement()), column, card,
+                            labelsByCard, checklistByCard);
                 }
             }
 
@@ -238,6 +213,8 @@ public class BoardExcelService {
             Map<String, Label> labelCache = loadLabelCache(board.getId()); // name(lower) -> Label
             Map<String, BoardColumn> columnCache = new HashMap<>();
             Set<Long> archivedColumns = new HashSet<>();
+            ImportContext context = new ImportContext(board, mode, labelCache, columnCache,
+                    archivedColumns, userId, jobId);
 
             AtomicInteger processed = new AtomicInteger();
             AtomicInteger success = new AtomicInteger();
@@ -245,8 +222,7 @@ public class BoardExcelService {
             parseSheet(tempFile, row -> {
                 buffer.add(row);
                 if (buffer.size() >= CHUNK_SIZE) {
-                    int chunkSuccess = persistChunk(board, buffer, mode, labelCache, columnCache,
-                            archivedColumns, userId, jobId);
+                    int chunkSuccess = persistChunk(context, buffer);
                     success.addAndGet(chunkSuccess);
                     processed.addAndGet(buffer.size());
                     buffer.clear();
@@ -257,8 +233,7 @@ public class BoardExcelService {
             });
 
             if (!buffer.isEmpty()) {
-                int chunkSuccess = persistChunk(board, buffer, mode, labelCache, columnCache,
-                        archivedColumns, userId, jobId);
+                int chunkSuccess = persistChunk(context, buffer);
                 success.addAndGet(chunkSuccess);
                 processed.addAndGet(buffer.size());
                 importJobManager.updateProgress(jobId, processed.get(), success.get(),
@@ -285,130 +260,154 @@ public class BoardExcelService {
         }
     }
 
-    private int persistChunk(Board board, List<ExcelRowData> rows, ExcelImportMode mode,
-            Map<String, Label> labelCache, Map<String, BoardColumn> columnCache,
-            Set<Long> archivedColumns, Long userId, String jobId) {
+    private int persistChunk(ImportContext context, List<ExcelRowData> rows) {
         return transactionTemplate.execute(status -> {
             AtomicInteger chunkSuccess = new AtomicInteger();
-            for (int i = 0; i < rows.size(); i++) {
-                ExcelRowData row = rows.get(i);
-                int rowNumber = row.getRowIndex();
-                if (!StringUtils.hasText(row.getColumnName())) {
-                    importJobManager.appendError(jobId,
-                            new ImportRowError(rowNumber, "필수 값(컬럼명)이 비어 있습니다"));
-                    continue;
-                }
-
-                boolean hasCardPayload = StringUtils.hasText(row.getCardTitle())
-                        || StringUtils.hasText(row.getDescription())
-                        || (row.getLabels() != null && !row.getLabels().isEmpty())
-                        || StringUtils.hasText(row.getAssigneeEmail()) || row.getDueDate() != null
-                        || (row.getChecklistItems() != null && !row.getChecklistItems().isEmpty());
-
-                // 컬럼만 생성하는 행(카드 정보 없음)
-                if (!hasCardPayload) {
-                    resolveColumn(board.getId(), row, columnCache);
+            for (ExcelRowData row : rows) {
+                if (processRow(context, row)) {
                     chunkSuccess.incrementAndGet();
-                    continue;
                 }
-
-                if (!StringUtils.hasText(row.getCardTitle())) {
-                    importJobManager.appendError(jobId,
-                            new ImportRowError(rowNumber, "카드 제목이 비어 있습니다"));
-                    continue;
-                }
-
-                BoardColumn column = resolveColumn(board.getId(), row, columnCache);
-                if (mode == ExcelImportMode.OVERWRITE
-                        && !archivedColumns.contains(column.getId())) {
-                    archiveColumnCards(column.getId(), userId);
-                    archivedColumns.add(column.getId());
-                }
-
-                Optional<Card> existingCard = cardRepository
-                        .findByColumnIdAndTitleIgnoreCase(column.getId(), row.getCardTitle());
-
-                Card card = existingCard.orElseGet(() -> Card.builder().column(column)
-                        .position(row.getCardPosition() != null ? row.getCardPosition()
-                                : cardRepository.countByColumnId(column.getId()))
-                        .build());
-
-                card.setTitle(row.getCardTitle());
-                card.setDescription(sanitizeDescription(row.getDescription()));
-                if (row.getCardPosition() != null) {
-                    card.setPosition(row.getCardPosition());
-                } else if (card.getPosition() == null) {
-                    card.setPosition(cardRepository.countByColumnId(column.getId()));
-                }
-                card.setDueDate(row.getDueDate());
-                if (StringUtils.hasText(row.getPriority())) {
-                    card.setPriority(row.getPriority());
-                }
-                card.setIsArchived(false);
-                card.setArchivedAt(null);
-
-                if (StringUtils.hasText(row.getAssigneeEmail())) {
-                    User assignee = userRepository.findByEmail(row.getAssigneeEmail()).orElse(null);
-                    if (assignee == null) {
-                        importJobManager.appendError(jobId, new ImportRowError(rowNumber,
-                                "담당자 이메일을 찾을 수 없습니다: " + row.getAssigneeEmail()));
-                        continue;
-                    }
-                    card.setAssignee(assignee);
-                } else {
-                    card.setAssignee(null);
-                }
-
-                List<String> labelNames = row.getLabels() != null ? row.getLabels() : List.of();
-                List<Label> labels = labelNames.isEmpty() ? List.of()
-                        : resolveLabels(labelCache, board, labelNames);
-
-                Card saved = cardRepository.save(card);
-
-                // 부모 카드 연결 (동일 컬럼 → 동일 보드 순)
-                if (StringUtils.hasText(row.getParentCardTitle())) {
-                    String parentTitle = row.getParentCardTitle();
-                    Optional<Card> parentInColumn = cardRepository
-                            .findByColumnIdAndTitleIgnoreCase(column.getId(), parentTitle);
-                    if (parentInColumn.isPresent()) {
-                        saved.setParentCard(parentInColumn.get());
-                    } else {
-                        List<Card> boardMatches = cardRepository
-                                .findByBoardIdAndTitleIgnoreCase(board.getId(), parentTitle);
-                        if (!boardMatches.isEmpty()) {
-                            saved.setParentCard(boardMatches.get(0));
-                        }
-                    }
-                }
-
-                // 라벨 매핑
-                cardLabelRepository.deleteByCardId(saved.getId());
-                if (!labels.isEmpty()) {
-                    List<CardLabel> cardLabels =
-                            labels.stream().map(label -> CardLabel.of(saved, label)).toList();
-                    cardLabelRepository.saveAll(cardLabels);
-                }
-
-                // 체크리스트
-                checklistItemRepository.deleteByCardId(saved.getId());
-                List<Boolean> checklistStates =
-                        row.getChecklistStates() != null ? row.getChecklistStates() : List.of();
-                if (row.getChecklistItems() != null && !row.getChecklistItems().isEmpty()) {
-                    List<ChecklistItem> items = new ArrayList<>();
-                    for (int idx = 0; idx < row.getChecklistItems().size(); idx++) {
-                        String content = row.getChecklistItems().get(idx);
-                        boolean checked = idx < checklistStates.size()
-                                && Boolean.TRUE.equals(checklistStates.get(idx));
-                        items.add(ChecklistItem.builder().card(saved).content(content).position(idx)
-                                .isChecked(checked).build());
-                    }
-                    checklistItemRepository.saveAll(items);
-                }
-
-                chunkSuccess.incrementAndGet();
             }
             return chunkSuccess.get();
         });
+    }
+
+    private boolean processRow(ImportContext context, ExcelRowData row) {
+        int rowNumber = row.getRowIndex();
+        if (!StringUtils.hasText(row.getColumnName())) {
+            importJobManager.appendError(context.jobId(),
+                    new ImportRowError(rowNumber, "필수 값(컬럼명)이 비어 있습니다"));
+            return false;
+        }
+
+        if (!hasCardPayload(row)) {
+            resolveColumn(context.board().getId(), row, context.columnCache());
+            return true;
+        }
+
+        if (!StringUtils.hasText(row.getCardTitle())) {
+            importJobManager.appendError(context.jobId(),
+                    new ImportRowError(rowNumber, "카드 제목이 비어 있습니다"));
+            return false;
+        }
+
+        BoardColumn column = resolveColumn(context.board().getId(), row, context.columnCache());
+        archiveIfNeeded(context.mode(), context.archivedColumns(), context.userId(), column);
+
+        Card card = findExistingOrCreate(column, row);
+        populateCardAttributes(row, card, column);
+        if (!assignAssignee(row, card, rowNumber, context.jobId())) {
+            return false;
+        }
+
+        List<Label> labels = resolveLabels(context.labelCache(), context.board(),
+                row.getLabels() != null ? row.getLabels() : List.of());
+
+        Card saved = cardRepository.save(card);
+        linkParentCard(context.board(), row, column, saved);
+        updateLabels(labels, saved);
+        updateChecklist(row, saved);
+
+        return true;
+    }
+
+    private void archiveIfNeeded(ExcelImportMode mode, Set<Long> archivedColumns, Long userId,
+            BoardColumn column) {
+        if (mode == ExcelImportMode.OVERWRITE && !archivedColumns.contains(column.getId())) {
+            archiveColumnCards(column.getId(), userId);
+            archivedColumns.add(column.getId());
+        }
+    }
+
+    private boolean hasCardPayload(ExcelRowData row) {
+        return StringUtils.hasText(row.getCardTitle()) || StringUtils.hasText(row.getDescription())
+                || (row.getLabels() != null && !row.getLabels().isEmpty())
+                || StringUtils.hasText(row.getAssigneeEmail()) || row.getDueDate() != null
+                || (row.getChecklistItems() != null && !row.getChecklistItems().isEmpty());
+    }
+
+    private Card findExistingOrCreate(BoardColumn column, ExcelRowData row) {
+        Optional<Card> existingCard = cardRepository
+                .findByColumnIdAndTitleIgnoreCase(column.getId(), row.getCardTitle());
+
+        return existingCard.orElseGet(() -> Card.builder().column(column)
+                .position(row.getCardPosition() != null ? row.getCardPosition()
+                        : cardRepository.countByColumnId(column.getId()))
+                .build());
+    }
+
+    private void populateCardAttributes(ExcelRowData row, Card card, BoardColumn column) {
+        card.setTitle(row.getCardTitle());
+        card.setDescription(sanitizeDescription(row.getDescription()));
+        if (row.getCardPosition() != null) {
+            card.setPosition(row.getCardPosition());
+        } else if (card.getPosition() == null) {
+            card.setPosition(cardRepository.countByColumnId(column.getId()));
+        }
+        card.setDueDate(row.getDueDate());
+        if (StringUtils.hasText(row.getPriority())) {
+            card.setPriority(row.getPriority());
+        }
+        card.setIsArchived(false);
+        card.setArchivedAt(null);
+    }
+
+    private boolean assignAssignee(ExcelRowData row, Card card, int rowNumber, String jobId) {
+        if (!StringUtils.hasText(row.getAssigneeEmail())) {
+            card.setAssignee(null);
+            return true;
+        }
+        User assignee = userRepository.findByEmail(row.getAssigneeEmail()).orElse(null);
+        if (assignee == null) {
+            importJobManager.appendError(jobId, new ImportRowError(rowNumber,
+                    "담당자 이메일을 찾을 수 없습니다: " + row.getAssigneeEmail()));
+            return false;
+        }
+        card.setAssignee(assignee);
+        return true;
+    }
+
+    private void linkParentCard(Board board, ExcelRowData row, BoardColumn column, Card saved) {
+        if (StringUtils.hasText(row.getParentCardTitle())) {
+            String parentTitle = row.getParentCardTitle();
+            Optional<Card> parentInColumn =
+                    cardRepository.findByColumnIdAndTitleIgnoreCase(column.getId(), parentTitle);
+            if (parentInColumn.isPresent()) {
+                saved.setParentCard(parentInColumn.get());
+                return;
+            }
+            List<Card> boardMatches =
+                    cardRepository.findByBoardIdAndTitleIgnoreCase(board.getId(), parentTitle);
+            if (!boardMatches.isEmpty()) {
+                saved.setParentCard(boardMatches.get(0));
+            }
+        }
+    }
+
+    private void updateLabels(List<Label> labels, Card saved) {
+        cardLabelRepository.deleteByCardId(saved.getId());
+        if (!labels.isEmpty()) {
+            List<CardLabel> cardLabels =
+                    labels.stream().map(label -> CardLabel.of(saved, label)).toList();
+            cardLabelRepository.saveAll(cardLabels);
+        }
+    }
+
+    private void updateChecklist(ExcelRowData row, Card saved) {
+        checklistItemRepository.deleteByCardId(saved.getId());
+        List<Boolean> checklistStates =
+                row.getChecklistStates() != null ? row.getChecklistStates() : List.of();
+        if (row.getChecklistItems() != null && !row.getChecklistItems().isEmpty()) {
+            List<ChecklistItem> items = new ArrayList<>();
+            for (int idx = 0; idx < row.getChecklistItems().size(); idx++) {
+                String content = row.getChecklistItems().get(idx);
+                boolean checked = idx < checklistStates.size()
+                        && Boolean.TRUE.equals(checklistStates.get(idx));
+                items.add(ChecklistItem.builder().card(saved).content(content).position(idx)
+                        .isChecked(checked).build());
+            }
+            checklistItemRepository.saveAll(items);
+        }
     }
 
     private void archiveExistingCards(Long boardId, Long userId) {
@@ -551,13 +550,15 @@ public class BoardExcelService {
         }
     }
 
-    private int countRows(Path file) throws Exception {
+    private int countRows(Path file)
+            throws IOException, SAXException, ParserConfigurationException, OpenXML4JException {
         AtomicInteger count = new AtomicInteger();
         parseSheet(file, row -> count.incrementAndGet());
         return count.get();
     }
 
-    private void parseSheet(Path file, Consumer<ExcelRowData> consumer) throws Exception {
+    private void parseSheet(Path file, Consumer<ExcelRowData> consumer)
+            throws IOException, SAXException, ParserConfigurationException, OpenXML4JException {
         try (OPCPackage pkg = OPCPackage.open(file.toFile())) {
             ReadOnlySharedStringsTable strings = new ReadOnlySharedStringsTable(pkg);
             XSSFReader xssfReader = new XSSFReader(pkg);
@@ -570,8 +571,7 @@ public class BoardExcelService {
                 ContentHandler handler = new XSSFSheetXMLHandler(styles, null, strings,
                         new ImportSheetHandler(consumer),
                         new org.apache.poi.ss.usermodel.DataFormatter(), false);
-                XMLReader sheetParser =
-                        SAXParserFactory.newInstance().newSAXParser().getXMLReader();
+                XMLReader sheetParser = createSecureXmlReader();
                 sheetParser.setContentHandler(handler);
                 sheetParser.parse(new InputSource(sheetStream));
             }
@@ -602,6 +602,59 @@ public class BoardExcelService {
                 .failureCount(status.getFailureCount()).errors(status.getErrors())
                 .progressPercent(status.progressPercent()).message(status.getMessage())
                 .startedAt(status.getStartedAt()).finishedAt(status.getFinishedAt()).build();
+    }
+
+    private void writeHeaderRow(Sheet sheet) {
+        Row header = sheet.createRow(0);
+        for (int i = 0; i < HEADER_TITLES.size(); i++) {
+            header.createCell(i).setCellValue(HEADER_TITLES.get(i));
+        }
+    }
+
+    private void writeEmptyColumnRow(Row row, BoardColumn column) {
+        row.createCell(0).setCellValue(column.getName());
+        row.createCell(1).setCellValue(column.getPosition());
+    }
+
+    private void writeCardRow(Row row, BoardColumn column, Card card,
+            Map<Long, List<String>> labelsByCard, Map<Long, List<ChecklistItem>> checklistByCard) {
+        row.createCell(0).setCellValue(column.getName());
+        row.createCell(1).setCellValue(column.getPosition());
+        row.createCell(2).setCellValue(card.getTitle());
+        row.createCell(3).setCellValue(card.getPosition());
+        row.createCell(4).setCellValue(card.getDescription() == null ? "" : card.getDescription());
+        row.createCell(5).setCellValue(
+                String.join(";", labelsByCard.getOrDefault(card.getId(), List.of())));
+        row.createCell(6)
+                .setCellValue(card.getAssignee() != null ? card.getAssignee().getEmail() : "");
+        if (card.getDueDate() != null) {
+            row.createCell(7).setCellValue(
+                    ISO_INSTANT.format(card.getDueDate().atStartOfDay().toInstant(ZoneOffset.UTC)));
+        }
+        List<ChecklistItem> items =
+                checklistByCard.getOrDefault(card.getId(), Collections.emptyList());
+        row.createCell(8).setCellValue(
+                joinWithSemicolon(items.stream().map(ChecklistItem::getContent).toList()));
+        row.createCell(9).setCellValue(
+                joinWithSemicolon(items.stream()
+                        .map(item -> Boolean.TRUE.equals(item.getIsChecked()) ? "true" : "false")
+                        .toList()));
+        row.createCell(10).setCellValue(card.getPriority() == null ? "" : card.getPriority());
+        if (card.getParentCard() != null) {
+            row.createCell(11).setCellValue(card.getParentCard().getTitle());
+        }
+    }
+
+    private String joinWithSemicolon(List<String> values) {
+        if (values.isEmpty()) {
+            return "";
+        }
+        return String.join(";", values);
+    }
+
+    private record ImportContext(Board board, ExcelImportMode mode, Map<String, Label> labelCache,
+            Map<String, BoardColumn> columnCache, Set<Long> archivedColumns, Long userId,
+            String jobId) {
     }
 
     private class ImportSheetHandler implements SheetContentsHandler {
@@ -717,5 +770,20 @@ public class BoardExcelService {
             }
             return result;
         }
+    }
+
+    private XMLReader createSecureXmlReader()
+            throws ParserConfigurationException, SAXException {
+        SAXParserFactory factory = SAXParserFactory.newInstance();
+        factory.setNamespaceAware(true);
+        try {
+            factory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
+            factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
+            factory.setFeature("http://xml.org/sax/features/external-general-entities", false);
+            factory.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
+        } catch (SAXNotRecognizedException | SAXNotSupportedException e) {
+            throw new SAXException("Failed to apply secure XML parser features", e);
+        }
+        return factory.newSAXParser().getXMLReader();
     }
 }

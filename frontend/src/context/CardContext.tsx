@@ -1,6 +1,6 @@
 import cardService from '@/services/cardService';
 import { Card, CardPageResponse, CardSortKey, CreateCardRequest, SortDirection, UpdateCardRequest } from '@/types/card';
-import React, { createContext, useCallback, useContext, useState } from 'react';
+import React, { createContext, useCallback, useContext, useMemo, useState } from 'react';
 
 interface CardContextType {
   cards: { [columnId: number]: Card[] };
@@ -224,23 +224,32 @@ export const CardProvider: React.FC<{ children: React.ReactNode }> = ({ children
     []
   );
 
-  return (
-    <CardContext.Provider
-      value={{
-        cards,
-        loading,
-        error,
-        loadCards,
-        createCard,
-        updateCard,
-        deleteCard,
-        updateCardPosition,
-        handleCardEvent,
-      }}
-    >
-      {children}
-    </CardContext.Provider>
+  const value = useMemo(
+    () => ({
+      cards,
+      loading,
+      error,
+      loadCards,
+      createCard,
+      updateCard,
+      deleteCard,
+      updateCardPosition,
+      handleCardEvent,
+    }),
+    [
+      cards,
+      loading,
+      error,
+      loadCards,
+      createCard,
+      updateCard,
+      deleteCard,
+      updateCardPosition,
+      handleCardEvent,
+    ],
   );
+
+  return <CardContext.Provider value={value}>{children}</CardContext.Provider>;
 };
 
 export const useCard = () => {

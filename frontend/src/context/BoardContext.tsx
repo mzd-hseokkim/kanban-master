@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useCallback, ReactNode } from 'react';
+import { createContext, useContext, useState, useCallback, ReactNode, useMemo } from 'react';
 import { Board } from '@/types/board';
 import { boardService } from '@/services/boardService';
 
@@ -166,22 +166,40 @@ export const BoardProvider = ({ children }: { children: ReactNode }) => {
     setError(null);
   }, []);
 
-  const value: BoardContextType = {
-    boards,
-    recentBoards,
-    loading,
-    error,
-    selectedWorkspaceId,
-    loadBoards,
-    loadRecentBoards,
-    createBoard,
-    updateBoard,
-    deleteBoard,
-    archiveBoard,
-    unarchiveBoard,
-    restoreBoard,
-    clearError,
-  };
+  const value: BoardContextType = useMemo(
+    () => ({
+      boards,
+      recentBoards,
+      loading,
+      error,
+      selectedWorkspaceId,
+      loadBoards,
+      loadRecentBoards,
+      createBoard,
+      updateBoard,
+      deleteBoard,
+      archiveBoard,
+      unarchiveBoard,
+      restoreBoard,
+      clearError,
+    }),
+    [
+      boards,
+      recentBoards,
+      loading,
+      error,
+      selectedWorkspaceId,
+      loadBoards,
+      loadRecentBoards,
+      createBoard,
+      updateBoard,
+      deleteBoard,
+      archiveBoard,
+      unarchiveBoard,
+      restoreBoard,
+      clearError,
+    ],
+  );
 
   return (
     <BoardContext.Provider value={value}>

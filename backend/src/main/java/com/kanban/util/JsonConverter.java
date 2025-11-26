@@ -22,7 +22,7 @@ public class JsonConverter implements AttributeConverter<Map<String, Integer>, S
         try {
             return objectMapper.writeValueAsString(attribute);
         } catch (JsonProcessingException e) {
-            throw new RuntimeException("Error converting map to JSON", e);
+            throw new IllegalStateException("Error converting map to JSON", e);
         }
     }
 
@@ -34,7 +34,7 @@ public class JsonConverter implements AttributeConverter<Map<String, Integer>, S
         try {
             return objectMapper.readValue(dbData, new TypeReference<Map<String, Integer>>() {});
         } catch (IOException e) {
-            throw new RuntimeException("Error converting JSON to map", e);
+            throw new IllegalStateException("Error converting JSON to map", e);
         }
     }
 }

@@ -107,6 +107,23 @@ export const EditCardModal: React.FC<EditCardModalProps> = ({
     const assigneeDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const [showArchiveConfirm, setShowArchiveConfirm] = useState(false);
 
+    const watchButtonClass = isWatching
+        ? 'text-pastel-blue-600 hover:bg-pastel-blue-100'
+        : 'text-gray-400 hover:text-pastel-blue-600 hover:bg-gray-100';
+
+    const renderWatchIcon = () => {
+        if (watchLoading) {
+            return <span className="animate-spin text-lg">⏳</span>;
+        }
+        return isWatching ? <HiEye className="text-xl" /> : <HiOutlineEye className="text-xl" />;
+    };
+
+    const getStartButtonLabel = () => {
+        if (startLoading) return '시작 중...';
+        if (currentCard.startedAt) return isCompleted ? '완료됨' : '진행 중';
+        return '작업 시작';
+    };
+
     const performAssigneeSearch = async (keyword: string) => {
         const trimmedKeyword = keyword.trim();
         if (!trimmedKeyword) {
@@ -230,6 +247,36 @@ export const EditCardModal: React.FC<EditCardModalProps> = ({
             setStartLoading(false);
         }
     }, [canEdit, startLoading, workspaceId, boardId, columnId, currentCard.id, loadCards]);
+
+    // 완료 체크 토글 핸들러 (즉시 업데이트)
+    const handleToggleCompletion = useCallback(async () => {
+        if (!canEdit || loading) return;
+
+        const newCompletionState = !isCompleted;
+
+        try {
+            setLoading(true);
+            setError(null);
+
+            // 낙관적 업데이트 (UI 즉시 반영)
+            setIsCompleted(newCompletionState);
+
+            // 서버에 업데이트 요청
+            await updateCard(workspaceId, boardId, columnId, currentCard.id, {
+                isCompleted: newCompletionState,
+            });
+
+            // 카드 목록 새로고침
+            await loadCards(workspaceId, boardId, columnId);
+        } catch (err) {
+            console.error('Failed to toggle completion:', err);
+            setError(err instanceof Error ? err.message : '완료 상태 변경에 실패했습니다');
+            // 에러 발생 시 상태 롤백
+            setIsCompleted(!newCompletionState);
+        } finally {
+            setLoading(false);
+        }
+    }, [canEdit, loading, isCompleted, workspaceId, boardId, columnId, currentCard.id, updateCard, loadCards]);
 
 
 
@@ -375,8 +422,9 @@ export const EditCardModal: React.FC<EditCardModalProps> = ({
             setError(null);
 
             // 라벨 업데이트 먼저 수행 (변경이 있을 경우에만)
-            const currentLabelIds = currentCard.labels?.map((l) => l.id).sort() || [];
-            const newLabelIds = [...selectedLabelIds].sort();
+            const sortByNumber = (a: number, b: number) => a - b;
+            const currentLabelIds = currentCard.labels?.map((l) => l.id).sort(sortByNumber) || [];
+            const newLabelIds = [...selectedLabelIds].sort(sortByNumber);
             if (JSON.stringify(currentLabelIds) !== JSON.stringify(newLabelIds)) {
                 await labelService.assignLabelsToCard(currentCard.id, selectedLabelIds);
             }
@@ -456,20 +504,10 @@ export const EditCardModal: React.FC<EditCardModalProps> = ({
                                     type="button"
                                     onClick={handleToggleWatch}
                                     disabled={watchLoading}
-                                    className={`absolute right-2 top-1/2 -translate-y-1/2 p-2 rounded-lg transition-all ${
-                                        isWatching
-                                            ? 'text-pastel-blue-600 hover:bg-pastel-blue-100'
-                                            : 'text-gray-400 hover:text-pastel-blue-600 hover:bg-gray-100'
-                                    } disabled:opacity-50`}
+                                    className={`absolute right-2 top-1/2 -translate-y-1/2 p-2 rounded-lg transition-all ${watchButtonClass} disabled:opacity-50`}
                                     title={isWatching ? '관심 카드 해제' : '관심 카드 등록'}
                                 >
-                                    {watchLoading ? (
-                                        <span className="animate-spin text-lg">⏳</span>
-                                    ) : isWatching ? (
-                                        <HiEye className="text-xl" />
-                                    ) : (
-                                        <HiOutlineEye className="text-xl" />
-                                    )}
+                                    {renderWatchIcon()}
                                 </button>
                             </div>
 
@@ -492,17 +530,13 @@ export const EditCardModal: React.FC<EditCardModalProps> = ({
                                     title={currentCard.startedAt ? `시작 ${formatDateTime(currentCard.startedAt)}` : '아직 시작되지 않은 카드입니다'}
                                 >
                                     <HiPlay className="text-base" />
-                                    {startLoading
-                                        ? '시작 중...'
-                                        : currentCard.startedAt
-                                            ? (isCompleted ? '완료됨' : '진행 중')
-                                            : '작업 시작'}
+                                    {getStartButtonLabel()}
                                 </button>
 
                                 {/* 완료 체크박스 */}
                                 <button
                                     type="button"
-                                    onClick={() => setIsCompleted(!isCompleted)}
+                                    onClick={handleToggleCompletion}
                                     disabled={loading || !canEdit}
                                     className={`flex items-center gap-2 px-4 py-2 rounded-lg border transition whitespace-nowrap ${
                                         isCompleted

@@ -91,15 +91,15 @@ const SprintListPanel = ({ sprints, onUpdate, onCreateSprint, boardId }: SprintL
   const [dragOverSprintId, setDragOverSprintId] = useState<number | null>(null);
 
   const handleStartSprint = async (sprintId: number) => {
-    try {
-      setStartingSprintId(sprintId);
-      await sprintService.startSprint(sprintId);
-      await onUpdate(true);
-    } catch (error) {
-      console.error('Failed to start sprint:', error);
-      alert(error instanceof Error ? error.message : 'Failed to start sprint');
-    } finally {
-      setStartingSprintId(null);
+      try {
+        setStartingSprintId(sprintId);
+        await sprintService.startSprint(sprintId);
+        onUpdate(true);
+      } catch (error) {
+        console.error('Failed to start sprint:', error);
+        alert(error instanceof Error ? error.message : 'Failed to start sprint');
+      } finally {
+        setStartingSprintId(null);
     }
   };
 

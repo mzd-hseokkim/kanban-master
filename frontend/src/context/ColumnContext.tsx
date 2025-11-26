@@ -1,6 +1,6 @@
 import columnService from '@/services/columnService';
 import { Column, CreateColumnRequest, UpdateColumnRequest } from '@/types/column';
-import React, { createContext, useCallback, useContext, useState } from 'react';
+import React, { createContext, useCallback, useContext, useMemo, useState } from 'react';
 
 interface ColumnContextType {
   columns: Column[];
@@ -153,24 +153,34 @@ export const ColumnProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     setColumns(newColumns);
   }, []);
 
-  return (
-    <ColumnContext.Provider
-      value={{
-        columns,
-        loading,
-        error,
-        loadColumns,
-        createColumn,
-        updateColumn,
-        deleteColumn,
-        updateColumnPosition,
-        setColumnsOptimistic,
-        handleColumnEvent,
-      }}
-    >
-      {children}
-    </ColumnContext.Provider>
+  const value = useMemo(
+    () => ({
+      columns,
+      loading,
+      error,
+      loadColumns,
+      createColumn,
+      updateColumn,
+      deleteColumn,
+      updateColumnPosition,
+      setColumnsOptimistic,
+      handleColumnEvent,
+    }),
+    [
+      columns,
+      loading,
+      error,
+      loadColumns,
+      createColumn,
+      updateColumn,
+      deleteColumn,
+      updateColumnPosition,
+      setColumnsOptimistic,
+      handleColumnEvent,
+    ],
   );
+
+  return <ColumnContext.Provider value={value}>{children}</ColumnContext.Provider>;
 };
 
 export const useColumn = () => {

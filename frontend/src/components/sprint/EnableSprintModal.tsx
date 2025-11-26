@@ -18,7 +18,6 @@ export const EnableSprintModal = ({
   onConfirm,
 }: EnableSprintModalProps) => {
   const [isLoading, setIsLoading] = useState(false);
-  const { alert } = useDialog();
 
   if (!isOpen) return null;
 

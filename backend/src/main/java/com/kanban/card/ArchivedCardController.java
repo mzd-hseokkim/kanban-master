@@ -7,7 +7,6 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import com.kanban.card.dto.CardResponse;
-import com.kanban.common.SecurityUtil;
 import lombok.RequiredArgsConstructor;
 
 /**
@@ -26,8 +25,7 @@ public class ArchivedCardController {
     @GetMapping("/archived-cards")
     public ResponseEntity<List<CardResponse>> getArchivedCards(@PathVariable Long workspaceId,
             @PathVariable Long boardId) {
-        Long userId = SecurityUtil.getCurrentUserId();
-        List<CardResponse> cards = cardService.getArchivedCards(boardId, userId);
+        List<CardResponse> cards = cardService.getArchivedCards(boardId);
         return ResponseEntity.ok(cards);
     }
 }

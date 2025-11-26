@@ -44,66 +44,55 @@ public class AuditLogAspect {
         log.info("========== AUDIT ASPECT TRIGGERED: action={}, targetType={}, method={}",
                 auditable.action(), auditable.targetType(), joinPoint.getSignature().getName());
 
-        Object oldState = null;
         String targetId = resolveTargetId(joinPoint, auditable.targetId());
-
-        // 1. Capture "Before" state for UPDATE/DELETE
-        if (auditable.action() == AuditAction.UPDATE || auditable.action() == AuditAction.DELETE) {
-            Object entity = fetchEntity(auditable.targetType(), targetId);
-            if (entity != null) {
-                // Deep clone via JSON to avoid persistence context issues
-                try {
-                    log.info("AUDIT: Cloning oldState entity - type={}, id={}",
-                            entity.getClass().getSimpleName(), targetId);
-                    String json = objectMapper.writeValueAsString(entity);
-                    oldState = objectMapper.readValue(json, entity.getClass());
-                    log.info("AUDIT: Successfully cloned oldState");
-                } catch (Exception e) {
-                    log.error("AUDIT: CRITICAL - Failed to clone entity for audit! type={}, id={}",
-                            entity.getClass().getSimpleName(), targetId, e);
-                    oldState = entity;
-                }
-            } else {
-                log.warn("AUDIT: oldState entity not found - targetType={}, targetId={}",
-                        auditable.targetType(), targetId);
-            }
-        }
-
-        // 2. Execute method
+        Object oldState = captureOldState(auditable, targetId);
         Object result = joinPoint.proceed();
+        StateCapture newStateCapture = captureNewState(auditable, result, targetId);
+        saveAuditLog(auditable, newStateCapture.targetId(), oldState, newStateCapture.state());
 
-        // 3. Capture "After" state
-        Object newState = null;
-        if (auditable.action() == AuditAction.CREATE || auditable.action() == AuditAction.UPDATE) {
-            // For CREATE, the result is usually the DTO or Entity.
-            // If it's a DTO, we might not have the full entity state unless we fetch it again or
-            // map it.
-            // Ideally, the service returns the Entity or a detailed DTO.
-            // Let's assume the service returns an object we can use or we fetch it if needed.
-            // For simplicity, if it's CREATE, we try to use the result.
-            // If the result is a ResponseDTO, we might need to map it back or just log the DTO.
-            // However, for accurate diffs, comparing Entity to Entity is best.
-            // If the return type is a Response DTO, we might need to fetch the entity again using
-            // the ID from the DTO.
+        return result;
+    }
 
-            // For now, let's try to fetch the entity again if we have the ID, to ensure we have the
-            // full state.
-            // For CREATE, we need to extract the ID from the result.
-            if (auditable.action() == AuditAction.CREATE) {
-                String newId = extractId(result);
-                if (newId != null) {
-                    targetId = newId; // Update targetId for CREATE
-                    newState = fetchEntity(auditable.targetType(), newId);
-                } else {
-                    newState = result; // Fallback to result
-                }
-            } else {
-                // For UPDATE, we already have the ID
-                newState = fetchEntity(auditable.targetType(), targetId);
-            }
+    private Object captureOldState(Auditable auditable, String targetId) {
+        if (auditable.action() != AuditAction.UPDATE && auditable.action() != AuditAction.DELETE) {
+            return null;
         }
+        Object entity = fetchEntity(auditable.targetType(), targetId);
+        if (entity == null) {
+            log.warn("AUDIT: oldState entity not found - targetType={}, targetId={}",
+                    auditable.targetType(), targetId);
+            return null;
+        }
+        try {
+            log.info("AUDIT: Cloning oldState entity - type={}, id={}",
+                    entity.getClass().getSimpleName(), targetId);
+            String json = objectMapper.writeValueAsString(entity);
+            Object cloned = objectMapper.readValue(json, entity.getClass());
+            log.info("AUDIT: Successfully cloned oldState");
+            return cloned;
+        } catch (Exception e) {
+            log.error("AUDIT: CRITICAL - Failed to clone entity for audit! type={}, id={}",
+                    entity.getClass().getSimpleName(), targetId, e);
+            return entity;
+        }
+    }
 
-        // 4. Calculate Diff & Save Log
+    private StateCapture captureNewState(Auditable auditable, Object result, String targetId) {
+        if (auditable.action() != AuditAction.CREATE && auditable.action() != AuditAction.UPDATE) {
+            return new StateCapture(targetId, null);
+        }
+        if (auditable.action() == AuditAction.CREATE) {
+            String newId = extractId(result);
+            String effectiveId = newId != null ? newId : targetId;
+            Object fetched = newId != null ? fetchEntity(auditable.targetType(), newId) : null;
+            Object state = fetched != null ? fetched : result;
+            return new StateCapture(effectiveId, state);
+        }
+        return new StateCapture(targetId, fetchEntity(auditable.targetType(), targetId));
+    }
+
+    private void saveAuditLog(Auditable auditable, String targetId, Object oldState,
+            Object newState) {
         try {
             log.info("AUDIT: Calculating diff - oldState={}, newState={}",
                     oldState != null ? oldState.getClass().getSimpleName() : "null",
@@ -113,13 +102,12 @@ public class AuditLogAspect {
 
             log.info("AUDIT: Diff result - changes={}", changes != null ? "PRESENT" : "NULL");
 
-            // Only save if there are changes or it's a Create/Delete action
             if (changes != null || auditable.action() == AuditAction.DELETE) {
                 AuditLog auditLog = AuditLog.builder().action(auditable.action())
                         .targetType(auditable.targetType()).targetId(targetId)
                         .actorId(auditContext.getCurrentUserId() != null
                                 ? auditContext.getCurrentUserId()
-                                : 0L) // 0L for system/anon
+                                : 0L)
                         .ipAddress(auditContext.getIpAddress())
                         .userAgent(auditContext.getUserAgent()).changes(changes)
                         .createdAt(LocalDateTime.now()).build();
@@ -132,12 +120,7 @@ public class AuditLogAspect {
         } catch (Exception e) {
             log.error("AUDIT: Failed to save audit log - targetType={}, targetId={}, action={}",
                     auditable.targetType(), targetId, auditable.action(), e);
-            // Do not fail the transaction because of audit logging failure?
-            // Usually audit logs are critical, so maybe we should let it fail or at least alert.
-            // For now, just log error to avoid breaking main flow.
         }
-
-        return result;
     }
 
     private String resolveTargetId(ProceedingJoinPoint joinPoint, String spEl) {
@@ -199,5 +182,8 @@ public class AuditLogAspect {
         } catch (Exception e) {
             return null;
         }
+    }
+
+    private record StateCapture(String targetId, Object state) {
     }
 }

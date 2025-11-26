@@ -33,7 +33,7 @@ public class LocalFileStorageService implements FileStorageService {
         try {
             Files.createDirectories(rootLocation);
         } catch (IOException e) {
-            throw new RuntimeException("Could not initialize storage location", e);
+            throw new IllegalStateException("Could not initialize storage location", e);
         }
     }
 

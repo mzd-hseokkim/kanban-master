@@ -2,7 +2,7 @@ import goalService from '@/services/goalService';
 import sprintService from '@/services/sprintService';
 import type { Goal, GoalCreateRequest } from '@/types/goal';
 import type { Sprint, SprintCreateRequest } from '@/types/sprint';
-import { createContext, ReactNode, useCallback, useContext, useState } from 'react';
+import { createContext, ReactNode, useCallback, useContext, useMemo, useState } from 'react';
 
 interface SprintContextType {
   sprints: Sprint[];
@@ -186,23 +186,42 @@ export const SprintProvider = ({ children }: { children: ReactNode }) => {
     setError(null);
   }, []);
 
-  const value: SprintContextType = {
-    sprints,
-    activeSprint,
-    goals,
-    loading,
-    error,
-    loadSprints,
-    createSprint,
-    startSprint,
-    completeSprint,
-    assignCardsToSprint,
-    removeCardFromSprint,
-    loadGoals,
-    createGoal,
-    updateGoalProgress,
-    clearError,
-  };
+  const value: SprintContextType = useMemo(
+    () => ({
+      sprints,
+      activeSprint,
+      goals,
+      loading,
+      error,
+      loadSprints,
+      createSprint,
+      startSprint,
+      completeSprint,
+      assignCardsToSprint,
+      removeCardFromSprint,
+      loadGoals,
+      createGoal,
+      updateGoalProgress,
+      clearError,
+    }),
+    [
+      sprints,
+      activeSprint,
+      goals,
+      loading,
+      error,
+      loadSprints,
+      createSprint,
+      startSprint,
+      completeSprint,
+      assignCardsToSprint,
+      removeCardFromSprint,
+      loadGoals,
+      createGoal,
+      updateGoalProgress,
+      clearError,
+    ],
+  );
 
   return (
     <SprintContext.Provider value={value}>

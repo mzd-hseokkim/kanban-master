@@ -22,6 +22,8 @@ import lombok.RequiredArgsConstructor;
 @Transactional
 public class ColumnService {
 
+        private static final String COLUMN_NOT_FOUND_MESSAGE = "칼럼을 찾을 수 없습니다: ";
+
         private final ColumnRepository columnRepository;
         private final BoardRepository boardRepository;
         private final ActivityService activityService;
@@ -43,7 +45,7 @@ public class ColumnService {
         @Transactional(readOnly = true)
         public ColumnResponse getColumn(Long columnId) {
                 BoardColumn column = columnRepository.findById(columnId).orElseThrow(
-                                () -> new NoSuchElementException("칼럼을 찾을 수 없습니다: " + columnId));
+                                () -> new NoSuchElementException(COLUMN_NOT_FOUND_MESSAGE + columnId));
                 return ColumnResponse.from(column);
         }
 
@@ -114,7 +116,7 @@ public class ColumnService {
         public ColumnResponse updateColumn(Long columnId, String name, String description,
                         String bgColor) {
                 BoardColumn column = columnRepository.findById(columnId).orElseThrow(
-                                () -> new NoSuchElementException("칼럼을 찾을 수 없습니다: " + columnId));
+                                () -> new NoSuchElementException(COLUMN_NOT_FOUND_MESSAGE + columnId));
 
                 if (name != null && !name.isBlank()) {
                         column.setName(name);
@@ -166,7 +168,7 @@ public class ColumnService {
                         Long userId) {
                 BoardColumn column = columnRepository.findByIdAndBoardId(columnId, boardId)
                                 .orElseThrow(() -> new NoSuchElementException(
-                                                "칼럼을 찾을 수 없습니다: " + columnId));
+                                                COLUMN_NOT_FOUND_MESSAGE + columnId));
 
                 int currentPosition = column.getPosition();
 
@@ -219,7 +221,7 @@ public class ColumnService {
         public void deleteColumn(Long boardId, Long columnId, Long userId) {
                 BoardColumn column = columnRepository.findByIdAndBoardId(columnId, boardId)
                                 .orElseThrow(() -> new NoSuchElementException(
-                                                "칼럼을 찾을 수 없습니다: " + columnId));
+                                                COLUMN_NOT_FOUND_MESSAGE + columnId));
 
                 String columnName = column.getName();
                 int deletedPosition = column.getPosition();

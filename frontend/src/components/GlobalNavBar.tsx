@@ -301,6 +301,103 @@ export const GlobalNavBar: React.FC = () => {
         }
     }, [showMenu, showInbox, showWatchList]);
 
+    const renderWatchListContent = () => {
+        if (loadingWatchList) {
+            return (
+                <div className="px-4 py-8 flex items-center justify-center">
+                    <div className="animate-spin h-5 w-5 border-2 border-blue-500 border-t-transparent rounded-full" />
+                </div>
+            );
+        }
+
+        if (watchedCards.length === 0) {
+            return (
+                <div className="px-4 py-8 text-center text-slate-400 text-sm">
+                    관심 카드가 없습니다
+                </div>
+            );
+        }
+
+        return (
+            <div className="max-h-80 overflow-y-auto">
+                {watchedCards.map((watchedCard) => (
+                    <div
+                        key={watchedCard.watchId}
+                        className="px-4 py-3 border-b border-white/5 hover:bg-white/5 transition cursor-pointer"
+                        onClick={() => handleWatchedCardClick(watchedCard)}
+                    >
+                        <div className="flex items-start gap-3">
+                            <div className="flex-shrink-0 mt-1">
+                                <HiEye className="text-xl text-blue-400" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                                <p className="text-sm font-semibold text-white truncate">
+                                    {watchedCard.card.title}
+                                </p>
+                                <p className="text-xs text-slate-400 mt-1">
+                                    {watchedCard.boardName} • {watchedCard.columnName}
+                                </p>
+                                <p className="text-[10px] text-slate-500 mt-1">
+                                    {new Date(watchedCard.watchedAt).toLocaleString()}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                ))}
+            </div>
+        );
+    };
+
+    const renderInboxContent = () => {
+        if (loadingInbox) {
+            return (
+                <div className="px-4 py-8 flex items-center justify-center">
+                    <div className="animate-spin h-5 w-5 border-2 border-blue-500 border-t-transparent rounded-full" />
+                </div>
+            );
+        }
+
+        if (inboxItems.length === 0) {
+            return (
+                <div className="px-4 py-8 text-center text-slate-400 text-sm">
+                    새로운 알림이 없습니다
+                </div>
+            );
+        }
+
+        return (
+            <div className="max-h-80 overflow-y-auto">
+                {inboxItems.map((item) => (
+                    <div
+                        key={item.id}
+                        className={`px-4 py-3 border-b border-white/5 hover:bg-white/5 transition cursor-pointer ${!item.isRead ? 'bg-blue-500/10' : ''}`}
+                        onClick={() => handleNotificationClick(item)}
+                    >
+                        <div className="flex items-start gap-3">
+                            <div className="flex-shrink-0 mt-1">
+                                {item.type === 'INVITATION' ? '💌' : '🔔'}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                                <p className="text-sm font-semibold text-white truncate">
+                                    {item.title}
+                                </p>
+                                <p className="text-xs text-slate-400 mt-1 line-clamp-2">
+                                    {item.message}
+                                </p>
+                                <p className="text-[10px] text-slate-500 mt-1">
+                                    {new Date(item.createdAt).toLocaleString()}
+                                </p>
+                            </div>
+                            {!item.isRead && (
+                                <div className="w-2 h-2 rounded-full bg-rose-500 flex-shrink-0 mt-2" />
+                            )}
+                        </div>
+                    </div>
+                ))}
+            </div>
+        );
+    };
+
     return (
         <nav className="backdrop-blur-xl bg-slate-900/80 shadow-lg sticky top-0 z-[300] border-b border-white/5 transition-colors duration-300">
             <div className="w-full max-w-[95vw] mx-auto px-4 sm:px-6 lg:px-8">
@@ -396,48 +493,13 @@ export const GlobalNavBar: React.FC = () => {
                                             <p className="text-sm font-semibold text-white">관심 카드 목록</p>
                                         </div>
 
-                                        {loadingWatchList ? (
-                                            <div className="px-4 py-8 flex items-center justify-center">
-                                                <div className="animate-spin h-5 w-5 border-2 border-blue-500 border-t-transparent rounded-full" />
-                                            </div>
-                                        ) : watchedCards.length === 0 ? (
-                                            <div className="px-4 py-8 text-center text-slate-400 text-sm">
-                                                관심 카드가 없습니다
-                                            </div>
-                                        ) : (
-                                            <div className="max-h-80 overflow-y-auto">
-                                                {watchedCards.map((watchedCard) => (
-                                                    <div
-                                                        key={watchedCard.watchId}
-                                                        className="px-4 py-3 border-b border-white/5 hover:bg-white/5 transition cursor-pointer"
-                                                        onClick={() => handleWatchedCardClick(watchedCard)}
-                                                    >
-                                                        <div className="flex items-start gap-3">
-                                                            <div className="flex-shrink-0 mt-1">
-                                                                <HiEye className="text-xl text-blue-400" />
-                                                            </div>
-                                                            <div className="flex-1 min-w-0">
-                                                                <p className="text-sm font-semibold text-white truncate">
-                                                                    {watchedCard.card.title}
-                                                                </p>
-                                                                <p className="text-xs text-slate-400 mt-1">
-                                                                    {watchedCard.boardName} • {watchedCard.columnName}
-                                                                </p>
-                                                                <p className="text-[10px] text-slate-500 mt-1">
-                                                                    {new Date(watchedCard.watchedAt).toLocaleString()}
-                                                                </p>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        )}
+                                        {renderWatchListContent()}
                                     </div>
                                 )}
                             </div>
 
                             {/* Inbox Button */}
-                    <div className="relative z-[310]" ref={inboxRef}>
+                            <div className="relative z-[310]" ref={inboxRef}>
                                 <button
                                     onClick={handleInboxClick}
                                     className="relative w-10 h-10 hover:bg-white/10 rounded-lg transition-all duration-200 flex items-center justify-center group"
@@ -460,45 +522,7 @@ export const GlobalNavBar: React.FC = () => {
                                             <p className="text-sm font-semibold text-white">알림함</p>
                                         </div>
 
-                                        {loadingInbox ? (
-                                            <div className="px-4 py-8 flex items-center justify-center">
-                                                <div className="animate-spin h-5 w-5 border-2 border-blue-500 border-t-transparent rounded-full" />
-                                            </div>
-                                        ) : inboxItems.length === 0 ? (
-                                            <div className="px-4 py-8 text-center text-slate-400 text-sm">
-                                                새로운 알림이 없습니다
-                                            </div>
-                                        ) : (
-                                            <div className="max-h-80 overflow-y-auto">
-                                                {inboxItems.map((item) => (
-                                                    <div
-                                                        key={item.id}
-                                                        className={`px-4 py-3 border-b border-white/5 hover:bg-white/5 transition cursor-pointer \${!item.isRead ? 'bg-blue-500/10' : ''}`}
-                                                        onClick={() => handleNotificationClick(item)}
-                                                    >
-                                                        <div className="flex items-start gap-3">
-                                                            <div className="flex-shrink-0 mt-1">
-                                                                {item.type === 'INVITATION' ? '💌' : '🔔'}
-                                                            </div>
-                                                            <div className="flex-1 min-w-0">
-                                                                <p className="text-sm font-semibold text-white truncate">
-                                                                    {item.title}
-                                                                </p>
-                                                                <p className="text-xs text-slate-400 mt-1 line-clamp-2">
-                                                                    {item.message}
-                                                                </p>
-                                                                <p className="text-[10px] text-slate-500 mt-1">
-                                                                    {new Date(item.createdAt).toLocaleString()}
-                                                                </p>
-                                                            </div>
-                                                            {!item.isRead && (
-                                                                <div className="w-2 h-2 rounded-full bg-rose-500 flex-shrink-0 mt-2" />
-                                                            )}
-                                                        </div>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        )}
+                                        {renderInboxContent()}
                                     </div>
                                 )}
                             </div>

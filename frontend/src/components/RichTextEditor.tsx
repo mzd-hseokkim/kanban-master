@@ -224,7 +224,7 @@ const RichTextEditor = React.forwardRef<ReactQuill, RichTextEditorProps>(({
       </div>
 
       {/* 글자 수 표시 (편집 모드에서만) */}
-      {!readOnly && !disabled && maxLength && (
+      {!readOnly && !disabled && Boolean(maxLength) && (
         <div
           className={`text-sm mt-2 text-right ${
             currentLength > maxLength * 0.9 ? 'text-red-500' : 'text-gray-500'

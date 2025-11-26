@@ -55,6 +55,7 @@ public class BoardResponse {
     /**
      * JPQL 생성자 표현식용 생성자 (14개 파라미터) Hibernate 6.4+에서 NULL 값 처리를 위해 필요
      */
+    @SuppressWarnings("java:S107")
     public BoardResponse(Long id, Long workspaceId, Long ownerId, String ownerName, String name,
             String description, String themeColor, String icon, BoardStatus status,
             LocalDateTime deletedAt, LocalDateTime createdAt, LocalDateTime updatedAt,

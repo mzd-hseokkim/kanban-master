@@ -58,6 +58,15 @@ export const CalendarModal = ({ isOpen, onClose, cards, onCardSelect }: Calendar
   const month = currentDate.getMonth();
   const daysInMonth = getDaysInMonth(year, month);
   const firstDay = getFirstDayOfMonth(year, month);
+  const previousMonthPlaceholders = useMemo(() => {
+    const prevMonthDays = getDaysInMonth(year, month - 1);
+    return Array.from({ length: firstDay }, (_, idx) => prevMonthDays - firstDay + idx + 1);
+  }, [firstDay, month, year]);
+
+  const nextMonthPlaceholders = useMemo(
+    () => Array.from({ length: 42 - (daysInMonth + firstDay) }, (_, idx) => idx + 1),
+    [daysInMonth, firstDay],
+  );
 
   const prevMonth = () => setCurrentDate(new Date(year, month - 1, 1));
   const nextMonth = () => setCurrentDate(new Date(year, month + 1, 1));
@@ -235,8 +244,8 @@ export const CalendarModal = ({ isOpen, onClose, cards, onCardSelect }: Calendar
           {/* Calendar Cells */}
           <div className="flex-1 grid grid-cols-7 grid-rows-6 auto-rows-fr gap-px bg-slate-200 overflow-y-auto">
             {/* Empty cells for previous month */}
-            {Array.from({ length: firstDay }).map((_, i) => (
-              <div key={`empty-${i}`} className="bg-slate-50/50" />
+            {previousMonthPlaceholders.map((day) => (
+              <div key={`prev-${year}-${month}-${day}`} className="bg-slate-50/50" />
             ))}
 
             {/* Days of current month */}
@@ -290,8 +299,8 @@ export const CalendarModal = ({ isOpen, onClose, cards, onCardSelect }: Calendar
             })}
 
             {/* Empty cells for next month */}
-            {Array.from({ length: 42 - (daysInMonth + firstDay) }).map((_, i) => (
-              <div key={`next-empty-${i}`} className="bg-slate-50/50" />
+            {nextMonthPlaceholders.map((day) => (
+              <div key={`next-${year}-${month}-${day}`} className="bg-slate-50/50" />
             ))}
           </div>
         </div>

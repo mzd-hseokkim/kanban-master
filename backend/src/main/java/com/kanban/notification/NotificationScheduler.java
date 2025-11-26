@@ -33,7 +33,7 @@ public class NotificationScheduler {
 
         LocalDateTime now = LocalDateTime.now();
         // 최대 24시간 + 10분 후까지 마감인 카드 조회 (넉넉하게 조회 후 필터링)
-        LocalDateTime end = now.plusMinutes(24 * 60 + 10);
+        LocalDateTime end = now.plusMinutes(24L * 60 + 10);
 
         List<Card> cards = cardRepository.findCardsDueBetween(now, end);
 

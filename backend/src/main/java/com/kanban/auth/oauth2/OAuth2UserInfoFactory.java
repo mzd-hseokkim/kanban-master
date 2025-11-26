@@ -14,6 +14,9 @@ import static org.springframework.http.HttpStatus.BAD_REQUEST;
  */
 public class OAuth2UserInfoFactory {
 
+    private OAuth2UserInfoFactory() {
+    }
+
     /**
      * 프로바이더별로 OAuth2UserInfo 구현체 생성
      * Spec § 6: 각 프로바이더의 사용자 정보 응답을 통일된 인터페이스로 변환

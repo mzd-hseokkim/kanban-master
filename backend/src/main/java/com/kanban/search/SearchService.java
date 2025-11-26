@@ -14,6 +14,7 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.criteria.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.util.StringUtils;
 
 /**
  * 검색 서비스 카드 검색 및 필터링 기능 제공
@@ -45,57 +46,8 @@ public class SearchService {
         Join<Object, Object> column = card.join("column");
         Join<Object, Object> board = column.join("board");
 
-        List<Predicate> predicates = new ArrayList<>();
-
-        // 보드 ID 필터 (필수)
+        List<Predicate> predicates = buildCommonPredicates(request, cb, card);
         predicates.add(cb.equal(board.get("id"), boardId));
-
-        // 키워드 검색 (제목 또는 설명)
-        if (request.getKeyword() != null && !request.getKeyword().trim().isEmpty()) {
-            String keyword = "%" + request.getKeyword().trim().toLowerCase() + "%";
-            Predicate titleMatch = cb.like(cb.lower(card.get("title")), keyword);
-            Predicate descMatch = cb.like(cb.lower(card.get("description")), keyword);
-            predicates.add(cb.or(titleMatch, descMatch));
-        }
-
-        // 우선순위 필터
-        if (request.getPriorities() != null && !request.getPriorities().isEmpty()) {
-            predicates.add(card.get("priority").in(request.getPriorities()));
-        }
-
-        // 담당자 필터
-        if (request.getAssigneeIds() != null && !request.getAssigneeIds().isEmpty()) {
-            predicates.add(card.get("assignee").get("id").in(request.getAssigneeIds()));
-        }
-
-        // 완료 상태 필터
-        if (request.getIsCompleted() != null) {
-            predicates.add(cb.equal(card.get("isCompleted"), request.getIsCompleted()));
-        }
-
-        // 마감일 범위 필터
-        if (request.getDueDateFrom() != null) {
-            predicates.add(cb.greaterThanOrEqualTo(card.get("dueDate"), request.getDueDateFrom()));
-        }
-        if (request.getDueDateTo() != null) {
-            predicates.add(cb.lessThanOrEqualTo(card.get("dueDate"), request.getDueDateTo()));
-        }
-
-        // 지연된 카드 필터 (마감일이 오늘보다 이전 + 미완료)
-        if (request.getOverdue() != null && request.getOverdue()) {
-            predicates.add(cb.lessThan(card.get("dueDate"), LocalDate.now()));
-            predicates.add(cb.equal(card.get("isCompleted"), false));
-        }
-
-        // 부모 카드가 없는 카드만 필터 (부모 카드 선택용)
-        if (request.getParentCardIdIsNull() != null && request.getParentCardIdIsNull()) {
-            predicates.add(cb.isNull(card.get("parentCard")));
-        }
-
-        // 스프린트 ID 필터
-        if (request.getSprintId() != null) {
-            predicates.add(cb.equal(card.get("sprint").get("id"), request.getSprintId()));
-        }
 
         query.where(predicates.toArray(new Predicate[0]));
         query.orderBy(cb.desc(card.get("updatedAt")));
@@ -128,57 +80,8 @@ public class SearchService {
         Join<Object, Object> board = column.join("board");
         Join<Object, Object> workspace = board.join("workspace");
 
-        List<Predicate> predicates = new ArrayList<>();
-
-        // 워크스페이스 ID 필터 (필수)
+        List<Predicate> predicates = buildCommonPredicates(request, cb, card);
         predicates.add(cb.equal(workspace.get("id"), workspaceId));
-
-        // 키워드 검색
-        if (request.getKeyword() != null && !request.getKeyword().trim().isEmpty()) {
-            String keyword = "%" + request.getKeyword().trim().toLowerCase() + "%";
-            Predicate titleMatch = cb.like(cb.lower(card.get("title")), keyword);
-            Predicate descMatch = cb.like(cb.lower(card.get("description")), keyword);
-            predicates.add(cb.or(titleMatch, descMatch));
-        }
-
-        // 우선순위 필터
-        if (request.getPriorities() != null && !request.getPriorities().isEmpty()) {
-            predicates.add(card.get("priority").in(request.getPriorities()));
-        }
-
-        // 담당자 필터
-        if (request.getAssigneeIds() != null && !request.getAssigneeIds().isEmpty()) {
-            predicates.add(card.get("assignee").get("id").in(request.getAssigneeIds()));
-        }
-
-        // 완료 상태 필터
-        if (request.getIsCompleted() != null) {
-            predicates.add(cb.equal(card.get("isCompleted"), request.getIsCompleted()));
-        }
-
-        // 마감일 범위 필터
-        if (request.getDueDateFrom() != null) {
-            predicates.add(cb.greaterThanOrEqualTo(card.get("dueDate"), request.getDueDateFrom()));
-        }
-        if (request.getDueDateTo() != null) {
-            predicates.add(cb.lessThanOrEqualTo(card.get("dueDate"), request.getDueDateTo()));
-        }
-
-        // 지연된 카드 필터
-        if (request.getOverdue() != null && request.getOverdue()) {
-            predicates.add(cb.lessThan(card.get("dueDate"), LocalDate.now()));
-            predicates.add(cb.equal(card.get("isCompleted"), false));
-        }
-
-        // 부모 카드가 없는 카드만 필터 (부모 카드 선택용)
-        if (request.getParentCardIdIsNull() != null && request.getParentCardIdIsNull()) {
-            predicates.add(cb.isNull(card.get("parentCard")));
-        }
-
-        // 스프린트 ID 필터
-        if (request.getSprintId() != null) {
-            predicates.add(cb.equal(card.get("sprint").get("id"), request.getSprintId()));
-        }
 
         query.where(predicates.toArray(new Predicate[0]));
         query.orderBy(cb.desc(card.get("updatedAt")));
@@ -192,6 +95,52 @@ public class SearchService {
         }
 
         return cards.stream().map(this::toSearchResponse).toList();
+    }
+
+    private List<Predicate> buildCommonPredicates(CardSearchRequest request, CriteriaBuilder cb,
+            Root<Card> card) {
+        List<Predicate> predicates = new ArrayList<>();
+
+        if (StringUtils.hasText(request.getKeyword())) {
+            String keyword = "%" + request.getKeyword().trim().toLowerCase() + "%";
+            Predicate titleMatch = cb.like(cb.lower(card.get("title")), keyword);
+            Predicate descMatch = cb.like(cb.lower(card.get("description")), keyword);
+            predicates.add(cb.or(titleMatch, descMatch));
+        }
+
+        if (request.getPriorities() != null && !request.getPriorities().isEmpty()) {
+            predicates.add(card.get("priority").in(request.getPriorities()));
+        }
+
+        if (request.getAssigneeIds() != null && !request.getAssigneeIds().isEmpty()) {
+            predicates.add(card.get("assignee").get("id").in(request.getAssigneeIds()));
+        }
+
+        if (request.getIsCompleted() != null) {
+            predicates.add(cb.equal(card.get("isCompleted"), request.getIsCompleted()));
+        }
+
+        if (request.getDueDateFrom() != null) {
+            predicates.add(cb.greaterThanOrEqualTo(card.get("dueDate"), request.getDueDateFrom()));
+        }
+        if (request.getDueDateTo() != null) {
+            predicates.add(cb.lessThanOrEqualTo(card.get("dueDate"), request.getDueDateTo()));
+        }
+
+        if (Boolean.TRUE.equals(request.getOverdue())) {
+            predicates.add(cb.lessThan(card.get("dueDate"), LocalDate.now()));
+            predicates.add(cb.equal(card.get("isCompleted"), false));
+        }
+
+        if (Boolean.TRUE.equals(request.getParentCardIdIsNull())) {
+            predicates.add(cb.isNull(card.get("parentCard")));
+        }
+
+        if (request.getSprintId() != null) {
+            predicates.add(cb.equal(card.get("sprint").get("id"), request.getSprintId()));
+        }
+
+        return predicates;
     }
 
     /**

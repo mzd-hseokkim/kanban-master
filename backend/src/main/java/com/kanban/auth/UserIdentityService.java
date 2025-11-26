@@ -38,7 +38,7 @@ public class UserIdentityService {
 
         return identities.stream()
                 .map(UserIdentityResponse::from)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     /**

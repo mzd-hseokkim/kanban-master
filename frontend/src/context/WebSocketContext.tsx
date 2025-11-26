@@ -1,5 +1,5 @@
 import { Client } from '@stomp/stompjs';
-import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
+import React, { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { authStorage } from '../utils/authStorage';
 
 interface WebSocketContextType {
@@ -62,9 +62,13 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({ children }
         };
     }, []);
 
-    return (
-        <WebSocketContext.Provider value={{ client, isConnected }}>
-            {children}
-        </WebSocketContext.Provider>
+    const value = useMemo(
+        () => ({
+            client,
+            isConnected,
+        }),
+        [client, isConnected],
     );
+
+    return <WebSocketContext.Provider value={value}>{children}</WebSocketContext.Provider>;
 };

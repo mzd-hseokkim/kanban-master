@@ -6,7 +6,6 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
-import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.kanban.analytics.dto.BurndownDataPoint;
@@ -31,14 +30,6 @@ public class AnalyticsService {
         LocalDate startDate = today.minusDays(days);
 
         List<BurndownDataPoint> points = new ArrayList<>();
-
-        // Calculate total scope (ideal line base)
-        // long totalCards =
-        // allCards.stream().filter(c -> !Boolean.TRUE.equals(c.getIsArchived())).count();
-
-        // Simple Ideal Line: Start from total items at start date, go to 0 at end date (or some
-        // target)
-        // For now, let's just show actual remaining tasks.
 
         for (int i = 0; i <= days; i++) {
             LocalDate date = startDate.plusDays(i);
@@ -82,7 +73,7 @@ public class AnalyticsService {
                             .cycleTimeDays(Math.round(days * 100.0) / 100.0)
                             .completedAt(c.getCompletedAt()).build();
                 }).sorted(Comparator.comparing(CycleTimeData::getCompletedAt))
-                .collect(Collectors.toList());
+                .toList();
     }
 
     public Long getCompletedTasksCount(Long boardId) {

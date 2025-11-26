@@ -51,6 +51,7 @@ public class EntityDiffCalculator {
         }
     }
 
+    @SuppressWarnings("java:S3011")
     private void extractFields(Object obj, Map<String, Map<String, Object>> diff, String key) {
         Class<?> clazz = obj.getClass();
         while (clazz != null) {
@@ -70,6 +71,7 @@ public class EntityDiffCalculator {
         }
     }
 
+    @SuppressWarnings("java:S3011")
     private void compareFields(Object oldObj, Object newObj,
             Map<String, Map<String, Object>> diff) {
         Class<?> clazz = oldObj.getClass();

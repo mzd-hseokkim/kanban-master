@@ -323,19 +323,19 @@ public class AuthService {
          * @param token 인증 토큰
          */
         private void sendVerificationEmail(User user, String token) {
-                try {
-                        String verificationUrl = frontendUrl + "/verify-email?token=" + token;
-                        String htmlContent = emailTemplateUtil.createVerificationEmail(
-                                        user.getName(), verificationUrl);
+        try {
+                String verificationUrl = frontendUrl + "/verify-email?token=" + token;
+                String htmlContent = emailTemplateUtil.createVerificationEmail(
+                                user.getName(), verificationUrl);
 
-                        emailUtil.sendEmail(
-                                        user.getEmail(),
-                                        user.getName(),
-                                        "Kanban Board 이메일 인증",
-                                        htmlContent);
-                } catch (Exception e) {
-                        throw new RuntimeException("이메일 발송 실패", e);
-                }
+                emailUtil.sendEmail(
+                                user.getEmail(),
+                                user.getName(),
+                                "Kanban Board 이메일 인증",
+                                htmlContent);
+        } catch (Exception e) {
+                throw new IllegalStateException("이메일 발송 실패", e);
         }
+    }
 
 }

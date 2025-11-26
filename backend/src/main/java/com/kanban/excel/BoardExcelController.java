@@ -61,8 +61,7 @@ public class BoardExcelController {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "인증 정보가 없습니다");
         }
         ImportJobStartResponse response =
-                boardExcelService.startImport(workspaceId, boardId, file, mode,
-                        user != null ? user.getId() : null);
+                boardExcelService.startImport(workspaceId, boardId, file, mode, user.getId());
         return ResponseEntity.accepted().body(response);
     }
 
