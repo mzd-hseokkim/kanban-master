@@ -47,6 +47,7 @@ export const ListView = ({
   const [openColumnMenuId, setOpenColumnMenuId] = useState<number | null>(null);
   const [isDeletingColumnId, setIsDeletingColumnId] = useState<number | null>(null);
   const [columnError, setColumnError] = useState<string | null>(null);
+  const listViewScrollRef = useRef<HTMLDivElement>(null);
   const columnRefs = useRef<Record<number, HTMLDivElement | null>>({});
   const columnContentRefs = useRef<Record<number, HTMLDivElement | null>>({});
   const columnMenuRefs = useRef<Record<number, HTMLDivElement | null>>({});
@@ -156,32 +157,15 @@ export const ListView = ({
   }, [columns, fetchColumnCards, sortConfig]);
 
   const scrollToColumn = (columnId: number, index: number) => {
-    const scrollContainer = scrollContainerRef.current;
-    if (!scrollContainer) {
-      return;
-    }
-
     const cardsContainer = columnContentRefs.current[columnId];
+    const scrollContainer = listViewScrollRef.current;
 
-    if (cardsContainer && cardsContainer.children.length > 0) {
-        const firstCard = cardsContainer.children[0] as HTMLElement;
+    if (cardsContainer && scrollContainer) {
+      // cardsContainer의 offsetTop을 직접 사용
+      let targetScrollTop = cardsContainer.offsetTop;
 
-        if (firstCard) {
-            const containerScrollTop = scrollContainer.scrollTop;
-            const containerRect = scrollContainer.getBoundingClientRect();
-            const cardRect = firstCard.getBoundingClientRect();
-
-            // Calculate sticky headers: main header + all column headers up to and including this one
-            const stickyTop = MAIN_HEADER_HEIGHT + (index + 1) * COLUMN_HEADER_HEIGHT;
-
-            const relativeCardTop = cardRect.top - containerRect.top;
-            const targetScrollTop = containerScrollTop + relativeCardTop - stickyTop;
-
-            scrollContainer.scrollTo({
-                top: Math.max(0, targetScrollTop),
-                behavior: 'smooth'
-            });
-        }
+      const targetPosition = targetScrollTop - ((index+1) * COLUMN_HEADER_HEIGHT) - MAIN_HEADER_HEIGHT - 22;
+      scrollContainer.scrollTo({ top: targetPosition, behavior: 'smooth' });
     }
   };
 
@@ -228,8 +212,8 @@ export const ListView = ({
   };
 
   // Constants for sticky header calculation
-  const MAIN_HEADER_HEIGHT = 60;
-  const COLUMN_HEADER_HEIGHT = 50;
+  const MAIN_HEADER_HEIGHT = 40;
+  const COLUMN_HEADER_HEIGHT = 40;
 
   useEffect(() => {
     if (openColumnMenuId === null) return;
@@ -263,7 +247,7 @@ export const ListView = ({
         });
       },
       {
-        root: scrollContainerRef.current || null,
+        root: listViewScrollRef.current || null,
         threshold: 0,
         rootMargin: '200px 0px',
       }
@@ -276,7 +260,7 @@ export const ListView = ({
     });
 
     return () => observer.disconnect();
-  }, [collapsedColumns, columns, fetchColumnCards, paginationState, scrollContainerRef]);
+  }, [collapsedColumns, columns, fetchColumnCards, paginationState]);
 
   const handleDeleteColumn = async (columnId: number) => {
     const confirmed = await confirm('정말 이 칼럼을 삭제하시겠습니까?', {
@@ -370,16 +354,17 @@ export const ListView = ({
     }
   };
 
+
   return (
-    <div className="w-full max-w-[95vw] mx-auto pb-10 relative">
+    <div className="flex-1 flex flex-col min-h-0">
       {columnError && (
         <div className="mb-4 px-4 py-3 rounded-lg bg-rose-50 border border-rose-200 text-rose-600 text-sm">
           {columnError}
         </div>
       )}
-      {/* Table Header */}
+      {/* Table Header - Fixed, not sticky */}
       <div
-        className="sticky top-0 z-30 bg-white/95 shadow-sm grid grid-cols-[40px_minmax(300px,3fr)_100px_120px_minmax(200px,2fr)_110px_100px_100px_100px_150px_90px] gap-4 px-4 py-2 items-center text-xs font-bold text-slate-700 border-b border-slate-200 mb-4 rounded-b-lg"
+        className="z-30 bg-white shadow-sm grid grid-cols-[40px_minmax(300px,3fr)_100px_120px_minmax(200px,2fr)_110px_100px_100px_100px_150px_90px] gap-4 px-4 py-1.5 items-center text-xs font-bold text-slate-700 border-b border-slate-200 rounded-b-lg flex-shrink-0"
         style={{ height: `${MAIN_HEADER_HEIGHT}px` }}
       >
         <div className="text-center">완료</div>
@@ -420,7 +405,10 @@ export const ListView = ({
         </div>
       </div>
 
-      <div className="flex flex-col">
+      <div className="h-2" />
+
+      {/* Scrollable content area */}
+      <div ref={listViewScrollRef} className="flex-1 overflow-auto pb-10">
         {columns.map((column, index) => {
             const columnCards = cards[column.id] || [];
             const sortedCards = [...columnCards].sort(compareCards);
@@ -429,8 +417,8 @@ export const ListView = ({
             const isDragOver = dragOverColumnId === column.id;
             const isCollapsed = collapsedColumns[column.id];
 
-            // Calculate sticky top position: Main Header + (Previous Column Headers)
-            const stickyTop = MAIN_HEADER_HEIGHT + (index * COLUMN_HEADER_HEIGHT);
+            // Column headers should be sticky and stack below main header
+            const stickyTop = MAIN_HEADER_HEIGHT + ((index-1) * COLUMN_HEADER_HEIGHT);
 
             return (
               <div
@@ -439,12 +427,14 @@ export const ListView = ({
                 onDragOver={(e) => handleDragOver(e, column.id)}
                 onDrop={(e) => handleDrop(e, column.id)}
               >
-                {/* Column Header */}
+                {/* Column Header - Sticky, stacks below main header */}
                 <div
                   ref={(el) => { columnRefs.current[column.id] = el; }}
-                  onClick={() => scrollToColumn(column.id, index)}
-                  className={`sticky z-20 backdrop-blur border-y border-slate-200 px-4 py-2 flex items-center justify-between group transition-colors duration-200 cursor-pointer hover:bg-slate-100/95 ${
-                    isDragOver ? 'bg-blue-100 border-blue-300' : 'bg-slate-50/95'
+                  onClick={() => {
+                    scrollToColumn(column.id, index);
+                  }}
+                  className={`sticky z-20 bg-white border-b border-slate-200 px-4 py-2 flex items-center justify-between group transition-colors duration-200 cursor-pointer hover:bg-slate-100 ${
+                    isDragOver ? 'bg-blue-100 border-blue-300' : 'bg-slate-50'
                   }`}
                   style={{
                     top: `${stickyTop}px`,
@@ -467,7 +457,8 @@ export const ListView = ({
                   <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                     {canEdit && (
                         <button
-                            onClick={() => {
+                            onClick={(e) => {
+                                e.stopPropagation();
                                 setCreateCardState({ isOpen: true, columnId: column.id });
                             }}
                             className="p-1.5 hover:bg-white hover:shadow-sm rounded text-slate-500 hover:text-pastel-blue-600 transition-all"
@@ -517,7 +508,7 @@ export const ListView = ({
                 {/* Cards */}
                 <div
                     ref={(el) => { columnContentRefs.current[column.id] = el; }}
-                    className={`transition-all duration-300 ease-in-out overflow-hidden ${
+                    className={`relative z-10 transition-all duration-300 ease-in-out overflow-hidden ${
                         isCollapsed ? 'max-h-0 opacity-0' : 'max-h-[5000px] opacity-100'
                     } ${isDragOver ? 'bg-blue-100' : ''}`}
                 >
@@ -553,7 +544,7 @@ export const ListView = ({
                       loadMoreRefs.current[column.id] = el;
                     }}
                     data-column-id={column.id}
-                    className="h-8"
+                    className="h-2"
                   />
                 </div>
               </div>

@@ -16,6 +16,11 @@ export const useModalAnimation = (onClose: () => void, duration = MODAL_TRANSITI
     onCloseRef.current = onClose;
   }, [onClose]);
 
+  // Reset stage to 'enter' when component mounts or reopens
+  useEffect(() => {
+    setStage('enter');
+  }, []);
+
   const close = useCallback(() => {
     if (prefersReducedMotion) {
       onCloseRef.current();

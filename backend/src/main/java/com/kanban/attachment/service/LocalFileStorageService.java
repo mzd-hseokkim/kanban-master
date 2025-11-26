@@ -38,7 +38,7 @@ public class LocalFileStorageService implements FileStorageService {
     }
 
     @Override
-    public String store(MultipartFile file) throws IOException {
+    public String store(MultipartFile file, String path) throws IOException {
         if (file.isEmpty()) {
             throw new IOException("Failed to store empty file.");
         }
@@ -53,10 +53,16 @@ public class LocalFileStorageService implements FileStorageService {
         // UUID로 고유한 파일명 생성
         String storedFileName = UUID.randomUUID().toString() + extension;
 
-        Path destinationFile =
-                this.rootLocation.resolve(Paths.get(storedFileName)).normalize().toAbsolutePath();
+        // 저장 경로 생성 (rootLocation + path)
+        Path uploadPath = this.rootLocation.resolve(path);
+        if (!Files.exists(uploadPath)) {
+            Files.createDirectories(uploadPath);
+        }
 
-        if (!destinationFile.getParent().equals(this.rootLocation.toAbsolutePath())) {
+        Path destinationFile =
+                uploadPath.resolve(Paths.get(storedFileName)).normalize().toAbsolutePath();
+
+        if (!destinationFile.getParent().startsWith(this.rootLocation.toAbsolutePath())) {
             // 보안 검사: 상위 디렉토리 접근 방지
             throw new IOException("Cannot store file outside current directory.");
         }
@@ -65,28 +71,82 @@ public class LocalFileStorageService implements FileStorageService {
             Files.copy(inputStream, destinationFile, StandardCopyOption.REPLACE_EXISTING);
         }
 
-        return storedFileName;
+        // 저장된 상대 경로 반환 (path/filename)
+        return path + "/" + storedFileName;
     }
 
     @Override
-    public Resource load(String fileName) throws IOException {
+    public String store(byte[] data, String path, String extension) throws IOException {
+        if (data == null || data.length == 0) {
+            throw new IOException("Failed to store empty data.");
+        }
+
+        // UUID로 고유한 파일명 생성
+        String storedFileName = UUID.randomUUID().toString() + extension;
+
+        // 저장 경로 생성 (rootLocation + path)
+        Path uploadPath = this.rootLocation.resolve(path);
+        if (!Files.exists(uploadPath)) {
+            Files.createDirectories(uploadPath);
+        }
+
+        Path destinationFile =
+                uploadPath.resolve(Paths.get(storedFileName)).normalize().toAbsolutePath();
+
+        if (!destinationFile.getParent().startsWith(this.rootLocation.toAbsolutePath())) {
+            // 보안 검사: 상위 디렉토리 접근 방지
+            throw new IOException("Cannot store file outside current directory.");
+        }
+
+        Files.write(destinationFile, data);
+
+        // 저장된 상대 경로 반환 (path/filename)
+        return path + "/" + storedFileName;
+    }
+
+    @Override
+    public Resource load(String path) throws IOException {
         try {
-            Path file = rootLocation.resolve(fileName);
+            Path file = rootLocation.resolve(path);
             Resource resource = new UrlResource(file.toUri());
 
             if (resource.exists() || resource.isReadable()) {
                 return resource;
             } else {
-                throw new IOException("Could not read file: " + fileName);
+                throw new IOException("Could not read file: " + path);
             }
         } catch (MalformedURLException e) {
-            throw new IOException("Could not read file: " + fileName, e);
+            throw new IOException("Could not read file: " + path, e);
         }
     }
 
     @Override
-    public void delete(String fileName) throws IOException {
-        Path file = rootLocation.resolve(fileName);
+    public void delete(String path) throws IOException {
+        Path file = rootLocation.resolve(path);
         Files.deleteIfExists(file);
+    }
+
+    @Override
+    public void deleteByUrl(String url) throws IOException {
+        // URL에서 path 추출 (/uploads/ 제거)
+        if (url != null && url.startsWith("/uploads/")) {
+            String path = url.substring("/uploads/".length());
+            delete(path);
+        }
+    }
+
+    @Override
+    public String getUrl(String path) {
+        return "/uploads/" + path;
+    }
+
+    @Override
+    public Resource loadAsResource(String url) throws IOException {
+        // URL에서 path 추출 (/uploads/ 제거)
+        if (url != null && url.startsWith("/uploads/")) {
+            String path = url.substring("/uploads/".length());
+            return load(path);
+        }
+        throw new IOException("Invalid URL format: " + url);
     }
 }

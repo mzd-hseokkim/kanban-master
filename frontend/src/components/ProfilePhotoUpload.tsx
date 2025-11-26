@@ -1,6 +1,7 @@
-import React, { useState, useRef } from 'react';
-import { Avatar } from './common/Avatar';
 import { userService } from '@/services/userService';
+import { avatarCache } from '@/utils/avatarCache';
+import React, { useRef, useState } from 'react';
+import { Avatar } from './common/Avatar';
 
 export interface ProfilePhotoUploadProps {
   currentAvatarUrl?: string | null;
@@ -81,6 +82,10 @@ export const ProfilePhotoUpload: React.FC<ProfilePhotoUploadProps> = ({
 
     try {
       const newAvatarUrl = await userService.uploadAvatar(selectedFile);
+      // Invalidate old avatar cache to ensure new image displays immediately
+      if (currentAvatarUrl) {
+        avatarCache.invalidate(currentAvatarUrl);
+      }
       onUploadSuccess(newAvatarUrl);
       setSelectedFile(null);
       setPreviewUrl(null);
@@ -108,6 +113,10 @@ export const ProfilePhotoUpload: React.FC<ProfilePhotoUploadProps> = ({
 
     try {
       await userService.deleteAvatar();
+      // Invalidate avatar cache to ensure fallback displays immediately
+      if (currentAvatarUrl) {
+        avatarCache.invalidate(currentAvatarUrl);
+      }
       onDeleteSuccess();
     } catch (err: any) {
       const errorMessage = err.response?.data?.message || '프로필 사진 삭제에 실패했습니다';
@@ -137,10 +146,10 @@ export const ProfilePhotoUpload: React.FC<ProfilePhotoUploadProps> = ({
           avatarUrl={previewUrl || currentAvatarUrl}
           userName={userName}
           size="xl"
-          className="shadow-lg"
+          className="shadow-lg ring-2 ring-white/10"
         />
         {selectedFile && (
-          <p className="mt-2 text-xs text-pastel-blue-600">
+          <p className="mt-2 text-xs text-slate-400">
             {selectedFile.name} ({(selectedFile.size / 1024).toFixed(1)} KB)
           </p>
         )}
@@ -148,7 +157,7 @@ export const ProfilePhotoUpload: React.FC<ProfilePhotoUploadProps> = ({
 
       {/* 에러 메시지 */}
       {error && (
-        <div className="w-full max-w-md px-4 py-3 bg-pastel-pink-50 border border-pastel-pink-200 rounded-lg text-sm text-pastel-pink-700">
+        <div className="w-full max-w-md px-4 py-3 bg-rose-500/10 border border-rose-500/20 rounded-lg text-sm text-rose-400">
           ⚠️ {error}
         </div>
       )}
@@ -159,7 +168,7 @@ export const ProfilePhotoUpload: React.FC<ProfilePhotoUploadProps> = ({
           <button
             onClick={() => fileInputRef.current?.click()}
             disabled={isUploading}
-            className="px-6 py-2 bg-gradient-to-r from-pastel-blue-500 to-pastel-cyan-400 text-white rounded-lg hover:shadow-lg transition disabled:opacity-50 disabled:cursor-not-allowed font-semibold shadow-glass-sm"
+            className="px-6 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg shadow-lg shadow-blue-500/20 transition disabled:opacity-50 disabled:cursor-not-allowed font-semibold"
           >
             {currentAvatarUrl ? '사진 변경' : '사진 업로드'}
           </button>
@@ -168,7 +177,7 @@ export const ProfilePhotoUpload: React.FC<ProfilePhotoUploadProps> = ({
             <button
               onClick={handleDelete}
               disabled={isUploading}
-              className="px-6 py-2 bg-pastel-pink-500 text-white rounded-lg hover:bg-pastel-pink-600 transition disabled:opacity-50 disabled:cursor-not-allowed font-semibold"
+              className="px-6 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed font-semibold"
             >
               {isUploading ? '삭제 중...' : '사진 삭제'}
             </button>
@@ -182,7 +191,7 @@ export const ProfilePhotoUpload: React.FC<ProfilePhotoUploadProps> = ({
           <button
             onClick={handleUpload}
             disabled={isUploading}
-            className="px-6 py-2 bg-gradient-to-r from-pastel-blue-500 to-pastel-cyan-400 text-white rounded-lg hover:shadow-lg transition disabled:opacity-50 disabled:cursor-not-allowed font-semibold shadow-glass-sm"
+            className="px-6 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg shadow-lg shadow-blue-500/20 transition disabled:opacity-50 disabled:cursor-not-allowed font-semibold"
           >
             {isUploading ? '업로드 중...' : '업로드'}
           </button>
@@ -190,7 +199,7 @@ export const ProfilePhotoUpload: React.FC<ProfilePhotoUploadProps> = ({
           <button
             onClick={handleCancel}
             disabled={isUploading}
-            className="px-6 py-2 bg-white/30 hover:bg-white/40 backdrop-blur-sm text-pastel-blue-700 rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed font-semibold border border-white/40"
+            className="px-6 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed font-semibold"
           >
             취소
           </button>

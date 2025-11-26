@@ -260,7 +260,7 @@ export const ListCardRow = ({
   return (
     <>
       <div
-        className={`group grid grid-cols-[40px_minmax(300px,3fr)_100px_120px_minmax(200px,2fr)_110px_100px_100px_100px_150px_90px] gap-4 items-center px-4 py-1 bg-white border-b border-slate-300 hover:bg-slate-50 transition-colors text-sm last:border-b-0 ${
+        className={`relative z-10 group grid grid-cols-[40px_minmax(300px,3fr)_100px_120px_minmax(200px,2fr)_110px_100px_100px_100px_150px_90px] gap-4 items-center px-4 py-1 bg-white border-b border-slate-300 hover:bg-slate-50 transition-colors text-sm last:border-b-0 ${
           isDragging ? 'opacity-50' : ''
         } ${isLoadingRelations ? 'cursor-wait opacity-70' : canEdit && !isEditMode ? 'cursor-pointer' : 'cursor-default'}`}
         draggable={canEdit && !isEditMode && !isLoadingRelations}

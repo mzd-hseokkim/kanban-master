@@ -147,14 +147,14 @@ export const ColumnsSection = ({
   const columnIds = sortedColumns.map((col) => col.id);
 
   return (
-    <div className="flex-1 h-full">
+    <>
       <DndContext
         sensors={sensors}
         collisionDetection={closestCenter}
         onDragEnd={handleDragEnd}
       >
         <SortableContext items={columnIds} strategy={horizontalListSortingStrategy}>
-          <div className="flex gap-4 pb-4 min-h-full h-full items-stretch">
+          <div className="flex gap-4 pb-4 min-h-full h-full items-stretch" style={{ minWidth: 'max-content' }}>
             {sortedColumns.map((column) => {
               const shouldRespectColumnConstraint = autoOpenColumnId && autoOpenColumnId !== column.id;
               const cardIdForColumn = shouldRespectColumnConstraint ? null : autoOpenCardId;
@@ -184,6 +184,6 @@ export const ColumnsSection = ({
           </div>
         </SortableContext>
       </DndContext>
-    </div>
+    </>
   );
 };

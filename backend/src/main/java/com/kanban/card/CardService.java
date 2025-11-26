@@ -10,12 +10,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import org.owasp.html.PolicyFactory;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.data.domain.*;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
@@ -70,8 +66,7 @@ public class CardService {
     private static final String STATUS_DELETED_PERMANENTLY = "DELETED_PERMANENTLY";
 
     /**
-     * Priority 기반 StoryPoints 자동 계산
-     * HIGH -> 5, MEDIUM -> 3, LOW -> 1, null -> 1
+     * Priority 기반 StoryPoints 자동 계산 HIGH -> 5, MEDIUM -> 3, LOW -> 1, null -> 1
      */
     private Integer calculateStoryPoints(String priority) {
         if (priority == null) {
@@ -88,8 +83,8 @@ public class CardService {
     /**
      * 특정 칼럼의 모든 카드 조회 Spec § 5. 기능 요구사항 - FR-06g: 자식 개수 표시
      */
-    public CardPageResponse getCardsByColumn(Long columnId, int page, int size,
-            CardSortBy sortBy, Sort.Direction direction) {
+    public CardPageResponse getCardsByColumn(Long columnId, int page, int size, CardSortBy sortBy,
+            Sort.Direction direction) {
         int cappedSize = Math.min(size, 500);
         Pageable pageable = PageRequest.of(Math.max(page, 0), cappedSize);
         Page<Card> cardPage =
@@ -217,8 +212,8 @@ public class CardService {
         Card card = Card.builder().column(column).title(request.getTitle())
                 .description(sanitizeHtml(request.getDescription())).position(nextPosition)
                 .bgColor(request.getBgColor()).priority(request.getPriority())
-                .dueDate(request.getDueDate()).parentCard(parentCard)
-                .storyPoints(storyPoints).build();
+                .dueDate(request.getDueDate()).parentCard(parentCard).storyPoints(storyPoints)
+                .build();
 
         if (request.getAssigneeId() != null) {
             com.kanban.user.User assignee = userRepository.findById(request.getAssigneeId())
@@ -352,7 +347,8 @@ public class CardService {
                 card.setAssignee(assignee);
             }
         }
-        context.assigneeChanged = determineAssigneeChange(context.oldAssigneeId, context.newAssigneeId);
+        context.assigneeChanged =
+                determineAssigneeChange(context.oldAssigneeId, context.newAssigneeId);
     }
 
     private boolean determineAssigneeChange(Long oldAssigneeId, Long newAssigneeId) {
@@ -477,8 +473,7 @@ public class CardService {
 
         Long workspaceId = updatedCard.getColumn().getBoard().getWorkspace().getId();
         notificationService.createNotification(context.newAssigneeId,
-                NotificationType.CARD_ASSIGNMENT,
-                "카드 \"" + updatedCard.getTitle() + "\"에 할당되었습니다.",
+                NotificationType.CARD_ASSIGNMENT, "카드 \"" + updatedCard.getTitle() + "\"에 할당되었습니다.",
                 "/boards/" + workspaceId + "/" + updatedCard.getColumn().getBoard().getId()
                         + "?cardId=" + updatedCard.getId() + "&columnId="
                         + updatedCard.getColumn().getId());
@@ -496,8 +491,8 @@ public class CardService {
         }
         if (request.getPriority() != null
                 && !request.getPriority().equals(context.originalPriority)) {
-            historyChanges
-                    .add(new CardChange("PRIORITY", context.originalPriority, request.getPriority()));
+            historyChanges.add(
+                    new CardChange("PRIORITY", context.originalPriority, request.getPriority()));
         }
         if (context.assigneeChanged) {
             historyChanges.add(new CardChange("ASSIGNEE",
@@ -506,8 +501,7 @@ public class CardService {
                             ? String.valueOf(context.newAssigneeId)
                             : null));
         }
-        if (request.getDueDate() != null
-                && !request.getDueDate().equals(context.originalDueDate)) {
+        if (request.getDueDate() != null && !request.getDueDate().equals(context.originalDueDate)) {
             historyChanges.add(new CardChange("DUE_DATE",
                     context.originalDueDate != null ? context.originalDueDate.toString() : null,
                     request.getDueDate().toString()));
@@ -710,7 +704,13 @@ public class CardService {
         if (cardResponse.getAssigneeId() != null) {
             userRepository.findById(cardResponse.getAssigneeId()).ifPresent(user -> {
                 cardResponse.setAssignee(user.getName());
-                cardResponse.setAssigneeAvatarUrl(user.getAvatarUrl());
+                // Convert avatarUrl to proxy URL for consistent access
+                String avatarUrl = user.getAvatarUrl();
+                if (avatarUrl != null && !avatarUrl.startsWith("/users/")) {
+                    // blob URL이면 프록시 URL로 변환
+                    avatarUrl = "/users/" + user.getId() + "/avatar";
+                }
+                cardResponse.setAssigneeAvatarUrl(avatarUrl);
             });
         }
         return cardResponse;

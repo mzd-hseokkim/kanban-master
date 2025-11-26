@@ -50,19 +50,13 @@ public class SecurityConfig {
                                 .authorizeHttpRequests(auth -> auth.requestMatchers(
                                                 "/api/v1/auth/**", "/api/v1/health/**",
                                                 "/h2-console/**", "/v3/api-docs/**",
-                                                "/swagger-ui/**", "/swagger-ui.html", "/uploads/**", // 업로드된
-                                                                                                     // 파일(프로필
-                                                                                                     // 사진
-                                                                                                     // 등)은
-                                                                                                     // 인증
-                                                                                                     // 없이
-                                                                                                     // 접근
-                                                                                                     // 가능
+                                                "/swagger-ui/**", "/swagger-ui.html", "/uploads/**", // 업로드된 파일
                                                 "/login/oauth2/**", // OAuth2 로그인 엔드포인트
                                                 "/oauth2/**", // OAuth2 콜백 엔드포인트
                                                 "/ws/**" // WebSocket 엔드포인트
-                                ).permitAll().requestMatchers(HttpMethod.GET, "/actuator/health")
-                                                .permitAll().anyRequest().authenticated());
+                                ).permitAll()
+                                                .requestMatchers(HttpMethod.GET, "/actuator/health").permitAll()
+                                                .anyRequest().authenticated());
 
                 // OAuth2 설정이 있을 때만 활성화
                 if (clientRegistrationRepository != null && customOAuth2UserService != null

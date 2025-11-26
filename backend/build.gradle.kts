@@ -75,6 +75,10 @@ dependencies {
 
     // Excel processing
     implementation("org.apache.poi:poi-ooxml:5.3.0")
+
+    // Azure Storage
+    // Azure Storage
+    implementation("com.azure:azure-storage-blob:12.25.1")
 }
 
 tasks.withType<Test> {

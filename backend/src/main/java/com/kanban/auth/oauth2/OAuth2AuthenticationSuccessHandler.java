@@ -1,11 +1,18 @@
 package com.kanban.auth.oauth2;
 
-import com.kanban.auth.AuthToken;
-import com.kanban.auth.AuthTokenRepository;
-import com.kanban.auth.OAuth2Provider;
-import com.kanban.auth.TokenType;
-import com.kanban.auth.UserIdentity;
-import com.kanban.auth.UserIdentityRepository;
+import java.io.IOException;
+import java.time.LocalDateTime;
+import java.util.UUID;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.ResponseCookie;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.oauth2.core.user.OAuth2User;
+import org.springframework.security.web.authentication.SimpleUrlAuthenticationSuccessHandler;
+import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.util.UriComponentsBuilder;
+import com.kanban.auth.*;
 import com.kanban.auth.config.JwtProperties;
 import com.kanban.auth.token.JwtTokenProvider;
 import com.kanban.user.User;
@@ -16,24 +23,9 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.ResponseCookie;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.oauth2.core.user.OAuth2User;
-import org.springframework.security.web.authentication.SimpleUrlAuthenticationSuccessHandler;
-import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.util.UriComponentsBuilder;
-
-import java.io.IOException;
-import java.time.LocalDateTime;
-import java.util.UUID;
 
 /**
- * OAuth2 인증 성공 핸들러
- * Spec § 6. 백엔드 규격 - OAuth2AuthenticationSuccessHandler
- * FR-06g: OAuth2 콜백 처리
+ * OAuth2 인증 성공 핸들러 Spec § 6. 백엔드 규격 - OAuth2AuthenticationSuccessHandler FR-06g: OAuth2 콜백 처리
  * FR-06h: 보안 토큰 발급
  */
 @Slf4j
@@ -47,6 +39,7 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
     private final JwtTokenProvider tokenProvider;
     private final JwtProperties jwtProperties;
     private final UserWorkspaceService userWorkspaceService;
+    private final com.kanban.user.AvatarDownloadService avatarDownloadService;
 
     @Value("${app.oauth2.redirect-uri:http://localhost:3000/oauth2/callback}")
     private String redirectUri;
@@ -61,8 +54,7 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
     private String cookieDomain;
 
     /**
-     * OAuth2 인증 성공 시 호출
-     * Spec § 7. OAuth2 플로우 - 신규 사용자 Google 로그인 플로우
+     * OAuth2 인증 성공 시 호출 Spec § 7. OAuth2 플로우 - 신규 사용자 Google 로그인 플로우
      *
      * @param request HTTP 요청
      * @param response HTTP 응답
@@ -70,11 +62,8 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
      */
     @Override
     @Transactional
-    public void onAuthenticationSuccess(
-        HttpServletRequest request,
-        HttpServletResponse response,
-        Authentication authentication
-    ) throws IOException {
+    public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response,
+            Authentication authentication) throws IOException {
         try {
             OAuth2User oAuth2User = (OAuth2User) authentication.getPrincipal();
             String registrationId = getRegistrationId(request);
@@ -83,10 +72,8 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
 
             // Spec § 6: 프로바이더별 사용자 정보 매핑
             OAuth2Provider provider = OAuth2UserInfoFactory.fromProviderName(registrationId);
-            OAuth2UserInfo oAuth2UserInfo = OAuth2UserInfoFactory.getOAuth2UserInfo(
-                provider,
-                oAuth2User.getAttributes()
-            );
+            OAuth2UserInfo oAuth2UserInfo =
+                    OAuth2UserInfoFactory.getOAuth2UserInfo(provider, oAuth2User.getAttributes());
 
             // Spec § 7. 보안 처리 - 이메일 검증
             String email = oAuth2UserInfo.getEmail();
@@ -110,13 +97,13 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
             ResponseCookie cookie = buildRefreshCookie(refreshToken.getToken(), false);
             response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
 
-            log.debug("OAuth2 login successful. Access token and refresh token created for user: {}", user.getEmail());
+            log.debug(
+                    "OAuth2 login successful. Access token and refresh token created for user: {}",
+                    user.getEmail());
 
             // Spec § 6: 프론트엔드로 리다이렉션 (/auth/callback?token={JWT})
             String targetUrl = UriComponentsBuilder.fromUriString(redirectUri)
-                .queryParam("token", accessToken)
-                .build()
-                .toUriString();
+                    .queryParam("token", accessToken).build().toUriString();
 
             log.debug("Redirecting to: {}", targetUrl);
             getRedirectStrategy().sendRedirect(request, response, targetUrl);
@@ -128,8 +115,8 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
     }
 
     /**
-     * OAuth2 사용자 처리: UserIdentity 및 User 조회 또는 생성
-     * Spec § 6. 서비스 로직 - OAuth2AuthenticationSuccessHandler 플로우
+     * OAuth2 사용자 처리: UserIdentity 및 User 조회 또는 생성 Spec § 6. 서비스 로직 -
+     * OAuth2AuthenticationSuccessHandler 플로우
      *
      * @param oAuth2UserInfo OAuth2 사용자 정보
      * @return User 엔티티
@@ -141,11 +128,11 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
 
         // Spec § 3: 시나리오 3 - 이미 Google 계정이 연동된 사용자의 재로그인
         UserIdentity existingIdentity = userIdentityRepository
-            .findByProviderAndProviderUserId(provider, providerId)
-            .orElse(null);
+                .findByProviderAndProviderUserId(provider, providerId).orElse(null);
 
         if (existingIdentity != null) {
-            log.debug("Existing UserIdentity found. User: {}", existingIdentity.getUser().getEmail());
+            log.debug("Existing UserIdentity found. User: {}",
+                    existingIdentity.getUser().getEmail());
             User user = existingIdentity.getUser();
             user.setLastLoginAt(LocalDateTime.now());
 
@@ -159,7 +146,8 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
         User user = userRepository.findByEmail(email).orElse(null);
 
         if (user != null) {
-            log.debug("Existing User found by email. Creating UserIdentity for provider: {}", provider);
+            log.debug("Existing User found by email. Creating UserIdentity for provider: {}",
+                    provider);
             UserIdentity newIdentity = createUserIdentity(user, oAuth2UserInfo);
             user.setLastLoginAt(LocalDateTime.now());
 
@@ -177,45 +165,46 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
     }
 
     /**
-     * 신규 User 생성
-     * Spec § 3: 시나리오 1 - 신규 사용자 자동 생성
-     * FR-06c: 신규 사용자 자동 생성
+     * 신규 User 생성 Spec § 3: 시나리오 1 - 신규 사용자 자동 생성 FR-06c: 신규 사용자 자동 생성
      */
     private User createUser(OAuth2UserInfo oAuth2UserInfo) {
-        User user = User.builder()
-            .email(oAuth2UserInfo.getEmail())
-            .name(oAuth2UserInfo.getName())
-            .password(null)  // Spec § 6: 소셜 로그인 전용 사용자는 password null
-            .avatarUrl(oAuth2UserInfo.getProfileImageUrl())
-            .status(UserStatus.ACTIVE)
-            .emailVerified(true)  // OAuth2 로그인은 이미 이메일이 인증된 것으로 간주
-            .emailVerifiedAt(LocalDateTime.now())
-            .lastLoginAt(LocalDateTime.now())
-            .build();
+        User user = User.builder().email(oAuth2UserInfo.getEmail()).name(oAuth2UserInfo.getName())
+                .password(null) // Spec § 6: 소셜 로그인 전용 사용자는 password null
+                .avatarUrl(null) // 임시로 null 설정, 저장 후 다운로드
+                .status(UserStatus.ACTIVE).emailVerified(true) // OAuth2 로그인은 이미 이메일이 인증된 것으로 간주
+                .emailVerifiedAt(LocalDateTime.now()).lastLoginAt(LocalDateTime.now()).build();
 
-        return userRepository.save(user);
+        User savedUser = userRepository.save(user);
+
+        // OAuth 프로필 이미지 다운로드 및 저장
+        if (oAuth2UserInfo.getProfileImageUrl() != null
+                && !oAuth2UserInfo.getProfileImageUrl().isBlank()) {
+            String localAvatarUrl = avatarDownloadService
+                    .downloadAndStore(oAuth2UserInfo.getProfileImageUrl(), savedUser.getId());
+            if (localAvatarUrl != null) {
+                savedUser.setAvatarUrl(localAvatarUrl);
+                userRepository.save(savedUser);
+            }
+        }
+
+        return savedUser;
     }
 
     /**
-     * UserIdentity 생성
-     * FR-06b: UserIdentity 엔티티 추가
+     * UserIdentity 생성 FR-06b: UserIdentity 엔티티 추가
      */
     private UserIdentity createUserIdentity(User user, OAuth2UserInfo oAuth2UserInfo) {
-        UserIdentity identity = UserIdentity.builder()
-            .user(user)
-            .provider(oAuth2UserInfo.getProvider())
-            .providerUserId(oAuth2UserInfo.getProviderId())
-            .email(oAuth2UserInfo.getEmail())
-            .name(oAuth2UserInfo.getName())
-            .profileImageUrl(oAuth2UserInfo.getProfileImageUrl())
-            .build();
+        UserIdentity identity =
+                UserIdentity.builder().user(user).provider(oAuth2UserInfo.getProvider())
+                        .providerUserId(oAuth2UserInfo.getProviderId())
+                        .email(oAuth2UserInfo.getEmail()).name(oAuth2UserInfo.getName())
+                        .profileImageUrl(oAuth2UserInfo.getProfileImageUrl()).build();
 
         return userIdentityRepository.save(identity);
     }
 
     /**
-     * 프로필 정보 동기화 (사용자 요청 사항)
-     * Google에서 제공하는 이름과 프로필 이미지를 User 테이블에 동기화
+     * 프로필 정보 동기화 (사용자 요청 사항) Google에서 제공하는 이름과 프로필 이미지를 User 테이블에 동기화
      */
     private void syncUserProfile(User user, UserIdentity identity, OAuth2UserInfo oAuth2UserInfo) {
         // 이름 동기화
@@ -225,9 +214,29 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
         }
 
         // 프로필 이미지 동기화
-        if (oAuth2UserInfo.getProfileImageUrl() != null && !oAuth2UserInfo.getProfileImageUrl().isBlank()) {
-            user.setAvatarUrl(oAuth2UserInfo.getProfileImageUrl());
-            identity.setProfileImageUrl(oAuth2UserInfo.getProfileImageUrl());
+        String newOAuthUrl = oAuth2UserInfo.getProfileImageUrl();
+        if (newOAuthUrl != null && !newOAuthUrl.isBlank()) {
+            String currentAvatarUrl = user.getAvatarUrl();
+
+            // user.avatarUrl이 외부 URL이면 무조건 다운로드 (기존 Google OAuth 사용자 마이그레이션)
+            boolean needsDownload =
+                    currentAvatarUrl == null || currentAvatarUrl.startsWith("http://")
+                            || currentAvatarUrl.startsWith("https://");
+
+            if (needsDownload) {
+                log.info("Downloading OAuth profile image for user: {}", user.getEmail());
+                String localAvatarUrl =
+                        avatarDownloadService.downloadAndStore(newOAuthUrl, user.getId());
+                if (localAvatarUrl != null) {
+                    user.setAvatarUrl(localAvatarUrl);
+                    identity.setProfileImageUrl(newOAuthUrl);
+                    log.info("OAuth profile image downloaded and stored for user: {}",
+                            user.getEmail());
+                } else {
+                    log.warn("Failed to download OAuth profile image for user: {}",
+                            user.getEmail());
+                }
+            }
         }
 
         log.debug("Profile synced for user: {}", user.getEmail());
@@ -247,44 +256,34 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
     /**
      * 에러 리다이렉션
      */
-    private void redirectToError(HttpServletResponse response, String errorMessage) throws IOException {
+    private void redirectToError(HttpServletResponse response, String errorMessage)
+            throws IOException {
         String targetUrl = UriComponentsBuilder.fromUriString("http://localhost:3000/login")
-            .queryParam("error", errorMessage)
-            .build()
-            .toUriString();
+                .queryParam("error", errorMessage).build().toUriString();
 
         response.sendRedirect(targetUrl);
     }
 
     /**
-     * Refresh Token 생성
-     * AuthService의 createRefreshToken과 동일한 로직
+     * Refresh Token 생성 AuthService의 createRefreshToken과 동일한 로직
      */
     private AuthToken createRefreshToken(User user) {
-        AuthToken token = AuthToken.builder()
-            .token(UUID.randomUUID().toString())
-            .type(TokenType.REFRESH)
-            .expiresAt(LocalDateTime.now().plusSeconds(
-                jwtProperties.refreshTokenValiditySeconds()))
-            .revoked(false)
-            .user(user)
-            .build();
+        AuthToken token =
+                AuthToken.builder().token(UUID.randomUUID().toString()).type(TokenType.REFRESH)
+                        .expiresAt(LocalDateTime.now()
+                                .plusSeconds(jwtProperties.refreshTokenValiditySeconds()))
+                        .revoked(false).user(user).build();
         return authTokenRepository.save(token);
     }
 
     /**
-     * Refresh Token Cookie 생성
-     * AuthService의 buildRefreshCookie와 동일한 로직
+     * Refresh Token Cookie 생성 AuthService의 buildRefreshCookie와 동일한 로직
      */
     private ResponseCookie buildRefreshCookie(String value, boolean expireNow) {
         long maxAge = expireNow ? 0 : jwtProperties.refreshTokenValiditySeconds();
-        ResponseCookie.ResponseCookieBuilder builder = ResponseCookie
-            .from(jwtProperties.refreshTokenCookieName(), value)
-            .httpOnly(true)
-            .secure(cookieSecure)
-            .path("/")
-            .maxAge(maxAge)
-            .sameSite(cookieSameSite);
+        ResponseCookie.ResponseCookieBuilder builder =
+                ResponseCookie.from(jwtProperties.refreshTokenCookieName(), value).httpOnly(true)
+                        .secure(cookieSecure).path("/").maxAge(maxAge).sameSite(cookieSameSite);
 
         if (cookieDomain != null && !cookieDomain.isEmpty()) {
             builder.domain(cookieDomain);

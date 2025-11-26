@@ -165,32 +165,11 @@ select:not(.borderless-input):not(:focus) {
     .text-pastel-orange-800 { color: #9a3412; }
 }
 
-/* 칼럼 영역 가로 스크롤바를 항상 표시 (Mac 등 자동 숨김 방지) */
+/* 칼럼 영역 가로 스크롤바 설정 */
 .columns-scroll-area {
     overflow-x: auto;
     overflow-y: hidden;
-    scrollbar-gutter: stable;
-    scrollbar-color: rgba(255, 255, 255, 0.35) rgba(255, 255, 255, 0.06);
-    scrollbar-width: thin;
-}
-
-.columns-scroll-area::-webkit-scrollbar {
-    height: 12px;
-}
-
-.columns-scroll-area::-webkit-scrollbar-track {
-    background: rgba(255, 255, 255, 0.06);
-    border-radius: 9999px;
-}
-
-.columns-scroll-area::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.35);
-    border-radius: 9999px;
-    border: 2px solid rgba(15, 23, 42, 0.4);
-}
-
-.columns-scroll-area::-webkit-scrollbar-thumb:hover {
-    background: rgba(255, 255, 255, 0.55);
+    /* 커스텀 스크롤바 스타일 제거 - 브라우저 기본 스크롤바 사용 */
 }
 
 .page-transition-wrapper {
@@ -557,4 +536,26 @@ select:not(.borderless-input):not(:focus) {
 
 .animate-scanner {
     animation: scanner 2s linear infinite;
+}
+
+/* Kanban Scroll Container - Always show scrollbar */
+.kanban-scroll-container::-webkit-scrollbar {
+  -webkit-appearance: none;
+  width: 14px;
+  height: 14px;
+}
+
+.kanban-scroll-container::-webkit-scrollbar-thumb {
+  background-color: rgba(156, 163, 175, 0.5); /* slate-400 with opacity */
+  border-radius: 7px;
+  border: 3px solid transparent;
+  background-clip: content-box;
+}
+
+.kanban-scroll-container::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(107, 114, 128, 0.8); /* slate-500 with opacity */
+}
+
+.kanban-scroll-container::-webkit-scrollbar-track {
+  background-color: transparent;
 }

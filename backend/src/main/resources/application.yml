@@ -45,11 +45,14 @@ spring:
         username: root
         password: password!
         hikari:
+            pool-name: HikariPool-Kanban
+            auto-commit: false
             maximum-pool-size: 10
             minimum-idle: 5
             connection-timeout: 30000
             idle-timeout: 600000
             max-lifetime: 1800000
+            leak-detection-threshold: 2000 # Detect leaks > 2s
 
     data:
         redis:
@@ -67,7 +70,7 @@ spring:
         open-in-view: false
         database-platform: org.hibernate.dialect.PostgreSQLDialect
         hibernate:
-            ddl-auto: update
+            ddl-auto: update # Temporarily reverted from validate for troubleshooting
         show-sql: true
         properties:
             hibernate:
@@ -85,6 +88,17 @@ spring:
         deserialization:
             fail-on-unknown-properties: false
         time-zone: UTC
+
+# Storage Configuration
+storage:
+    type: ${STORAGE_TYPE:local} # local, azure
+    local:
+        root-dir: uploads
+    azure:
+        account-name: ${AZURE_STORAGE_ACCOUNT_NAME:devstoreaccount1}
+        account-key: ${AZURE_STORAGE_ACCOUNT_KEY:Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==}
+        endpoint: ${AZURE_STORAGE_CONNECTION_STRING:UseDevelopmentStorage=true}
+        container-name: ${AZURE_STORAGE_CONTAINER_NAME:kanban-master}
 
 server:
     port: ${SERVER_PORT:8080}

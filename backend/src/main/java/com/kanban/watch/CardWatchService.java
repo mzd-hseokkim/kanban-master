@@ -151,7 +151,13 @@ public class CardWatchService {
         if (cardResponse.getAssigneeId() != null) {
             userRepository.findById(cardResponse.getAssigneeId()).ifPresent(user -> {
                 cardResponse.setAssignee(user.getName());
-                cardResponse.setAssigneeAvatarUrl(user.getAvatarUrl());
+                // Convert avatarUrl to proxy URL for consistent access
+                String avatarUrl = user.getAvatarUrl();
+                if (avatarUrl != null && !avatarUrl.startsWith("/users/")) {
+                    // blob URL이면 프록시 URL로 변환
+                    avatarUrl = "/users/" + user.getId() + "/avatar";
+                }
+                cardResponse.setAssigneeAvatarUrl(avatarUrl);
             });
         }
         return cardResponse;

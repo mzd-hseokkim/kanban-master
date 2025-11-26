@@ -1,5 +1,5 @@
 import checklistService, { ChecklistItem, ChecklistProgress } from '@/services/checklistService';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { HiCheck, HiPlus, HiTrash } from 'react-icons/hi';
 
 interface ChecklistSectionProps {
@@ -22,6 +22,8 @@ export const ChecklistSection: React.FC<ChecklistSectionProps> = ({
   const [newItemContent, setNewItemContent] = useState('');
   const [loading, setLoading] = useState(false);
   const [hideCompleted, setHideCompleted] = useState(false);
+
+  const inputRef = useRef<HTMLInputElement>(null);
 
   const loadChecklist = async () => {
     try {
@@ -50,6 +52,11 @@ export const ChecklistSection: React.FC<ChecklistSectionProps> = ({
       });
       setNewItemContent('');
       await loadChecklist();
+
+      // 입력 완료 후 다시 포커스
+      setTimeout(() => {
+        inputRef.current?.focus();
+      }, 0);
     } catch (error) {
       console.error('Failed to create checklist item:', error);
     } finally {
@@ -154,6 +161,7 @@ export const ChecklistSection: React.FC<ChecklistSectionProps> = ({
       {canEdit && (
         <div className="flex items-center gap-2">
           <input
+            ref={inputRef}
             type="text"
             value={newItemContent}
             onChange={(e) => setNewItemContent(e.target.value)}

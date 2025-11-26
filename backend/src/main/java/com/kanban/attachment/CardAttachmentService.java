@@ -32,7 +32,7 @@ public class CardAttachmentService {
                 .orElseThrow(() -> new ResourceNotFoundException("Card not found"));
 
         // 파일 저장
-        String storedFileName = fileStorageService.store(file);
+        String storedFileName = fileStorageService.store(file, "attachments");
 
         // DB 저장
         CardAttachment attachment =

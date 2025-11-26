@@ -1,9 +1,11 @@
 
-import { useModalAnimation } from '@/hooks/useModalAnimation';
+import { useAuth } from '@/context/AuthContext';
+import { usePresenceTransition } from '@/hooks/usePresenceTransition';
 import { NotificationPreference, notificationService } from '@/services/notificationService';
-import { modalOverlayClass, modalPanelClass } from '@/styles/modalStyles';
 import React, { useEffect, useState } from 'react';
-import { HiBell, HiX } from 'react-icons/hi';
+import { createPortal } from 'react-dom';
+import { HiBell, HiUser, HiX } from 'react-icons/hi';
+import { ProfilePhotoUpload } from './ProfilePhotoUpload';
 
 interface SettingsModalProps {
     isOpen: boolean;
@@ -11,9 +13,10 @@ interface SettingsModalProps {
 }
 
 export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
-    const { stage, close } = useModalAnimation(onClose);
+    const { shouldRender, stage } = usePresenceTransition(isOpen, 320);
+    const { user, updateAvatar, removeAvatar } = useAuth();
 
-    const [activeTab, setActiveTab] = useState<'profile' | 'notification'>('notification');
+    const [activeTab, setActiveTab] = useState<'profile' | 'notification'>('profile');
     const [preference, setPreference] = useState<NotificationPreference>({
         notifyDueDate: true,
         dueDateBeforeMinutes: 60
@@ -22,10 +25,26 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
     const [saving, setSaving] = useState(false);
 
     useEffect(() => {
-        if (isOpen) {
+        if (isOpen && activeTab === 'notification') {
             loadPreference();
         }
-    }, [isOpen]);
+    }, [isOpen, activeTab]);
+
+    // ESC 키로 모달 닫기
+    useEffect(() => {
+        const handleKeyDown = (event: KeyboardEvent) => {
+            if (event.key === 'Escape' && isOpen) {
+                onClose();
+            }
+        };
+
+        if (isOpen) {
+            window.addEventListener('keydown', handleKeyDown);
+            return () => {
+                window.removeEventListener('keydown', handleKeyDown);
+            };
+        }
+    }, [isOpen, onClose]);
 
     const loadPreference = async () => {
         try {
@@ -43,8 +62,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
         try {
             setSaving(true);
             await notificationService.updateMyPreference(preference);
-            // Show success toast (optional)
-            close();
+            onClose();
         } catch (error) {
             console.error('Failed to update notification preference:', error);
         } finally {
@@ -52,43 +70,109 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
         }
     };
 
-    if (!isOpen && stage !== 'exit') return null;
+    if (!shouldRender || !user) return null;
 
-    return (
-        <div className={modalOverlayClass(stage)}>
-            <div className={`${modalPanelClass({ stage })} w-full max-w-md bg-slate-800 rounded-xl shadow-2xl border border-white/10 overflow-hidden`}>
+    const modalContent = (
+        <div
+            className={`fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[9999] transition-opacity duration-300 ${
+                stage === 'enter' ? 'opacity-100' : 'opacity-0'
+            }`}
+            onClick={onClose}
+        >
+            <div
+                className={`w-full max-w-2xl bg-slate-800 rounded-xl shadow-2xl border border-white/10 overflow-hidden transition-all duration-300 ${
+                    stage === 'enter' ? 'scale-100 opacity-100' : 'scale-95 opacity-0'
+                }`}
+                onClick={(e) => e.stopPropagation()}
+            >
                 {/* Header */}
                 <div className="px-6 py-4 border-b border-white/10 flex justify-between items-center bg-slate-900/50">
                     <h2 className="text-lg font-bold text-white flex items-center gap-2">
-                        <HiBell className="text-blue-400" />
-                        설정
+                        {activeTab === 'profile' ? (
+                            <>
+                                <HiUser className="text-blue-400" />
+                                프로필 설정
+                            </>
+                        ) : (
+                            <>
+                                <HiBell className="text-blue-400" />
+                                알림 설정
+                            </>
+                        )}
                     </h2>
                     <button
-                        onClick={close}
+                        onClick={onClose}
                         className="text-slate-400 hover:text-white transition-colors p-1 rounded-lg hover:bg-white/10"
                     >
                         <HiX className="text-xl" />
                     </button>
                 </div>
 
-                {/* Tabs (Currently only Notification is active for this task) */}
+                {/* Tabs */}
                 <div className="flex border-b border-white/10">
                     <button
-                        className={`flex-1 py-3 text-sm font-medium transition-colors ${
+                        className={`flex-1 py-3 text-sm font-medium transition-colors flex items-center justify-center gap-2 ${
+                            activeTab === 'profile'
+                                ? 'text-blue-400 border-b-2 border-blue-400 bg-white/5'
+                                : 'text-slate-400 hover:text-white hover:bg-white/5'
+                        }`}
+                        onClick={() => setActiveTab('profile')}
+                    >
+                        <HiUser className="text-lg" />
+                        프로필
+                    </button>
+                    <button
+                        className={`flex-1 py-3 text-sm font-medium transition-colors flex items-center justify-center gap-2 ${
                             activeTab === 'notification'
                                 ? 'text-blue-400 border-b-2 border-blue-400 bg-white/5'
                                 : 'text-slate-400 hover:text-white hover:bg-white/5'
                         }`}
                         onClick={() => setActiveTab('notification')}
                     >
-                        알림 설정
+                        <HiBell className="text-lg" />
+                        알림
                     </button>
-                    {/* Add Profile tab later if needed */}
                 </div>
 
                 {/* Content */}
-                <div className="p-6">
-                    {loading ? (
+                <div className="p-6 max-h-[60vh] overflow-y-auto">
+                    {activeTab === 'profile' ? (
+                        <div className="space-y-6">
+                            {/* 프로필 사진 섹션 */}
+                            <div>
+                                <h3 className="text-sm font-semibold text-white mb-4">프로필 사진</h3>
+                                <ProfilePhotoUpload
+                                    currentAvatarUrl={user.avatarUrl}
+                                    userName={user.name}
+                                    onUploadSuccess={updateAvatar}
+                                    onDeleteSuccess={removeAvatar}
+                                />
+                            </div>
+
+                            {/* 기본 정보 섹션 */}
+                            <div className="pt-6 border-t border-white/10">
+                                <h3 className="text-sm font-semibold text-white mb-4">기본 정보</h3>
+                                <div className="space-y-4">
+                                    <div>
+                                        <label className="block text-xs font-medium text-slate-400 mb-2">
+                                            이름
+                                        </label>
+                                        <div className="px-4 py-3 bg-slate-900/50 border border-white/10 rounded-lg text-white">
+                                            {user.name}
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-medium text-slate-400 mb-2">
+                                            이메일
+                                        </label>
+                                        <div className="px-4 py-3 bg-slate-900/50 border border-white/10 rounded-lg text-white">
+                                            {user.email}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    ) : loading ? (
                         <div className="flex justify-center py-8">
                             <div className="animate-spin h-8 w-8 border-2 border-blue-500 border-t-transparent rounded-full" />
                         </div>
@@ -143,20 +227,24 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
                 {/* Footer */}
                 <div className="px-6 py-4 bg-slate-900/50 border-t border-white/10 flex justify-end gap-3">
                     <button
-                        onClick={close}
+                        onClick={onClose}
                         className="px-4 py-2 text-sm font-medium text-slate-300 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
                     >
-                        취소
+                        {activeTab === 'profile' ? '닫기' : '취소'}
                     </button>
-                    <button
-                        onClick={handleSave}
-                        disabled={saving || loading}
-                        className="px-4 py-2 text-sm font-bold text-white bg-blue-500 hover:bg-blue-600 active:bg-blue-700 rounded-lg shadow-lg shadow-blue-500/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                        {saving ? '저장 중...' : '저장'}
-                    </button>
+                    {activeTab === 'notification' && (
+                        <button
+                            onClick={handleSave}
+                            disabled={saving || loading}
+                            className="px-4 py-2 text-sm font-bold text-white bg-blue-500 hover:bg-blue-600 active:bg-blue-700 rounded-lg shadow-lg shadow-blue-500/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            {saving ? '저장 중...' : '저장'}
+                        </button>
+                    )}
                 </div>
             </div>
         </div>
     );
+
+    return createPortal(modalContent, document.body);
 };

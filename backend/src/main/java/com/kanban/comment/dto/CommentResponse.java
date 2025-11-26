@@ -1,15 +1,13 @@
 package com.kanban.comment.dto;
 
+import java.time.LocalDateTime;
 import com.kanban.comment.Comment;
 import lombok.*;
-
-import java.time.LocalDateTime;
 
 /**
  * 댓글 응답 DTO
  *
- * Spec § 6. 백엔드 규격 - DTO 클래스
- * Spec § FR-06e: 작성자 정보 표시 (이름, 이메일, 아바타, 작성 시간)
+ * Spec § 6. 백엔드 규격 - DTO 클래스 Spec § FR-06e: 작성자 정보 표시 (이름, 이메일, 아바타, 작성 시간)
  */
 @Getter
 @Setter
@@ -59,8 +57,7 @@ public class CommentResponse {
     private LocalDateTime createdAt;
 
     /**
-     * 수정 시간
-     * Spec § FR-06m: 수정 이력 표시용
+     * 수정 시간 Spec § FR-06m: 수정 이력 표시용
      */
     private LocalDateTime updatedAt;
 
@@ -71,16 +68,17 @@ public class CommentResponse {
      * @return CommentResponse
      */
     public static CommentResponse from(Comment comment) {
-        return CommentResponse.builder()
-                .id(comment.getId())
-                .cardId(comment.getCard().getId())
-                .authorId(comment.getAuthor().getId())
-                .authorName(comment.getAuthor().getName())
-                .authorEmail(comment.getAuthor().getEmail())
-                .authorAvatarUrl(comment.getAuthor().getAvatarUrl())
-                .content(comment.getContent())
-                .createdAt(comment.getCreatedAt())
-                .updatedAt(comment.getUpdatedAt())
-                .build();
+        // Convert avatarUrl to proxy URL for consistent access
+        String avatarUrl = comment.getAuthor().getAvatarUrl();
+        if (avatarUrl != null && !avatarUrl.startsWith("/users/")) {
+            // blob URL이면 프록시 URL로 변환
+            avatarUrl = "/users/" + comment.getAuthor().getId() + "/avatar";
+        }
+
+        return CommentResponse.builder().id(comment.getId()).cardId(comment.getCard().getId())
+                .authorId(comment.getAuthor().getId()).authorName(comment.getAuthor().getName())
+                .authorEmail(comment.getAuthor().getEmail()).authorAvatarUrl(avatarUrl)
+                .content(comment.getContent()).createdAt(comment.getCreatedAt())
+                .updatedAt(comment.getUpdatedAt()).build();
     }
 }
