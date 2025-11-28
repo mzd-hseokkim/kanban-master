@@ -7,6 +7,7 @@ import { FiTrash2 } from "react-icons/fi";
 
 interface BoardMemberTableProps {
   boardId: number;
+  boardOwnerId: number;
   canManage: boolean;
   onMemberCountChange?: (count: number) => void;
 }
@@ -46,6 +47,7 @@ const formatAvatarUrl = (avatarUrl?: string | null) => {
 
 interface BoardMemberRowProps {
   member: BoardMember;
+  boardOwnerId: number;
   canManage: boolean;
   gridTemplate: string;
   loading: boolean;
@@ -69,6 +71,7 @@ const StatusBadge = ({ status }: { status: InvitationStatus }) => {
 
 const BoardMemberRow = ({
   member,
+  boardOwnerId,
   canManage,
   gridTemplate,
   loading,
@@ -79,7 +82,17 @@ const BoardMemberRow = ({
 }: BoardMemberRowProps) => {
   const avatarUrl = formatAvatarUrl(member.avatarUrl);
 
+  const isOwner = member.userId === boardOwnerId;
+
   const renderRoleControl = () => {
+    if (isOwner) {
+      return (
+        <span className="inline-block px-2 py-1 text-xs rounded font-medium bg-indigo-100 text-indigo-800">
+          Owner
+        </span>
+      );
+    }
+
     if (!canManage) {
       return (
         <span
@@ -127,7 +140,7 @@ const BoardMemberRow = ({
         <StatusBadge status={member.invitationStatus} />
       </div>
 
-      {canManage && (
+      {canManage && !isOwner && (
         <div className="col-span-1 flex justify-end">
           <button
             onClick={() => onRemove(member.userId)}
@@ -169,6 +182,7 @@ const BoardMemberRow = ({
 
 export const BoardMemberTable = ({
   boardId,
+  boardOwnerId,
   canManage,
   onMemberCountChange,
 }: BoardMemberTableProps) => {
@@ -295,6 +309,7 @@ export const BoardMemberTable = ({
               <BoardMemberRow
                 key={member.userId}
                 member={member}
+                boardOwnerId={boardOwnerId}
                 canManage={canManage}
                 gridTemplate={gridTemplate}
                 loading={loading}

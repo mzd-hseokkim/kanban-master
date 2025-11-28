@@ -7,7 +7,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import com.kanban.card.dto.CardPageResponse;
 import com.kanban.card.dto.CardResponse;
-import com.kanban.card.CardSortBy;
 import com.kanban.card.dto.CreateCardRequest;
 import com.kanban.card.dto.UpdateCardRequest;
 import com.kanban.common.SecurityUtil;
@@ -30,7 +29,8 @@ public class CardController {
     @GetMapping
     public ResponseEntity<CardPageResponse> listCards(@PathVariable Long workspaceId,
             @PathVariable Long boardId, @PathVariable Long columnId,
-            @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "100") int size,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "100") int size,
             @RequestParam(defaultValue = "createdAt") String sortBy,
             @RequestParam(defaultValue = "asc") String direction) {
         Sort.Direction sortDirection = Sort.Direction.fromString(direction);

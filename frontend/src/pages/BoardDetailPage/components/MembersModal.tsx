@@ -9,6 +9,7 @@ interface MembersModalProps {
   isOpen: boolean;
   onClose: () => void;
   boardId: number;
+  boardOwnerId: number;
   canManage: boolean;
   onInvite: () => void;
 }
@@ -17,6 +18,7 @@ export const MembersModal = ({
   isOpen,
   onClose,
   boardId,
+  boardOwnerId,
   canManage,
   onInvite,
 }: MembersModalProps) => {
@@ -66,7 +68,7 @@ export const MembersModal = ({
 
         {/* Content */}
         <div className="h-[60vh] overflow-hidden rounded-2xl border border-white/40 bg-white/30 backdrop-blur-sm">
-           <BoardMemberTable boardId={boardId} canManage={canManage} />
+           <BoardMemberTable boardId={boardId} boardOwnerId={boardOwnerId} canManage={canManage} />
         </div>
       </div>
     </div>

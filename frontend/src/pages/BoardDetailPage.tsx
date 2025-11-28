@@ -265,6 +265,7 @@ const BoardDetailPage = () => {
         workspaceId={workspaceNumericId}
         boardId={boardNumericId}
         boardName={board.name}
+        boardOwnerId={board.ownerId}
         canManage={canManage}
         columns={columns}
         showCreateColumnModal={uiState.showCreateColumnModal}

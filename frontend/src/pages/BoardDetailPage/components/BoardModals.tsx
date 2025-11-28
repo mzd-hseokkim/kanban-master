@@ -21,6 +21,7 @@ interface BoardModalsProps {
   workspaceId: number;
   boardId: number;
   boardName: string;
+  boardOwnerId: number;
   canManage: boolean;
   columns: Column[];
 
@@ -79,6 +80,7 @@ export const BoardModals = ({
   workspaceId,
   boardId,
   boardName,
+  boardOwnerId,
   canManage,
   columns,
   showCreateColumnModal,
@@ -172,6 +174,7 @@ export const BoardModals = ({
         <MembersModal
           isOpen={showMembersPanel}
           boardId={boardId}
+          boardOwnerId={boardOwnerId}
           canManage={canManage}
           onInvite={onOpenInviteModal}
           onClose={onCloseMembersPanel}
