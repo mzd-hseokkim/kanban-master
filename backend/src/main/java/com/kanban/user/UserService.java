@@ -22,7 +22,6 @@ public class UserService {
     private final UserRepository userRepository;
     private final FileStorageService fileStorageService;
     private final FileValidator fileValidator;
-    private final AvatarDownloadService avatarDownloadService;
 
     /**
      * 프로필 사진 업데이트

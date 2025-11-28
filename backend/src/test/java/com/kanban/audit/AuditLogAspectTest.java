@@ -15,6 +15,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.ApplicationContext;
 import org.springframework.data.repository.CrudRepository;
 
+
+@SuppressWarnings("rawtypes")
 @ExtendWith(MockitoExtension.class)
 class AuditLogAspectTest {
 
@@ -61,6 +63,7 @@ class AuditLogAspectTest {
         verify(auditLogRepository).save(any(AuditLog.class));
     }
 
+    @SuppressWarnings("unchecked")
     @Test
     void audit_UpdateAction_ShouldSaveLog_WhenChangesExist() throws Throwable {
         // Given
@@ -85,6 +88,7 @@ class AuditLogAspectTest {
         verify(auditLogRepository).save(any(AuditLog.class));
     }
 
+    @SuppressWarnings("unchecked")
     @Test
     void audit_UpdateAction_ShouldNotSaveLog_WhenNoChanges() throws Throwable {
         // Given

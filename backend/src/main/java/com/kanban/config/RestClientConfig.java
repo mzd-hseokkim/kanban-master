@@ -42,7 +42,9 @@ public class RestClientConfig {
      */
     @Bean
     public RestTemplate restTemplate(RestTemplateBuilder builder) {
-        return builder.setConnectTimeout(Duration.ofSeconds(10))
-                .setReadTimeout(Duration.ofSeconds(10)).build();
+        var requestFactory = new JdkClientHttpRequestFactory();
+        requestFactory.setReadTimeout(Duration.ofSeconds(10));
+
+        return builder.requestFactory(() -> requestFactory).build();
     }
 }

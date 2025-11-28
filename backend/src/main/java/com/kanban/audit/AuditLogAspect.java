@@ -158,17 +158,14 @@ public class AuditLogAspect {
         }
     }
 
+    @SuppressWarnings("unchecked")
     private CrudRepository<?, Long> getRepository(AuditTargetType type) {
-        switch (type) {
-            case BOARD:
-                return (CrudRepository<?, Long>) applicationContext.getBean("boardRepository");
-            case COLUMN:
-                return (CrudRepository<?, Long>) applicationContext.getBean("columnRepository");
-            case CARD:
-                return (CrudRepository<?, Long>) applicationContext.getBean("cardRepository");
-            default:
-                throw new IllegalArgumentException("Unknown target type: " + type);
-        }
+        return switch (type) {
+            case BOARD -> (CrudRepository<?, Long>) applicationContext.getBean("boardRepository");
+            case COLUMN -> (CrudRepository<?, Long>) applicationContext.getBean("columnRepository");
+            case CARD -> (CrudRepository<?, Long>) applicationContext.getBean("cardRepository");
+            case MEMBER -> throw new IllegalArgumentException("MEMBER audit not yet supported");
+        };
     }
 
     private String extractId(Object obj) {
