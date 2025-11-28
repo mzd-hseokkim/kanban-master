@@ -63,12 +63,18 @@ export const ColumnProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         setColumns(prev => prev.filter(col => col.id !== Number(columnId)));
         break;
       case 'COLUMN_REORDERED':
-        // For reorder, it's safer to reload to get all correct positions
-        // But we can update the specific one optimistically
-        setColumns(prev => {
+        // 백엔드에서 전체 칼럼 목록을 전송하므로 배열로 받아 처리
+        // 순서 변경 시 여러 칼럼의 position이 변경되므로 전체 목록으로 교체
+        if (Array.isArray(payload)) {
+          // 전체 칼럼 목록이 전송된 경우
+          setColumns(payload.sort((a, b) => a.position - b.position));
+        } else {
+          // 하위 호환성: 단일 칼럼만 전송된 경우 (기존 로직)
+          setColumns(prev => {
             const updated = prev.map(col => col.id === payload.id ? payload : col);
             return updated.sort((a, b) => a.position - b.position);
-        });
+          });
+        }
         break;
     }
   }, []);

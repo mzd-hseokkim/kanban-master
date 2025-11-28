@@ -4,11 +4,12 @@
 // FR-04e: 드래그 중 시각적 피드백 (opacity 50%, cursor grabbing)
 // WCAG 2.1 AA: ARIA 속성 및 접근성 지원
 
-import { useSortable } from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
 import { ColumnCard } from '@/components/ColumnCard';
 import type { Column } from '@/types/column';
 import type { CardSearchState } from '@/types/search';
+import { useSortable } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+import { useState } from 'react';
 
 interface SortableColumnCardProps {
   column: Column;
@@ -45,10 +46,14 @@ export const SortableColumnCard = ({
     disabled: !canEdit,
   });
 
+  const [columnZIndex, setColumnZIndex] = useState(0);
+
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
     opacity: isDragging ? 0.5 : 1, // FR-04e: 드래그 중 투명도 50%
+    zIndex: columnZIndex > 0 ? columnZIndex : undefined,
+    position: 'relative' as const,
   };
 
   // Spec § 5. 프론트엔드 규격 - ARIA 속성
@@ -77,6 +82,7 @@ export const SortableColumnCard = ({
         dragHandleProps={canEdit ? listeners : undefined}
         searchState={searchState}
         currentUserId={currentUserId}
+        onZIndexChange={setColumnZIndex}
       />
     </div>
   );

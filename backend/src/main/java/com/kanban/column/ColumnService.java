@@ -44,8 +44,9 @@ public class ColumnService {
          */
         @Transactional(readOnly = true)
         public ColumnResponse getColumn(Long columnId) {
-                BoardColumn column = columnRepository.findById(columnId).orElseThrow(
-                                () -> new NoSuchElementException(COLUMN_NOT_FOUND_MESSAGE + columnId));
+                BoardColumn column = columnRepository.findById(columnId)
+                                .orElseThrow(() -> new NoSuchElementException(
+                                                COLUMN_NOT_FOUND_MESSAGE + columnId));
                 return ColumnResponse.from(column);
         }
 
@@ -115,8 +116,9 @@ public class ColumnService {
                         allEntries = true)
         public ColumnResponse updateColumn(Long columnId, String name, String description,
                         String bgColor) {
-                BoardColumn column = columnRepository.findById(columnId).orElseThrow(
-                                () -> new NoSuchElementException(COLUMN_NOT_FOUND_MESSAGE + columnId));
+                BoardColumn column = columnRepository.findById(columnId)
+                                .orElseThrow(() -> new NoSuchElementException(
+                                                COLUMN_NOT_FOUND_MESSAGE + columnId));
 
                 if (name != null && !name.isBlank()) {
                         column.setName(name);
@@ -184,20 +186,21 @@ public class ColumnService {
                 BoardColumn updatedColumn = columnRepository.save(column);
 
                 // 활동 기록
+                // 활동 기록
                 if (currentPosition != newPosition) {
                         activityService.recordActivity(ActivityScopeType.BOARD, boardId,
                                         ActivityEventType.COLUMN_REORDERED, userId,
                                         "\"" + column.getName() + "\" 칼럼이 이동되었습니다");
                 }
 
-                // Redis 이벤트 발행
-                // Redis 이벤트 발행
-                ColumnResponse response = ColumnResponse.from(updatedColumn);
+                // Redis 이벤트 발행 - 전체 칼럼 목록을 전송
+                // 순서 변경 시 여러 칼럼의 position이 변경되므로 전체 목록을 조회하여 전송
+                List<ColumnResponse> allColumns = getColumnsByBoard(boardId);
                 redisPublisher.publish(new com.kanban.notification.event.BoardEvent(
                                 com.kanban.notification.event.BoardEvent.EventType.COLUMN_REORDERED
                                                 .name(),
-                                boardId, response, userId, System.currentTimeMillis()));
-                return response;
+                                boardId, allColumns, userId, System.currentTimeMillis()));
+                return ColumnResponse.from(updatedColumn);
         }
 
         /**

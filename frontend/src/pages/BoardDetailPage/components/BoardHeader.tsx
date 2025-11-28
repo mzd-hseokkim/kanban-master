@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type DragEvent, type ReactNode } from 'react';
-import { HiArrowLeft, HiCalendar, HiChartBar, HiChevronDown, HiClipboardList, HiDownload, HiLightningBolt, HiPlus, HiSearch, HiTag, HiUpload, HiUsers, HiViewBoards, HiViewList } from 'react-icons/hi';
+import { HiArrowLeft, HiCalendar, HiChartBar, HiChevronDown, HiClipboardList, HiDotsHorizontal, HiDownload, HiLightningBolt, HiPlus, HiSearch, HiTag, HiUpload, HiUsers, HiViewBoards, HiViewList } from 'react-icons/hi';
 import { MdArchive } from 'react-icons/md';
 
 interface BoardHeaderProps {
@@ -53,7 +53,9 @@ export const BoardHeader = ({
 }: BoardHeaderProps) => {
   const [isArchiveDropTarget, setIsArchiveDropTarget] = useState(false);
   const [isExcelMenuOpen, setIsExcelMenuOpen] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement | null>(null);
+  const mobileMenuRef = useRef<HTMLDivElement | null>(null);
 
   const handleArchiveDragOver = (e: DragEvent<HTMLButtonElement>) => {
     if (!canEdit) return;
@@ -88,6 +90,9 @@ export const BoardHeader = ({
       if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
         setIsExcelMenuOpen(false);
       }
+      if (mobileMenuRef.current && !mobileMenuRef.current.contains(event.target as Node)) {
+        setIsMobileMenuOpen(false);
+      }
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
@@ -109,13 +114,13 @@ export const BoardHeader = ({
           <div className="h-6 w-px bg-slate-200" />
 
           <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-bold text-slate-900 tracking-tight">{boardName}</h1>
+            <h1 className="text-2xl font-bold text-slate-900 tracking-tight whitespace-nowrap">{boardName}</h1>
 
             {/* Sprint Activation Button - next to board title */}
             {boardMode !== 'SPRINT' && onEnableSprint && (
               <button
                 onClick={onEnableSprint}
-                className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-semibold text-xs shadow-md shadow-purple-500/20 hover:from-purple-500 hover:to-indigo-500 transition-all duration-200"
+                className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-semibold text-xs shadow-md shadow-purple-500/20 hover:from-purple-500 hover:to-indigo-500 transition-all duration-200 whitespace-nowrap"
                 title="Sprint 모드 활성화"
               >
                 <HiLightningBolt className="text-sm" />
@@ -147,7 +152,7 @@ export const BoardHeader = ({
                     onViewModeChange('PLANNING');
                   }
                 }}
-                className={`flex items-center gap-2 px-3 py-1.5 rounded-lg font-semibold text-sm transition-all duration-200 ${
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-lg font-semibold text-sm transition-all duration-200 whitespace-nowrap ${
                   viewMode === 'PLANNING'
                     ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-md shadow-purple-500/20'
                     : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
@@ -192,7 +197,7 @@ export const BoardHeader = ({
           {canEdit && (
             <button
               onClick={onCreateColumn}
-              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-blue-600 to-cyan-600 text-white font-semibold text-sm shadow-md shadow-blue-500/20 hover:from-blue-500 hover:to-cyan-500 transition-all duration-200"
+              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-blue-600 to-cyan-600 text-white font-semibold text-sm shadow-md shadow-blue-500/20 hover:from-blue-500 hover:to-cyan-500 transition-all duration-200 whitespace-nowrap"
             >
               <HiPlus className="text-base" />
               <span className="hidden md:inline">칼럼 추가</span>
@@ -202,7 +207,7 @@ export const BoardHeader = ({
           {/* Analytics Button - Analysis Feature */}
           <button
             onClick={() => onViewModeChange('ANALYTICS')}
-            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg font-semibold text-sm transition-all duration-200 ${
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg font-semibold text-sm transition-all duration-200 whitespace-nowrap ${
               viewMode === 'ANALYTICS'
                 ? 'bg-gradient-to-r from-blue-600 to-cyan-600 text-white shadow-md shadow-blue-500/20'
                 : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
@@ -213,102 +218,222 @@ export const BoardHeader = ({
             <span>분석</span>
           </button>
 
-          <HeaderButton
-            icon={<HiSearch />}
-            label="검색"
-            onClick={onSearch}
-            badge={isFilterActive ? (
-              <span
-                className="absolute -right-0.5 -top-0.5 w-2.5 h-2.5 rounded-full bg-rose-500 ring-2 ring-white shadow-sm"
-                aria-label="필터 적용됨"
-                title="필터 적용됨"
-              />
-            ) : undefined}
-          />
+          {/* Desktop Menu Items (Hidden on Mobile/Tablet) */}
+          <div className="hidden xl:flex items-center gap-2">
+            <HeaderButton
+              icon={<HiSearch />}
+              label="검색"
+              onClick={onSearch}
+              badge={isFilterActive ? (
+                <span
+                  className="absolute -right-0.5 -top-0.5 w-2.5 h-2.5 rounded-full bg-rose-500 ring-2 ring-white shadow-sm"
+                  aria-label="필터 적용됨"
+                  title="필터 적용됨"
+                />
+              ) : undefined}
+            />
 
-          <div className="relative" ref={menuRef}>
-
-            <button
-              type="button"
-              onClick={() => setIsExcelMenuOpen((prev) => !prev)}
-              className="flex items-center gap-2 px-3 py-2 rounded-lg text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition-all duration-200 font-medium text-sm"
-            >
-              <HiDownload className="text-lg" />
-              <span className="hidden md:inline">엑셀</span>
-              <HiChevronDown className="text-sm" />
-            </button>
-            {isExcelMenuOpen && (
-              <div
-                className="absolute right-0 mt-2 w-56 rounded-2xl overflow-hidden excel-dropdown"
+            <div className="relative" ref={menuRef}>
+              <button
+                type="button"
+                onClick={() => setIsExcelMenuOpen((prev) => !prev)}
+                className="flex items-center gap-2 px-3 py-2 rounded-lg text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition-all duration-200 font-medium text-sm whitespace-nowrap"
               >
+                <HiDownload className="text-lg" />
+                <span className="hidden xl:inline">엑셀</span>
+                <HiChevronDown className="text-sm" />
+              </button>
+              {isExcelMenuOpen && (
+                <div
+                  className="absolute right-0 mt-2 w-56 rounded-2xl overflow-hidden excel-dropdown bg-white shadow-xl border border-slate-100 z-[130]"
+                >
+                  <button
+                    className="w-full flex items-center gap-2 px-4 py-3 text-sm text-slate-700 hover:bg-slate-50 transition-colors"
+                    onClick={() => {
+                      onTemplateDownload();
+                      setIsExcelMenuOpen(false);
+                    }}
+                  >
+                    <HiDownload className="text-slate-500" />
+                    템플릿 다운로드
+                  </button>
+                  <button
+                    className="w-full flex items-center gap-2 px-4 py-3 text-sm text-slate-700 hover:bg-slate-50 transition-colors"
+                    onClick={() => {
+                      onExportBoard();
+                      setIsExcelMenuOpen(false);
+                    }}
+                    disabled={isExporting}
+                  >
+                    <HiArrowLeft className="text-slate-500 rotate-180" />
+                    {isExporting ? '내보내는 중...' : '엑셀로 내보내기'}
+                  </button>
+                  <button
+                    className={`w-full flex items-center gap-2 px-4 py-3 text-sm transition-colors ${
+                      canEdit
+                        ? 'text-slate-700 hover:bg-slate-50'
+                        : 'text-slate-400 cursor-not-allowed bg-slate-50'
+                    }`}
+                    onClick={() => {
+                      if (!canEdit) return;
+                      onImport();
+                      setIsExcelMenuOpen(false);
+                    }}
+                  >
+                    <HiUpload className="text-slate-500" />
+                    엑셀 가져오기
+                  </button>
+                </div>
+              )}
+            </div>
+            <HeaderButton
+              icon={<HiCalendar />}
+              label="일정"
+              onClick={onCalendar}
+            />
+            <HeaderButton
+              icon={<HiTag />}
+              label="라벨"
+              onClick={onLabelManager}
+            />
+            <HeaderButton
+              icon={<HiLightningBolt />}
+              label="활동"
+              onClick={onToggleActivity}
+            />
+            <HeaderButton
+              icon={<HiUsers />}
+              label="멤버"
+              onClick={onToggleMembers}
+            />
+            <HeaderButton
+              icon={<MdArchive />}
+              label="아카이브"
+              onClick={onToggleArchive}
+              onDragOver={handleArchiveDragOver}
+              onDragLeave={handleArchiveDragLeave}
+              onDrop={handleArchiveDrop}
+              isDropActive={isArchiveDropTarget}
+            />
+          </div>
+
+          {/* Mobile Menu Button (Visible on Mobile/Tablet) */}
+          <div className="xl:hidden relative" ref={mobileMenuRef}>
+            <button
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              className="p-2 rounded-lg text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition-all"
+            >
+              <HiDotsHorizontal className="text-xl" />
+              {isFilterActive && (
+                <span className="absolute top-1 right-1 w-2.5 h-2.5 rounded-full bg-rose-500 ring-2 ring-white shadow-sm" />
+              )}
+            </button>
+
+            {isMobileMenuOpen && (
+              <div className="absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-xl border border-slate-100 py-2 z-[130]">
                 <button
-                  className="w-full flex items-center gap-2 px-4 py-3 text-sm text-slate-700 hover:bg-slate-50 transition-colors"
+                  onClick={() => {
+                    onSearch();
+                    setIsMobileMenuOpen(false);
+                  }}
+                  className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 transition-colors"
+                >
+                  <HiSearch className="text-lg text-slate-400" />
+                  검색
+                  {isFilterActive && <span className="ml-auto text-xs text-rose-500 font-medium">필터 적용됨</span>}
+                </button>
+                <button
+                  onClick={() => {
+                    onCalendar();
+                    setIsMobileMenuOpen(false);
+                  }}
+                  className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 transition-colors"
+                >
+                  <HiCalendar className="text-lg text-slate-400" />
+                  일정
+                </button>
+                <button
+                  onClick={() => {
+                    onLabelManager();
+                    setIsMobileMenuOpen(false);
+                  }}
+                  className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 transition-colors"
+                >
+                  <HiTag className="text-lg text-slate-400" />
+                  라벨
+                </button>
+                <button
+                  onClick={() => {
+                    onToggleActivity();
+                    setIsMobileMenuOpen(false);
+                  }}
+                  className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 transition-colors"
+                >
+                  <HiLightningBolt className="text-lg text-slate-400" />
+                  활동
+                </button>
+                <button
+                  onClick={() => {
+                    onToggleMembers();
+                    setIsMobileMenuOpen(false);
+                  }}
+                  className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 transition-colors"
+                >
+                  <HiUsers className="text-lg text-slate-400" />
+                  멤버
+                </button>
+                <button
+                  onClick={() => {
+                    onToggleArchive();
+                    setIsMobileMenuOpen(false);
+                  }}
+                  className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 transition-colors"
+                >
+                  <MdArchive className="text-lg text-slate-400" />
+                  아카이브
+                </button>
+
+                <div className="my-1 border-t border-slate-100" />
+
+                <div className="px-4 py-2 text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                  엑셀
+                </div>
+                <button
                   onClick={() => {
                     onTemplateDownload();
-                    setIsExcelMenuOpen(false);
+                    setIsMobileMenuOpen(false);
                   }}
+                  className="w-full flex items-center gap-3 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors"
                 >
-                  <HiDownload className="text-slate-500" />
+                  <HiDownload className="text-lg text-slate-400" />
                   템플릿 다운로드
                 </button>
                 <button
-                  className="w-full flex items-center gap-2 px-4 py-3 text-sm text-slate-700 hover:bg-slate-50 transition-colors"
                   onClick={() => {
                     onExportBoard();
-                    setIsExcelMenuOpen(false);
+                    setIsMobileMenuOpen(false);
                   }}
                   disabled={isExporting}
+                  className="w-full flex items-center gap-3 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors disabled:opacity-50"
                 >
-                  <HiArrowLeft className="text-slate-500 rotate-180" />
-                  {isExporting ? '내보내는 중...' : '엑셀로 내보내기'}
+                  <HiArrowLeft className="text-lg text-slate-400 rotate-180" />
+                  {isExporting ? '내보내는 중...' : '내보내기'}
                 </button>
-                <button
-                  className={`w-full flex items-center gap-2 px-4 py-3 text-sm transition-colors ${
-                    canEdit
-                      ? 'text-slate-700 hover:bg-slate-50'
-                      : 'text-slate-400 cursor-not-allowed bg-slate-50'
-                  }`}
-                  onClick={() => {
-                    if (!canEdit) return;
-                    onImport();
-                    setIsExcelMenuOpen(false);
-                  }}
-                >
-                  <HiUpload className="text-slate-500" />
-                  엑셀 가져오기
-                </button>
+                {canEdit && (
+                  <button
+                    onClick={() => {
+                      onImport();
+                      setIsMobileMenuOpen(false);
+                    }}
+                    className="w-full flex items-center gap-3 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors"
+                  >
+                    <HiUpload className="text-lg text-slate-400" />
+                    가져오기
+                  </button>
+                )}
               </div>
             )}
           </div>
-          <HeaderButton
-            icon={<HiCalendar />}
-            label="일정"
-            onClick={onCalendar}
-          />
-          <HeaderButton
-            icon={<HiTag />}
-            label="라벨"
-            onClick={onLabelManager}
-          />
-          <HeaderButton
-            icon={<HiLightningBolt />}
-            label="활동"
-            onClick={onToggleActivity}
-          />
-          <HeaderButton
-            icon={<HiUsers />}
-            label="멤버"
-            onClick={onToggleMembers}
-          />
-          <HeaderButton
-            icon={<MdArchive />}
-            label="아카이브"
-            onClick={onToggleArchive}
-            onDragOver={handleArchiveDragOver}
-            onDragLeave={handleArchiveDragLeave}
-            onDrop={handleArchiveDrop}
-            isDropActive={isArchiveDropTarget}
-          />
         </div>
       </div>
     </header>
@@ -333,7 +458,7 @@ const HeaderButton = ({ icon, label, onClick, onDrop, onDragOver, onDragLeave, i
     onDrop={onDrop}
     onDragOver={onDragOver}
     onDragLeave={onDragLeave}
-    className={`relative flex items-center gap-2 px-3 py-2 rounded-lg text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition-all duration-200 font-medium text-sm group focus:outline-none ${
+    className={`relative flex items-center gap-2 px-3 py-2 rounded-lg text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition-all duration-200 font-medium text-sm group focus:outline-none whitespace-nowrap ${
       isDropActive ? 'ring-2 ring-pastel-blue-300 bg-pastel-blue-50 text-pastel-blue-700' : ''
     }`}
   >

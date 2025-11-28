@@ -260,7 +260,13 @@ export const ListCardRow = ({
   return (
     <>
       <div
-        className={`relative z-10 group grid grid-cols-[40px_minmax(300px,3fr)_100px_120px_minmax(200px,2fr)_110px_100px_100px_100px_150px_90px] gap-4 items-center px-4 py-1 bg-white border-b border-slate-300 hover:bg-slate-50 transition-colors text-sm last:border-b-0 ${
+        className={`relative z-10 group grid gap-4 items-center px-4 py-1 bg-white border-b border-slate-300 hover:bg-slate-50 transition-colors text-sm last:border-b-0
+        grid-cols-[40px_1fr_90px]
+        md:grid-cols-[40px_1fr_100px_100px_90px]
+        lg:grid-cols-[40px_1fr_100px_120px_100px_150px_90px]
+        xl:grid-cols-[40px_2fr_100px_120px_2fr_100px_150px_90px]
+        2xl:grid-cols-[40px_3fr_100px_120px_2fr_110px_100px_100px_100px_150px_90px]
+        ${
           isDragging ? 'opacity-50' : ''
         } ${isLoadingRelations ? 'cursor-wait opacity-70' : canEdit && !isEditMode ? 'cursor-pointer' : 'cursor-default'}`}
         draggable={canEdit && !isEditMode && !isLoadingRelations}
@@ -319,7 +325,7 @@ export const ListCardRow = ({
         </div>
 
         {/* Priority */}
-        <div>
+        <div className="hidden md:block">
             {isEditMode ? (
                 <select
                     value={card.priority || ''}
@@ -341,7 +347,7 @@ export const ListCardRow = ({
         </div>
 
         {/* Labels */}
-        <div className="flex items-center gap-1 flex-wrap min-w-0">
+        <div className="hidden lg:flex items-center gap-1 flex-wrap min-w-0">
             {isEditMode ? (
                 <button
                     onClick={(e) => {
@@ -384,7 +390,7 @@ export const ListCardRow = ({
         </div>
 
         {/* Description */}
-        <div className="min-w-0">
+        <div className="hidden xl:block min-w-0">
             {isEditMode ? (
                  <input
                     type="text"
@@ -409,17 +415,17 @@ export const ListCardRow = ({
         </div>
 
         {/* Created At */}
-        <div className="text-xs text-slate-600">
+        <div className="hidden 2xl:block text-xs text-slate-600">
           {createdLabel || '-'}
         </div>
 
         {/* Due Date */}
-        <div className={`text-xs ${isOverdue && !card.isCompleted ? 'text-rose-600 font-bold' : 'text-slate-600'}`}>
+        <div className={`hidden md:block text-xs ${isOverdue && !card.isCompleted ? 'text-rose-600 font-bold' : 'text-slate-600'}`}>
           {dueDateInfo?.dateStr || '-'}
         </div>
 
         {/* Started At */}
-        <div className="text-xs text-slate-600 flex items-center">
+        <div className="hidden 2xl:flex text-xs text-slate-600 items-center">
             {isEditMode && !card.startedAt ? (
                 <button
                     onClick={handleStartCard}
@@ -434,7 +440,7 @@ export const ListCardRow = ({
         </div>
 
         {/* Completed At */}
-        <div className="text-xs text-slate-600">
+        <div className="hidden 2xl:block text-xs text-slate-600">
           {completedLabel ? (
             <div className="flex items-center gap-1 text-emerald-600">
               <HiCheckCircle className="w-3.5 h-3.5" />
@@ -444,7 +450,7 @@ export const ListCardRow = ({
         </div>
 
         {/* Assignee */}
-        <div className="min-w-0">
+        <div className="hidden lg:block min-w-0">
             {isEditMode ? (
                 <AssigneeSelector
                     currentAssignee={card.assignee ? { id: card.assigneeId!, name: card.assignee, avatarUrl: card.assigneeAvatarUrl } : null}

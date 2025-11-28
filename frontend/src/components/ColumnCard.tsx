@@ -10,7 +10,8 @@ import type { Card } from '@/types/card';
 import { Column } from '@/types/column';
 import type { CardSearchState } from '@/types/search';
 import { filterCardsBySearch, hasActiveSearchFilter } from '@/utils/searchFilters';
-import React, { useEffect, useRef, useState } from 'react';
+import { motion } from 'framer-motion';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { HiArchive, HiPencilAlt, HiTrash } from 'react-icons/hi';
 
 interface ColumnCardProps {
@@ -24,6 +25,7 @@ interface ColumnCardProps {
   dragHandleProps?: React.HTMLAttributes<HTMLDivElement>;
   searchState: CardSearchState;
   currentUserId?: number;
+  onZIndexChange?: (zIndex: number) => void;
 }
 
 const ColumnCardComponent: React.FC<ColumnCardProps> = ({
@@ -37,6 +39,7 @@ const ColumnCardComponent: React.FC<ColumnCardProps> = ({
   dragHandleProps,
   searchState,
   currentUserId,
+  onZIndexChange,
 }) => {
   const { deleteColumn } = useColumn();
   const { cards, loadCards, updateCard, archiveCardsInColumn } = useCard();
@@ -52,10 +55,57 @@ const ColumnCardComponent: React.FC<ColumnCardProps> = ({
   const [dragOverEmpty, setDragOverEmpty] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const cardListRef = useRef<HTMLDivElement>(null);
-  const [animatedCardIds, setAnimatedCardIds] = useState<Set<number>>(new Set());
+
   const [recentlyCreatedCardId, setRecentlyCreatedCardId] = useState<number | null>(null);
   const highlightTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const columnCards = cards[column.id] || [];
+
+  // Track present card IDs to distinguish between entering (target) and exiting (source) cards
+  const cardIdsRef = useRef(new Set<number>());
+  useEffect(() => {
+    cardIdsRef.current = new Set(columnCards.map(c => c.id));
+  }, [columnCards]);
+
+  // Track active animations: cardId -> 'source' | 'target'
+  const activeAnimations = useRef(new Map<number, 'source' | 'target'>());
+  const [animatingCards, setAnimatingCards] = useState<Set<number>>(new Set());
+
+  const updateZIndex = useCallback(() => {
+    if (!onZIndexChange) return;
+
+    let hasTarget = false;
+    let hasSource = false;
+
+    for (const type of activeAnimations.current.values()) {
+      if (type === 'target') hasTarget = true;
+      if (type === 'source') hasSource = true;
+    }
+
+    if (hasTarget) {
+      onZIndexChange(100); // Target column (entering) gets highest priority
+    } else if (hasSource) {
+      onZIndexChange(50); // Source column (exiting) gets medium priority
+    } else {
+      onZIndexChange(0); // Idle
+    }
+  }, [onZIndexChange]);
+
+  const handleAnimationStart = useCallback((cardId: number) => {
+    const isTarget = cardIdsRef.current.has(cardId);
+    activeAnimations.current.set(cardId, isTarget ? 'target' : 'source');
+    setAnimatingCards(prev => new Set(prev).add(cardId));
+    updateZIndex();
+  }, [updateZIndex]);
+
+  const handleAnimationEnd = useCallback((cardId: number) => {
+    activeAnimations.current.delete(cardId);
+    setAnimatingCards(prev => {
+      const next = new Set(prev);
+      next.delete(cardId);
+      return next;
+    });
+    updateZIndex();
+  }, [updateZIndex]);
 
   useColumnScrollPersistence({
     boardId,
@@ -78,25 +128,6 @@ const ColumnCardComponent: React.FC<ColumnCardProps> = ({
 
     loadColumnCards();
   }, [column.id, workspaceId, boardId, loadCards]);
-
-  useEffect(() => {
-    if (columnCards.length === 0) {
-      return;
-    }
-
-    setAnimatedCardIds((prev) => {
-      let hasChanges = false;
-      const next = new Set(prev);
-      columnCards.forEach((card) => {
-        if (!next.has(card.id)) {
-          next.add(card.id);
-          hasChanges = true;
-        }
-      });
-
-      return hasChanges ? next : prev;
-    });
-  }, [columnCards]);
 
   useEffect(() => {
     return () => {
@@ -392,19 +423,36 @@ const ColumnCardComponent: React.FC<ColumnCardProps> = ({
               {sortedVisibleCards.length > 0 ? (
                 <div className="space-y-1.5 w-full">
                   {sortedVisibleCards.map((card) => (
-                    <CardItem
+                    <motion.div
                       key={card.id}
-                      card={card}
-                      workspaceId={workspaceId}
-                      boardId={boardId}
-                      boardOwnerId={boardOwnerId}
-                      columnId={column.id}
-                      canEdit={canEdit}
-                      autoOpen={autoOpenCardId === card.id}
-                      onAutoOpenHandled={onAutoOpenHandled}
-                      animateOnMount={!animatedCardIds.has(card.id)}
-                      isRecentlyCreated={card.id === recentlyCreatedCardId}
-                    />
+                      layout
+                      layoutId={`card-${card.id}`}
+                      initial={{ opacity: 0, scale: 0.9 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.9 }}
+                      transition={{
+                        type: "spring",
+                        stiffness: 200,
+                        damping: 25
+                      }}
+                      className="w-full"
+                      style={{ zIndex: animatingCards.has(card.id) ? 9999 : 1 }}
+                      onLayoutAnimationStart={() => handleAnimationStart(card.id)}
+                      onLayoutAnimationComplete={() => handleAnimationEnd(card.id)}
+                    >
+                      <CardItem
+                        card={card}
+                        workspaceId={workspaceId}
+                        boardId={boardId}
+                        boardOwnerId={boardOwnerId}
+                        columnId={column.id}
+                        canEdit={canEdit}
+                        autoOpen={autoOpenCardId === card.id}
+                        onAutoOpenHandled={onAutoOpenHandled}
+                        animateOnMount={false}
+                        isRecentlyCreated={card.id === recentlyCreatedCardId}
+                      />
+                    </motion.div>
                   ))}
                 </div>
               ) : (

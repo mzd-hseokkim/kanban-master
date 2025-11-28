@@ -418,7 +418,7 @@ export const GlobalNavBar: React.FC = () => {
                         {/* 로고 */}
                         <button
                             onClick={handleHome}
-                            className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-cyan-300 bg-clip-text text-transparent hover:from-blue-300 hover:to-cyan-200 transition-all"
+                            className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-cyan-300 bg-clip-text text-transparent hover:from-blue-300 hover:to-cyan-200 transition-all whitespace-nowrap"
                         >
                             Kanban Master
                         </button>
@@ -550,7 +550,7 @@ export const GlobalNavBar: React.FC = () => {
                                         userName={user.name}
                                         size="md"
                                     />
-                                    <span className="text-sm font-semibold text-slate-200 hidden sm:inline">
+                                    <span className="text-sm font-semibold text-slate-200 hidden sm:inline whitespace-nowrap">
                                         {user.name}
                                     </span>
                                 </button>

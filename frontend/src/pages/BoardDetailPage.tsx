@@ -248,7 +248,6 @@ const BoardDetailPage = () => {
                   boardOwnerId={board?.ownerId ?? 0}
                   canEdit={canEdit}
                   onCreateColumn={() => uiActions.setShowCreateColumnModal(true)}
-                  scrollContainerRef={scrollContainerRef}
                   searchState={uiState.searchState}
                   currentUserId={user?.id}
                 />
