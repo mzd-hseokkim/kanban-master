@@ -21,4 +21,5 @@ public class ExcelRowData {
     private List<Boolean> checklistStates;
     private String priority;
     private String parentCardTitle;
+    private Boolean isCompleted;
 }

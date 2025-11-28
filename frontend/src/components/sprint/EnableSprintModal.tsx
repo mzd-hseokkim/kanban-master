@@ -1,4 +1,3 @@
-import { useDialog } from '@/context/DialogContext';
 import { useState } from 'react';
 import { HiExclamationCircle, HiX } from 'react-icons/hi';
 
@@ -12,7 +11,7 @@ interface EnableSprintModalProps {
 
 export const EnableSprintModal = ({
   isOpen,
-  boardId,
+  boardId: _boardId,
   boardName,
   onClose,
   onConfirm,

@@ -46,7 +46,7 @@ export const BoardHeader = ({
   onExportBoard,
   onImport,
   isExporting,
-  isDownloadingTemplate,
+  // isDownloadingTemplate,
   boardMode,
   onEnableSprint,
   isFilterActive = false,

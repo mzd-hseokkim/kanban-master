@@ -47,7 +47,7 @@ class SprintService {
   /**
    * 스프린트에 단일 카드 배정
    */
-  async assignCardToSprint(boardId: number, cardId: number, sprintId: number): Promise<void> {
+  async assignCardToSprint(_boardId: number, cardId: number, sprintId: number): Promise<void> {
     await axiosInstance.post(`/sprints/${sprintId}/cards`, [cardId]);
   }
 

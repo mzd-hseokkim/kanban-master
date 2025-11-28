@@ -63,7 +63,7 @@ export const BoardsPage = () => {
           <BoardCard
             key={board.id}
             board={board}
-            workspaceId={selectedWorkspaceId}
+            workspaceId={selectedWorkspaceId!}
             onSaveAsTemplate={(currentBoard) => {
               setSelectedBoard(currentBoard);
               setShowSaveAsTemplate(true);

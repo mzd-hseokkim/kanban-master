@@ -12,7 +12,6 @@ import {
     Scatter,
     ScatterChart,
     Tooltip,
-    TooltipProps,
     XAxis, YAxis,
     ZAxis
 } from 'recharts';
@@ -23,7 +22,7 @@ interface AnalyticsDashboardProps {
     boardId: number;
 }
 
-const CycleTooltip: React.FC<TooltipProps<number, string>> = ({ active, payload }) => {
+const CycleTooltip: React.FC<any> = ({ active, payload }) => {
     if (active && payload && payload.length) {
         const data = payload[0].payload as CycleTimeData;
         return (

@@ -16,7 +16,6 @@ import java.util.function.Consumer;
 import javax.xml.XMLConstants;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParserFactory;
-import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
 import org.apache.poi.openxml4j.exceptions.OpenXML4JException;
 import org.apache.poi.openxml4j.opc.OPCPackage;
 import org.apache.poi.ss.usermodel.Row;
@@ -40,12 +39,7 @@ import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.InputSource;
-import org.xml.sax.XMLReader;
-import org.xml.sax.SAXException;
-import org.xml.sax.SAXNotRecognizedException;
-import org.xml.sax.SAXNotSupportedException;
+import org.xml.sax.*;
 import com.kanban.board.Board;
 import com.kanban.board.BoardRepository;
 import com.kanban.board.member.BoardMemberRole;
@@ -83,7 +77,7 @@ public class BoardExcelService {
     private static final List<String> HEADER_TITLES =
             List.of("Column Name", "Column Position", "Card Title", "Card Position", "Description",
                     "Labels", "Assignee Email", "Due Date (UTC ISO8601)", "Checklist Items",
-                    "Checklist States", "Priority", "Parent Card Title");
+                    "Checklist States", "Priority", "Parent Card Title", "Is Completed");
 
     private final BoardRepository boardRepository;
     private final ColumnRepository columnRepository;
@@ -128,6 +122,9 @@ public class BoardExcelService {
                     ISO_INSTANT.format(LocalDate.now().atStartOfDay().toInstant(ZoneOffset.UTC)));
             example.createCell(8).setCellValue("체크리스트1;체크리스트2");
             example.createCell(9).setCellValue("true;false");
+            example.createCell(10).setCellValue("HIGH");
+            example.createCell(11).setCellValue("");
+            example.createCell(12).setCellValue(false);
 
             workbook.write(outputStream);
             return outputStream.toByteArray();
@@ -327,8 +324,8 @@ public class BoardExcelService {
     }
 
     private Card findExistingOrCreate(BoardColumn column, ExcelRowData row) {
-        Optional<Card> existingCard = cardRepository
-                .findByColumnIdAndTitleIgnoreCase(column.getId(), row.getCardTitle());
+        Optional<Card> existingCard =
+                cardRepository.findByColumnIdAndTitleIgnoreCase(column.getId(), row.getCardTitle());
 
         return existingCard.orElseGet(() -> Card.builder().column(column)
                 .position(row.getCardPosition() != null ? row.getCardPosition()
@@ -350,6 +347,14 @@ public class BoardExcelService {
         }
         card.setIsArchived(false);
         card.setArchivedAt(null);
+        if (row.getIsCompleted() != null) {
+            card.setIsCompleted(row.getIsCompleted());
+            if (Boolean.TRUE.equals(row.getIsCompleted()) && card.getCompletedAt() == null) {
+                card.setCompletedAt(java.time.LocalDateTime.now());
+            } else if (Boolean.FALSE.equals(row.getIsCompleted())) {
+                card.setCompletedAt(null);
+            }
+        }
     }
 
     private boolean assignAssignee(ExcelRowData row, Card card, int rowNumber, String jobId) {
@@ -359,8 +364,8 @@ public class BoardExcelService {
         }
         User assignee = userRepository.findByEmail(row.getAssigneeEmail()).orElse(null);
         if (assignee == null) {
-            importJobManager.appendError(jobId, new ImportRowError(rowNumber,
-                    "담당자 이메일을 찾을 수 없습니다: " + row.getAssigneeEmail()));
+            importJobManager.appendError(jobId,
+                    new ImportRowError(rowNumber, "담당자 이메일을 찾을 수 없습니다: " + row.getAssigneeEmail()));
             return false;
         }
         card.setAssignee(assignee);
@@ -623,8 +628,8 @@ public class BoardExcelService {
         row.createCell(2).setCellValue(card.getTitle());
         row.createCell(3).setCellValue(card.getPosition());
         row.createCell(4).setCellValue(card.getDescription() == null ? "" : card.getDescription());
-        row.createCell(5).setCellValue(
-                String.join(";", labelsByCard.getOrDefault(card.getId(), List.of())));
+        row.createCell(5)
+                .setCellValue(String.join(";", labelsByCard.getOrDefault(card.getId(), List.of())));
         row.createCell(6)
                 .setCellValue(card.getAssignee() != null ? card.getAssignee().getEmail() : "");
         if (card.getDueDate() != null) {
@@ -635,14 +640,15 @@ public class BoardExcelService {
                 checklistByCard.getOrDefault(card.getId(), Collections.emptyList());
         row.createCell(8).setCellValue(
                 joinWithSemicolon(items.stream().map(ChecklistItem::getContent).toList()));
-        row.createCell(9).setCellValue(
-                joinWithSemicolon(items.stream()
+        row.createCell(9)
+                .setCellValue(joinWithSemicolon(items.stream()
                         .map(item -> Boolean.TRUE.equals(item.getIsChecked()) ? "true" : "false")
                         .toList()));
         row.createCell(10).setCellValue(card.getPriority() == null ? "" : card.getPriority());
         if (card.getParentCard() != null) {
             row.createCell(11).setCellValue(card.getParentCard().getTitle());
         }
+        row.createCell(12).setCellValue(Boolean.TRUE.equals(card.getIsCompleted()));
     }
 
     private String joinWithSemicolon(List<String> values) {
@@ -716,7 +722,14 @@ public class BoardExcelService {
                     .checklistStates(splitBooleans(normalized.get("checklist states")))
                     .priority(normalized.getOrDefault("priority", "").trim())
                     .parentCardTitle(normalized.getOrDefault("parent card title", "").trim())
-                    .build();
+                    .isCompleted(parseBoolean(normalized.get("is completed"))).build();
+        }
+
+        private Boolean parseBoolean(String value) {
+            if (!StringUtils.hasText(value)) {
+                return null;
+            }
+            return Boolean.parseBoolean(value.trim());
         }
 
         private Integer parseInteger(String value) {
@@ -772,8 +785,7 @@ public class BoardExcelService {
         }
     }
 
-    private XMLReader createSecureXmlReader()
-            throws ParserConfigurationException, SAXException {
+    private XMLReader createSecureXmlReader() throws ParserConfigurationException, SAXException {
         SAXParserFactory factory = SAXParserFactory.newInstance();
         factory.setNamespaceAware(true);
         try {

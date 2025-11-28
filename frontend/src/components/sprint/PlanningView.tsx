@@ -234,7 +234,7 @@ interface SprintItemProps {
 
 const SprintItem = ({
   sprint,
-  boardId,
+  boardId: _boardId,
   isActive,
   isCompleted,
   isDragOver,

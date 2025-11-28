@@ -11,7 +11,7 @@ interface CreateSprintModalProps {
 
 export const CreateSprintModal = ({
   isOpen,
-  boardId,
+  boardId: _boardId,
   onClose,
   onSubmit,
 }: CreateSprintModalProps) => {

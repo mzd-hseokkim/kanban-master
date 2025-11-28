@@ -34,7 +34,7 @@ export const CalendarModal = ({ isOpen, onClose, boardId, onCardSelect }: Calend
   const [filterStarted, setFilterStarted] = useState(false);
   const [filterCompleted, setFilterCompleted] = useState(false);
   const [cards, setCards] = useState<CardSearchResult[]>([]);
-  const [loading, setLoading] = useState(false);
+  // const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
@@ -45,14 +45,13 @@ export const CalendarModal = ({ isOpen, onClose, boardId, onCardSelect }: Calend
 
   const fetchCards = async () => {
     try {
-      setLoading(true);
       // Fetch all cards for the board
       const results = await searchService.searchCardsInBoard(boardId, {});
       setCards(results);
     } catch (error) {
       console.error('Failed to fetch cards for calendar:', error);
     } finally {
-      setLoading(false);
+      // setLoading(false);
     }
   };
 
