@@ -116,7 +116,7 @@ export const CommentSection = ({
   if (isLoading) {
     return (
       <div className="h-full flex flex-col">
-        <h3 className="text-lg font-semibold mb-4">댓글</h3>
+        <h3 className="text-base font-semibold mb-2">댓글</h3>
         <CommentSkeleton />
       </div>
     );
@@ -125,7 +125,7 @@ export const CommentSection = ({
   if (error) {
     return (
       <div className="h-full flex flex-col">
-        <h3 className="text-lg font-semibold mb-4">댓글</h3>
+        <h3 className="text-base font-semibold mb-2">댓글</h3>
         <div className="text-center py-8 text-red-500">
           <p>{error}</p>
           <button
@@ -141,7 +141,7 @@ export const CommentSection = ({
 
   return (
     <div className="h-full flex flex-col">
-      <h3 className="text-lg font-semibold mb-4">댓글</h3>
+      <h3 className="text-base font-semibold mb-2">댓글</h3>
 
       {/* 댓글 입력 */}
       <CommentInput boardId={boardId} onSubmit={handleCreateComment} />

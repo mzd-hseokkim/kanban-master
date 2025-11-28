@@ -50,13 +50,15 @@ export const CommentInput = ({
   };
 
   return (
-    <div className="border-b border-gray-200 pb-4 mb-4">
-      <MentionInput
-        boardId={boardId}
-        value={content}
-        onChange={setContent}
-        placeholder={placeholder}
-      />
+    <div className="border-b border-gray-200 pb-3 mb-3">
+      <div style={{ minHeight: '120px' }}>
+        <MentionInput
+          boardId={boardId}
+          value={content}
+          onChange={setContent}
+          placeholder={placeholder}
+        />
+      </div>
       <div className="flex justify-between items-center mt-2">
         <span className="text-xs text-gray-500">
           {content.length.toLocaleString()} / 10,000
