@@ -13,6 +13,8 @@ import com.kanban.activity.ActivityService;
 import com.kanban.board.Board;
 import com.kanban.board.BoardRepository;
 import com.kanban.board.member.dto.BoardMemberResponse;
+import com.kanban.notification.domain.NotificationType;
+import com.kanban.notification.service.NotificationService;
 import com.kanban.user.User;
 import com.kanban.user.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -31,6 +33,7 @@ public class MemberService {
         private final BoardRepository boardRepository;
         private final UserRepository userRepository;
         private final ActivityService activityService;
+        private final NotificationService notificationService;
 
         /**
          * 초대 토큰 생성
@@ -80,6 +83,14 @@ public class MemberService {
                 activityService.recordActivity(ActivityScopeType.BOARD, boardId,
                                 ActivityEventType.MEMBER_INVITED, invitedByUserId,
                                 invitedByUser.getName() + "님이 " + user.getName() + "님을 초대했습니다");
+
+                // 초대받은 사용자에게 실시간 WebSocket 알림 전송 (Notification 테이블에는 저장 안 함)
+                // 이유: 인박스 API에서 BoardMember PENDING 초대로 표시하므로 중복 방지
+                String notificationMessage =
+                                invitedByUser.getName() + "님이 '" + board.getName() + "' 보드에 초대했습니다";
+                String relatedUrl = "/boards/" + boardId + "/members";
+                notificationService.publishNotificationEvent(userId, NotificationType.BOARD_INVITATION,
+                                notificationMessage, relatedUrl);
 
                 log.info("Member invited - Board: {}, User: {}, Role: {}", boardId, userId, role);
                 return BoardMemberResponse.from(savedMember);
@@ -200,7 +211,19 @@ public class MemberService {
                                                 "사용자를 찾을 수 없습니다: " + removedByUserId));
 
                 String memberName = member.getUser().getName();
+                String boardName = member.getBoard().getName();
+                InvitationStatus invitationStatus = member.getInvitationStatus();
+
                 boardMemberRepository.delete(member);
+
+                // PENDING 상태인 경우 초대 취소 알림 전송 (WebSocket만)
+                if (invitationStatus == InvitationStatus.PENDING) {
+                        String cancelMessage = "'" + boardName + "' 보드 초대가 취소되었습니다";
+                        notificationService.publishNotificationEvent(memberId,
+                                        NotificationType.INVITATION_CANCELLED,
+                                        cancelMessage, null);
+                        log.info("Invitation cancelled notification sent - Board: {}, User: {}", boardId, memberId);
+                }
 
                 // 활동 기록
                 activityService.recordActivity(ActivityScopeType.BOARD, boardId,
@@ -359,7 +382,13 @@ public class MemberService {
         public List<BoardMemberResponse> getPendingInvitations(Long userId) {
                 return boardMemberRepository
                                 .findPendingInvitationsByUserId(userId, InvitationStatus.PENDING)
-                                .stream().map(BoardMemberResponse::from).toList();
+                                .stream().map(member -> {
+                                        // Get inviter information
+                                        User invitedBy = member.getBoard().getOwner();
+                                        String inviterName =
+                                                        invitedBy != null ? invitedBy.getName() : null;
+                                        return BoardMemberResponse.fromWithInviter(member, inviterName);
+                                }).toList();
         }
 
         /**

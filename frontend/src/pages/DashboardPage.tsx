@@ -69,9 +69,9 @@ const DashboardPage = () => {
         </div>
       </header>
 
-      <main className="flex-1 overflow-hidden flex flex-col relative">
+      <main className="flex-1 overflow-auto flex flex-col relative">
         <DashboardLoadingBanner isVisible={cardsLoading} />
-        <div className="w-full max-w-[95vw] mx-auto px-4 sm:px-6 lg:px-8 flex-1 overflow-hidden flex flex-col py-6">
+        <div className="w-full max-w-[95vw] mx-auto px-4 sm:px-6 lg:px-8 py-6">
           {boardsLoading && (
             <div className="flex-1 flex items-center justify-center">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600" />
@@ -83,7 +83,7 @@ const DashboardPage = () => {
           )}
 
           {!boardsLoading && !shouldShowEmptyState && (
-            <div className="flex-1 overflow-auto flex flex-col gap-8">
+            <div className="flex flex-col gap-8">
               {summary && (
                 <>
                   <KPITiles summary={{ ...summary, totalBoards: boards.length }} />
@@ -99,7 +99,7 @@ const DashboardPage = () => {
               <CardHighlightSection variant="upcoming" cards={upcomingCards} onCardClick={handleCardNavigate} />
 
               {boards.length > 0 && (
-                <section className="flex-1 overflow-auto pb-8">
+                <section className="pb-8">
                   <div className="flex items-center gap-3 mb-6">
                     <div className="p-2 rounded-lg bg-white shadow-sm border border-slate-100">
                       <HiClipboardList className="text-xl text-blue-600" />

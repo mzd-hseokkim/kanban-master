@@ -227,19 +227,42 @@ export const GlobalNavBar: React.FC = () => {
     useEffect(() => {
         if (!client || !isConnected || !user) return;
 
-        const subscription = client.subscribe('/user/queue/notifications', (message) => {
+        const subscription = client.subscribe('/user/queue/notifications', async (message) => {
             try {
                 const event = JSON.parse(message.body);
                 console.log('Received notification:', event);
 
+                // BOARD_INVITATION 타입은 무시 (인박스 API에서 BoardMember로 이미 표시됨)
+                if (event.type === 'BOARD_INVITATION') {
+                    console.log('Skipping BOARD_INVITATION notification (already shown as invitation in inbox)');
+                    // 인박스를 새로고침하여 새 초대를 표시
+                    await loadInbox();
+                    return;
+                }
+
+                // INVITATION_CANCELLED 타입은 인박스를 새로고침해서 취소된 초대를 제거
+                if (event.type === 'INVITATION_CANCELLED') {
+                    console.log('Invitation cancelled - refreshing inbox to remove cancelled invitation');
+                    await loadInbox();
+                    // 토스트는 표시
+                    setToast({
+                        id: Date.now(),
+                        notificationId: `cancel-${Date.now()}`,
+                        message: event.message,
+                        type: 'INVITATION_CANCELLED',
+                        actionUrl: undefined
+                    });
+                    return;
+                }
+
                 // Create new InboxItem from event
                 const newItem: InboxItem = {
                     id: `notif-${event.id}`,
-                    type: 'NOTIFICATION', // Currently only handling notifications via WS
-                    title: '알림', // You might want to make this dynamic based on event type
+                    type: 'NOTIFICATION',
+                    title: '알림',
                     message: event.message,
                     actionUrl: event.actionUrl,
-                    createdAt: event.createdAt, // Ensure this matches format
+                    createdAt: event.createdAt,
                     isRead: false,
                     payload: { type: event.type }
                 };

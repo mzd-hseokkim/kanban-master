@@ -11,11 +11,12 @@ import type { Column } from '@/types/column';
 import type { ImportJobStartResponse } from '@/types/excel';
 import type { CardSearchResult, CardSearchState } from '@/types/search';
 import type { Dispatch, SetStateAction } from 'react';
+import { useRef } from 'react';
 import { ActivityPanel } from './ActivityPanel';
 import { CalendarModal } from './CalendarModal';
 import { ExcelImportModal } from './ExcelImportModal';
 import { ImportProgressPanel } from './ImportProgressPanel';
-import { MembersModal } from './MembersModal';
+import { MembersModal, MembersModalRef } from './MembersModal';
 
 interface BoardModalsProps {
   workspaceId: number;
@@ -123,6 +124,7 @@ export const BoardModals = ({
   onCreateSprint,
 }: BoardModalsProps) => {
   const activityPanelTransition = usePresenceTransition(showActivityPanel);
+  const membersModalRef = useRef<MembersModalRef>(null);
 
   return (
     <>
@@ -140,7 +142,11 @@ export const BoardModals = ({
           boardId={boardId}
           isOpen={showInviteModal}
           onClose={onCloseInviteModal}
-          onSuccess={onCloseInviteModal}
+          onSuccess={async () => {
+            // 멤버 초대 성공 시 Members Modal의 테이블 새로고침
+            await membersModalRef.current?.refreshTable();
+            onCloseInviteModal();
+          }}
         />
       )}
 
@@ -172,6 +178,7 @@ export const BoardModals = ({
 
       {showMembersPanel && (
         <MembersModal
+          ref={membersModalRef}
           isOpen={showMembersPanel}
           boardId={boardId}
           boardOwnerId={boardOwnerId}

@@ -1,9 +1,10 @@
-import { BoardMemberTable } from '@/components/BoardMemberTable';
+import { BoardMemberTable, BoardMemberTableRef } from '@/components/BoardMemberTable';
 import { useModalAnimation } from '@/hooks/useModalAnimation';
 import {
-    modalOverlayClass,
-    modalPanelClass,
+  modalOverlayClass,
+  modalPanelClass,
 } from '@/styles/modalStyles';
+import { forwardRef, useImperativeHandle, useRef } from 'react';
 
 interface MembersModalProps {
   isOpen: boolean;
@@ -14,17 +15,28 @@ interface MembersModalProps {
   onInvite: () => void;
 }
 
-export const MembersModal = ({
+export interface MembersModalRef {
+  refreshTable: () => Promise<void>;
+}
+
+export const MembersModal = forwardRef<MembersModalRef, MembersModalProps>(({
   isOpen,
   onClose,
   boardId,
   boardOwnerId,
   canManage,
   onInvite,
-}: MembersModalProps) => {
+}, ref) => {
   const { stage, close } = useModalAnimation(() => {
     onClose();
   });
+  const tableRef = useRef<BoardMemberTableRef>(null);
+
+  useImperativeHandle(ref, () => ({
+    refreshTable: async () => {
+      await tableRef.current?.refresh();
+    },
+  }));
 
   if (!isOpen) {
     return null;
@@ -68,9 +80,11 @@ export const MembersModal = ({
 
         {/* Content */}
         <div className="h-[60vh] overflow-hidden rounded-2xl border border-white/40 bg-white/30 backdrop-blur-sm">
-           <BoardMemberTable boardId={boardId} boardOwnerId={boardOwnerId} canManage={canManage} />
+           <BoardMemberTable ref={tableRef} boardId={boardId} boardOwnerId={boardOwnerId} canManage={canManage} />
         </div>
       </div>
     </div>
   );
-};
+});
+
+MembersModal.displayName = 'MembersModal';

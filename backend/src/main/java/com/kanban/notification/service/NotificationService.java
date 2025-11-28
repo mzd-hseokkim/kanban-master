@@ -66,4 +66,28 @@ public class NotificationService {
             notification.setIsRead(true);
         });
     }
+
+    /**
+     * WebSocket 이벤트만 발행 (DB에 저장하지 않음)
+     * 보드 초대 같이 별도 테이블에서 관리되는 경우 사용
+     */
+    public void publishNotificationEvent(Long recipientId, NotificationType type, String message,
+            String relatedUrl) {
+        log.info("[NOTIFICATION] Publishing WebSocket event only - Recipient: {}, Type: {}, Message: {}",
+                recipientId, type, message);
+
+        try {
+            redisPublisher.publishNotification(NotificationEvent.builder()
+                    .recipientId(recipientId)
+                    .id(null) // No DB record, so no ID
+                    .message(message)
+                    .type(type)
+                    .actionUrl(relatedUrl)
+                    .createdAt(java.time.LocalDateTime.now())
+                    .build());
+            log.info("[NOTIFICATION] WebSocket event published successfully for user: {}", recipientId);
+        } catch (Exception e) {
+            log.error("[NOTIFICATION] Failed to publish WebSocket event", e);
+        }
+    }
 }

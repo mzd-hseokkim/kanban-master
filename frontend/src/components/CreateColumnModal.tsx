@@ -1,19 +1,19 @@
-import React, { useState, useEffect } from 'react';
-import { useColumn } from '@/context/ColumnContext';
-import { Column } from '@/types/column';
 import { ErrorNotification } from '@/components/ErrorNotification';
+import { useColumn } from '@/context/ColumnContext';
 import { useModalAnimation } from '@/hooks/useModalAnimation';
 import {
-  modalOverlayClass,
-  modalPanelClass,
-  modalLabelClass,
-  modalInputClass,
-  modalTextareaClass,
-  modalSecondaryButtonClass,
-  modalPrimaryButtonClass,
-  modalErrorClass,
-  modalColorButtonClass,
+    modalColorButtonClass,
+    modalErrorClass,
+    modalInputClass,
+    modalLabelClass,
+    modalOverlayClass,
+    modalPanelClass,
+    modalPrimaryButtonClass,
+    modalSecondaryButtonClass,
+    modalTextareaClass,
 } from '@/styles/modalStyles';
+import { Column } from '@/types/column';
+import React, { useEffect, useRef, useState } from 'react';
 
 interface CreateColumnModalProps {
   workspaceId: number;
@@ -46,6 +46,7 @@ export const CreateColumnModal: React.FC<CreateColumnModalProps> = ({
   const [selectedColor, setSelectedColor] = useState(columnColors[0].hex);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const nameInputRef = useRef<HTMLInputElement>(null);
 
   // 편집 모드일 때 기존 데이터로 초기화
   useEffect(() => {
@@ -55,6 +56,11 @@ export const CreateColumnModal: React.FC<CreateColumnModalProps> = ({
       setSelectedColor(editColumn.bgColor || columnColors[0].hex);
     }
   }, [editColumn]);
+
+  // 모달이 열릴 때 칼럼 이름 필드에 포커스
+  useEffect(() => {
+    nameInputRef.current?.focus();
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -121,6 +127,7 @@ export const CreateColumnModal: React.FC<CreateColumnModalProps> = ({
                 칼럼 이름 *
               </label>
               <input
+                ref={nameInputRef}
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}

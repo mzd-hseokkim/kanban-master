@@ -2,7 +2,7 @@ import { Avatar } from "@/components/common/Avatar";
 import { useDialog } from "@/context/DialogContext";
 import { memberService } from "@/services/memberService";
 import type { BoardMember, BoardMemberRole, InvitationStatus } from "@/types/member";
-import { useEffect, useState } from "react";
+import { forwardRef, useEffect, useImperativeHandle, useState } from "react";
 import { FiTrash2 } from "react-icons/fi";
 
 interface BoardMemberTableProps {
@@ -10,6 +10,10 @@ interface BoardMemberTableProps {
   boardOwnerId: number;
   canManage: boolean;
   onMemberCountChange?: (count: number) => void;
+}
+
+export interface BoardMemberTableRef {
+  refresh: () => Promise<void>;
 }
 
 const roleBadgeColor: Record<BoardMemberRole, string> = {
@@ -180,12 +184,12 @@ const BoardMemberRow = ({
   );
 };
 
-export const BoardMemberTable = ({
+export const BoardMemberTable = forwardRef<BoardMemberTableRef, BoardMemberTableProps>(({
   boardId,
   boardOwnerId,
   canManage,
   onMemberCountChange,
-}: BoardMemberTableProps) => {
+}, ref) => {
   const { confirm } = useDialog();
   const [members, setMembers] = useState<BoardMember[]>([]);
   const [loading, setLoading] = useState(false);
@@ -218,6 +222,12 @@ export const BoardMemberTable = ({
       setLoading(false);
     }
   };
+
+  useImperativeHandle(ref, () => ({
+    refresh: async () => {
+      await loadMembers(currentPage);
+    },
+  }));
 
   useEffect(() => {
     loadMembers(0);
@@ -347,4 +357,4 @@ export const BoardMemberTable = ({
       )}
     </div>
   );
-};
+});

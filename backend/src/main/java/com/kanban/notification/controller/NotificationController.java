@@ -36,40 +36,50 @@ public class NotificationController {
                 List<BoardMemberResponse> invitations =
                                 memberService.getPendingInvitations(currentUserId);
                 for (BoardMemberResponse invitation : invitations) {
-                        inboxItems.add(InboxItemDTO.builder().id("inv-" + invitation.getBoardId()) // Using
-                                                                                                   // boardId
-                                                                                                   // as
-                                                                                                   // part
-                                                                                                   // of
-                                                                                                   // ID
-                                                                                                   // for
-                                                                                                   // uniqueness
+                        // Build payload map with null-safe approach
+                        java.util.Map<String, Object> payload = new java.util.HashMap<>();
+                        if (invitation.getInvitationToken() != null) {
+                                payload.put("invitationToken", invitation.getInvitationToken());
+                        }
+                        if (invitation.getBoardName() != null) {
+                                payload.put("boardName", invitation.getBoardName());
+                        }
+                        if (invitation.getInvitedByName() != null) {
+                                payload.put("invitedByName", invitation.getInvitedByName());
+                        }
+
+                        String inviterName = invitation.getInvitedByName() != null
+                                        ? invitation.getInvitedByName()
+                                        : "알 수 없는 사용자";
+                        String boardName = invitation.getBoardName() != null
+                                        ? invitation.getBoardName()
+                                        : "알 수 없는 보드";
+
+                        inboxItems.add(InboxItemDTO.builder().id("inv-" + invitation.getBoardId())
                                         .type("INVITATION").title("보드 초대")
-                                        .message(invitation.getInvitedByName() + "님이 "
-                                                        + invitation.getBoardName()
-                                                        + " 보드에 초대했습니다.")
+                                        .message(inviterName + "님이 " + boardName + " 보드에 초대했습니다.")
                                         .createdAt(LocalDateTime.parse(invitation.getInvitedAt(),
                                                         java.time.format.DateTimeFormatter.ISO_LOCAL_DATE_TIME))
-                                        .isRead(false)
-                                        .payload(Map.of("invitationToken",
-                                                        invitation.getInvitationToken(),
-                                                        "boardName", invitation.getBoardName(),
-                                                        "invitedByName",
-                                                        invitation.getInvitedByName()))
-                                        .build());
+                                        .isRead(false).payload(payload).build());
                 }
 
                 // 2. Get Recent Notifications (Unread + Read in last 24h)
                 List<Notification> notifications =
                                 notificationService.getRecentNotifications(currentUserId);
                 for (Notification notification : notifications) {
+                        // Build payload map with null-safe approach
+                        java.util.Map<String, Object> notifPayload = new java.util.HashMap<>();
+                        if (notification.getType() != null) {
+                                notifPayload.put("type", notification.getType());
+                        }
+
                         inboxItems.add(InboxItemDTO.builder().id("notif-" + notification.getId())
                                         .type("NOTIFICATION").title("알림")
                                         .message(notification.getMessage())
                                         .actionUrl(notification.getRelatedUrl())
                                         .createdAt(notification.getCreatedAt())
-                                        .isRead(notification.getIsRead())
-                                        .payload(Map.of("type", notification.getType())).build());
+                                        .isRead(notification.getIsRead()).payload(notifPayload)
+                                        .build());
                 }
 
                 // 3. Sort by CreatedAt Descending

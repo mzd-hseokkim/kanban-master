@@ -1,20 +1,21 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { Avatar } from '@/components/common/Avatar';
+import { useModalAnimation } from '@/hooks/useModalAnimation';
 import { memberService } from '@/services/memberService';
 import { userService } from '@/services/userService';
+import {
+    modalErrorClass,
+    modalLabelClass,
+    modalOverlayClass,
+    modalPanelClass,
+    modalPrimaryButtonClass,
+    modalSecondaryButtonClass,
+    modalSelectClass,
+    modalTextareaClass,
+} from '@/styles/modalStyles';
 import type { BoardMemberRole } from '@/types/member';
 import type { UserSearchResult } from '@/types/user';
-import { useModalAnimation } from '@/hooks/useModalAnimation';
-import { Avatar } from '@/components/common/Avatar';
-import {
-  modalOverlayClass,
-  modalPanelClass,
-  modalLabelClass,
-  modalSelectClass,
-  modalTextareaClass,
-  modalSecondaryButtonClass,
-  modalPrimaryButtonClass,
-  modalErrorClass,
-} from '@/styles/modalStyles';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 
 interface InviteMemberModalProps {
   boardId: number;
@@ -163,9 +164,9 @@ export const InviteMemberModal = ({
     return null;
   }
 
-  return (
+  const modalContent = (
     <div
-      className={modalOverlayClass(stage)}
+      className={`${modalOverlayClass(stage)} z-[1100]`}
       onClick={(e) => {
         if (e.target === e.currentTarget) {
           close();
@@ -330,4 +331,6 @@ export const InviteMemberModal = ({
       </div>
     </div>
   );
+
+  return createPortal(modalContent, document.body);
 };
