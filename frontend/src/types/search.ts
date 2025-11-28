@@ -18,6 +18,21 @@ export interface CardSearchRequest {
   overdue?: boolean;
 }
 
+export interface CardSearchState {
+  keyword: string;
+  selectedPriorities: string[];
+  selectedLabelIds: number[];
+  selectedAssigneeIds: number[];
+  isCompleted: boolean | undefined;
+  overdue: boolean;
+  dueDateFrom: string;
+  dueDateTo: string;
+  sortBy: 'PRIORITY' | 'DUE_DATE' | 'CREATED_AT' | 'UPDATED_AT';
+  sortDir: 'ASC' | 'DESC';
+  isFilterActive: boolean;
+  onlyMine: boolean;
+}
+
 /**
  * 카드 검색 결과
  */
@@ -33,7 +48,9 @@ export interface CardSearchResult {
   position: number;
   bgColor?: string;
   priority?: string;
+  assigneeId?: number;
   assignee?: string;
+  assigneeAvatarUrl?: string | null;
   dueDate?: string;
   isCompleted: boolean;
   startedAt?: string;

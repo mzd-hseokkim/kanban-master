@@ -170,6 +170,20 @@ class CardService {
   }
 
   /**
+   * 컬럼의 모든 미아카이브 카드를 일괄 아카이브
+   */
+  async archiveCardsInColumn(
+    workspaceId: number,
+    boardId: number,
+    columnId: number
+  ): Promise<Card[]> {
+    const response = await axiosInstance.post<Card[]>(
+      `/workspaces/${workspaceId}/boards/${boardId}/columns/${columnId}/cards/archive-all`
+    );
+    return response.data;
+  }
+
+  /**
    * 카드 아카이브 복구
    */
   async unarchiveCard(
@@ -205,6 +219,35 @@ class CardService {
   ): Promise<void> {
     await axiosInstance.delete(
       `/workspaces/${workspaceId}/boards/${boardId}/columns/${columnId}/cards/${cardId}/permanent`
+    );
+  }
+
+  /**
+   * 아카이브된 카드 일괄 복구
+   */
+  async bulkUnarchiveCards(
+    workspaceId: number,
+    boardId: number,
+    cardIds: number[]
+  ): Promise<Card[]> {
+    const response = await axiosInstance.post<Card[]>(
+      `/workspaces/${workspaceId}/boards/${boardId}/archived-cards/unarchive`,
+      { cardIds }
+    );
+    return response.data;
+  }
+
+  /**
+   * 아카이브된 카드 일괄 영구 삭제
+   */
+  async bulkPermanentlyDeleteCards(
+    workspaceId: number,
+    boardId: number,
+    cardIds: number[]
+  ): Promise<void> {
+    await axiosInstance.post(
+      `/workspaces/${workspaceId}/boards/${boardId}/archived-cards/permanent-delete`,
+      { cardIds }
     );
   }
 }

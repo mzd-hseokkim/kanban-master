@@ -4,8 +4,10 @@ import { EditCardModal } from '@/components/EditCardModal';
 import { useCard } from '@/context/CardContext';
 import { useColumn } from '@/context/ColumnContext';
 import { useDialog } from '@/context/DialogContext';
+import { filterCardsBySearch, hasActiveSearchFilter } from '@/utils/searchFilters';
 import type { Card, CardSortKey, SortDirection } from '@/types/card';
 import type { Column } from '@/types/column';
+import type { CardSearchState } from '@/types/search';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { HiChevronDown, HiChevronRight, HiChevronUp, HiDotsVertical, HiPlus, HiSelector } from 'react-icons/hi';
 import { ListCardRow } from './ListCardRow';
@@ -24,6 +26,8 @@ interface ListViewProps {
   canEdit: boolean;
   onCreateColumn: () => void;
   scrollContainerRef: React.RefObject<HTMLDivElement | null>;
+  searchState: CardSearchState;
+  currentUserId?: number;
 }
 
 export const ListView = ({
@@ -35,6 +39,8 @@ export const ListView = ({
   canEdit,
   onCreateColumn,
   scrollContainerRef,
+  searchState,
+  currentUserId,
 }: ListViewProps) => {
   const { updateCard, loadCards } = useCard();
   const { deleteColumn } = useColumn();
@@ -56,6 +62,7 @@ export const ListView = ({
   const [paginationState, setPaginationState] = useState<Record<number, { page: number; hasNext: boolean; isLoading: boolean }>>({});
   const loadMoreRefs = useRef<Record<number, HTMLDivElement | null>>({});
   const PAGE_SIZE = 100;
+  const isFilterActive = hasActiveSearchFilter(searchState);
 
   const fetchColumnCards = useCallback(
     async (columnId: number, page: number, append: boolean) => {
@@ -411,7 +418,10 @@ export const ListView = ({
       <div ref={listViewScrollRef} className="flex-1 overflow-auto pb-10">
         {columns.map((column, index) => {
             const columnCards = cards[column.id] || [];
-            const sortedCards = [...columnCards].sort(compareCards);
+            const filteredCards = filterCardsBySearch(columnCards, searchState, currentUserId);
+            const sortedCards = [...filteredCards].sort(compareCards);
+            const visibleCount = filteredCards.length;
+            const totalCount = columnCards.length;
             const pageState = paginationState[column.id] || { page: 0, hasNext: true, isLoading: false };
 
             const isDragOver = dragOverColumnId === column.id;
@@ -433,8 +443,10 @@ export const ListView = ({
                   onClick={() => {
                     scrollToColumn(column.id, index);
                   }}
-                  className={`sticky z-20 bg-white border-b border-slate-200 px-4 py-2 flex items-center justify-between group transition-colors duration-200 cursor-pointer hover:bg-slate-100 ${
-                    isDragOver ? 'bg-blue-100 border-blue-300' : 'bg-slate-50'
+                  className={`sticky z-20 border-b border-slate-200 px-4 py-2 flex items-center justify-between group transition-colors duration-200 cursor-pointer ${
+                    isDragOver
+                      ? 'bg-blue-50 ring-2 ring-inset ring-blue-500 z-30'
+                      : 'bg-slate-50 hover:bg-slate-100'
                   }`}
                   style={{
                     top: `${stickyTop}px`,
@@ -450,7 +462,7 @@ export const ListView = ({
                     </button>
                     <span className="font-bold text-slate-800 text-sm">{column.name}</span>
                     <span className="text-xs text-slate-400 bg-slate-200 px-2 py-0.5 rounded-full">
-                      {columnCards.length}
+                      {isFilterActive ? `${visibleCount}/${totalCount}` : totalCount}
                     </span>
                   </div>
 
@@ -510,8 +522,11 @@ export const ListView = ({
                     ref={(el) => { columnContentRefs.current[column.id] = el; }}
                     className={`relative z-10 transition-all duration-300 ease-in-out overflow-hidden ${
                         isCollapsed ? 'max-h-0 opacity-0' : 'max-h-[5000px] opacity-100'
-                    } ${isDragOver ? 'bg-blue-100' : ''}`}
+                    }`}
                 >
+                  {isDragOver && (
+                    <div className="absolute inset-0 z-50 bg-blue-500/10 ring-2 ring-inset ring-blue-500 pointer-events-none" />
+                  )}
                   {sortedCards.map((card) => (
                     <ListCardRow
                       key={card.id}
@@ -529,9 +544,9 @@ export const ListView = ({
                       }}
                     />
                   ))}
-                  {columnCards.length === 0 && (
-                    <div className="px-4 py-8 text-center text-slate-500 text-xs italic bg-slate-50/50 border-b border-slate-100">
-                      카드가 없습니다
+                  {sortedCards.length === 0 && (
+                    <div className="px-4 py-4 text-center text-slate-500 text-xs italic bg-slate-50/50 border-b border-slate-100">
+                      {isFilterActive ? '필터에 맞는 카드가 없습니다' : '카드가 없습니다'}
                     </div>
                   )}
                   {pageState.isLoading && (

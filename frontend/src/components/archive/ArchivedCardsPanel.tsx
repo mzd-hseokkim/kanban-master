@@ -22,6 +22,7 @@ export const ArchivedCardsPanel: React.FC<ArchivedCardsPanelProps> = ({
     const [archivedCards, setArchivedCards] = useState<Card[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [selectedCardIds, setSelectedCardIds] = useState<Set<number>>(new Set());
 
     const { stage, close } = useModalAnimation(() => {
         onClose();
@@ -45,6 +46,20 @@ export const ArchivedCardsPanel: React.FC<ArchivedCardsPanelProps> = ({
         loadArchivedCards();
     }, [workspaceId, boardId]);
 
+    const toggleSelection = (card: Card) => {
+        setSelectedCardIds((prev) => {
+            const next = new Set(prev);
+            if (next.has(card.id)) {
+                next.delete(card.id);
+            } else {
+                next.add(card.id);
+            }
+            return next;
+        });
+    };
+
+    const clearSelection = () => setSelectedCardIds(new Set());
+
     const handleUnarchive = async (card: Card) => {
         if (!card.columnId) return;
 
@@ -52,6 +67,12 @@ export const ArchivedCardsPanel: React.FC<ArchivedCardsPanelProps> = ({
             await cardService.unarchiveCard(workspaceId, boardId, card.columnId, card.id);
             await loadArchivedCards();
             onRestore();
+            setSelectedCardIds((prev) => {
+                if (!prev.has(card.id)) return prev;
+                const next = new Set(prev);
+                next.delete(card.id);
+                return next;
+            });
         } catch (err) {
             console.error('Failed to restore card:', err);
             alert('카드 복구에 실패했습니다');
@@ -74,6 +95,64 @@ export const ArchivedCardsPanel: React.FC<ArchivedCardsPanelProps> = ({
         }
     };
 
+    const handleBulkUnarchive = async () => {
+        if (!hasSelection) return;
+
+        const targets = archivedCards.filter((card) => selectedCardIds.has(card.id));
+        if (targets.length === 0) return;
+
+        try {
+            setLoading(true);
+            await cardService.bulkUnarchiveCards(
+                workspaceId,
+                boardId,
+                targets.map((card) => card.id)
+            );
+            clearSelection();
+            await loadArchivedCards();
+            onRestore();
+        } catch (err) {
+            console.error('Failed to bulk restore cards:', err);
+            alert('일괄 복구에 실패했습니다');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleBulkDelete = async () => {
+        if (!hasSelection) return;
+
+        const targets = archivedCards.filter((card) => selectedCardIds.has(card.id));
+        if (targets.length === 0) return;
+
+        if (
+            !window.confirm(
+                `${targets.length}개의 카드를 영구 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.`
+            )
+        ) {
+            return;
+        }
+
+        try {
+            setLoading(true);
+            await cardService.bulkPermanentlyDeleteCards(
+                workspaceId,
+                boardId,
+                targets.map((card) => card.id)
+            );
+            clearSelection();
+            await loadArchivedCards();
+        } catch (err) {
+            console.error('Failed to bulk delete cards:', err);
+            alert('일괄 삭제에 실패했습니다');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const isSelected = (cardId: number) => selectedCardIds.has(cardId);
+    const hasSelection = selectedCardIds.size > 0;
+
     return (
         <div
             className={modalOverlayClass(stage)}
@@ -83,7 +162,7 @@ export const ArchivedCardsPanel: React.FC<ArchivedCardsPanelProps> = ({
                 }
             }}
         >
-            <div className={`${modalPanelClass({ stage })} w-[50vw] max-w-none`}>
+            <div className={`${modalPanelClass({ stage })} w-[56.25vw] max-w-none`}>
                 {/* Header */}
                 <div className="flex items-start justify-between mb-6">
                     <div>
@@ -126,54 +205,97 @@ export const ArchivedCardsPanel: React.FC<ArchivedCardsPanelProps> = ({
                     )}
 
                     {!loading && !error && archivedCards.length > 0 && (
-                        <div className="grid grid-cols-3 gap-3">
-                            {archivedCards.map((card) => (
-                                <div
-                                    key={card.id}
-                                    className="bg-white/80 backdrop-blur-sm rounded-xl border-2 border-pastel-blue-200/60 p-3 hover:shadow-lg hover:border-pastel-blue-300 transition flex flex-col"
-                                >
-                                    <h3 className="font-semibold text-pastel-blue-900 mb-2 text-sm line-clamp-2">
-                                        {card.title}
-                                    </h3>
-                                    {card.description && (
-                                        <p className="text-xs text-gray-600 line-clamp-2 mb-3 flex-1">
-                                            {card.description.replace(/<[^>]*>/g, '')}
-                                        </p>
-                                    )}
-                                    <div className="space-y-2">
-                                        <div className="flex items-center gap-2 text-xs text-gray-500">
-                                            {card.archivedAt && (
-                                                <span className="truncate">
-                                                    {new Date(card.archivedAt).toLocaleDateString('ko-KR')}
-                                                </span>
-                                            )}
-                                            {card.priority && (
-                                                <span className="px-2 py-0.5 rounded bg-pastel-blue-100 text-pastel-blue-700 font-medium">
-                                                    {card.priority}
-                                                </span>
-                                            )}
+                        <div className="space-y-4">
+                            <div className="grid grid-cols-4 gap-3">
+                                {archivedCards.map((card) => (
+                                    <div
+                                        key={card.id}
+                                        className="bg-white/80 backdrop-blur-sm rounded-xl border-2 border-pastel-blue-200/60 p-3 hover:shadow-lg hover:border-pastel-blue-300 transition flex flex-col gap-2 relative h-full"
+                                    >
+                                        <div className="flex items-start gap-2">
+                                            <input
+                                                type="checkbox"
+                                                checked={isSelected(card.id)}
+                                                onChange={() => toggleSelection(card)}
+                                                className="mt-0.5 h-4 w-4 rounded border-pastel-blue-300 text-pastel-blue-600 focus:ring-pastel-blue-400"
+                                                aria-label={`${card.title} 선택`}
+                                            />
+                                            <h3 className="font-semibold text-pastel-blue-900 text-sm line-clamp-2 flex-1">
+                                                {card.title}
+                                            </h3>
                                         </div>
-                                        <div className="flex items-center gap-1.5">
-                                            <button
-                                                onClick={() => handleUnarchive(card)}
-                                                className="flex-1 px-2 py-1.5 rounded-lg bg-pastel-green-100 text-pastel-green-700 hover:bg-pastel-green-200 transition flex items-center justify-center gap-1 text-xs font-medium"
-                                                title="복구"
-                                            >
-                                                <HiRefresh className="text-sm" />
-                                                복구
-                                            </button>
-                                            <button
-                                                onClick={() => handlePermanentDelete(card)}
-                                                className="flex-1 px-2 py-1.5 rounded-lg bg-red-100 text-red-700 hover:bg-red-200 transition flex items-center justify-center gap-1 text-xs font-medium"
-                                                title="삭제"
-                                            >
-                                                <HiTrash className="text-sm" />
-                                                삭제
-                                            </button>
+                                        {card.description ? (
+                                            <p className="text-xs text-gray-600 line-clamp-2 flex-1">
+                                                {card.description.replace(/<[^>]*>/g, '')}
+                                            </p>
+                                        ) : (
+                                            <div className="flex-1" />
+                                        )}
+                                        <div className="space-y-2 mt-auto">
+                                            <div className="flex items-center gap-2 text-xs text-gray-500">
+                                                {card.archivedAt && (
+                                                    <span className="truncate">
+                                                        {new Date(card.archivedAt).toLocaleDateString('ko-KR')}
+                                                    </span>
+                                                )}
+                                                {card.priority && (
+                                                    <span className="px-2 py-0.5 rounded bg-pastel-blue-100 text-pastel-blue-700 font-medium">
+                                                        {card.priority}
+                                                    </span>
+                                                )}
+                                            </div>
+                                            <div className="flex items-center gap-1.5">
+                                                <button
+                                                    onClick={() => handleUnarchive(card)}
+                                                    className="flex-1 px-2 py-1.5 rounded-lg bg-pastel-green-100 text-pastel-green-700 hover:bg-pastel-green-200 transition flex items-center justify-center gap-1 text-xs font-medium"
+                                                    title="복구"
+                                                >
+                                                    <HiRefresh className="text-sm" />
+                                                    복구
+                                                </button>
+                                                <button
+                                                    onClick={() => handlePermanentDelete(card)}
+                                                    className="flex-1 px-2 py-1.5 rounded-lg bg-red-100 text-red-700 hover:bg-red-200 transition flex items-center justify-center gap-1 text-xs font-medium"
+                                                    title="삭제"
+                                                >
+                                                    <HiTrash className="text-sm" />
+                                                    삭제
+                                                </button>
+                                            </div>
                                         </div>
                                     </div>
+                                ))}
+                            </div>
+
+                            {hasSelection && (
+                                <div className="sticky bottom-0 left-0 right-0 border border-white/50 bg-white/60 backdrop-blur-md rounded-2xl shadow-lg p-4 flex items-center justify-between">
+                                    <div className="text-sm text-pastel-blue-900 font-semibold">
+                                        {selectedCardIds.size}개 선택됨
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <button
+                                            onClick={handleBulkUnarchive}
+                                            className="px-4 py-2 rounded-lg bg-pastel-green-500 text-white hover:bg-pastel-green-600 transition font-medium text-sm"
+                                            disabled={loading}
+                                        >
+                                            선택 항목 일괄 복구
+                                        </button>
+                                        <button
+                                            onClick={handleBulkDelete}
+                                            className="px-4 py-2 rounded-lg bg-red-500 text-white hover:bg-red-600 transition font-medium text-sm"
+                                            disabled={loading}
+                                        >
+                                            선택 항목 일괄 삭제
+                                        </button>
+                                        <button
+                                            onClick={clearSelection}
+                                            className="px-3 py-2 rounded-lg border border-pastel-blue-300 text-pastel-blue-700 hover:bg-white transition text-sm"
+                                        >
+                                            선택 해제
+                                        </button>
+                                    </div>
                                 </div>
-                            ))}
+                            )}
                         </div>
                     )}
                 </div>

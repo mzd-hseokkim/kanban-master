@@ -8,6 +8,7 @@ import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { ColumnCard } from '@/components/ColumnCard';
 import type { Column } from '@/types/column';
+import type { CardSearchState } from '@/types/search';
 
 interface SortableColumnCardProps {
   column: Column;
@@ -17,6 +18,8 @@ interface SortableColumnCardProps {
   canEdit: boolean;
   autoOpenCardId?: number | null;
   onAutoOpenHandled?: () => void;
+  searchState: CardSearchState;
+  currentUserId?: number;
 }
 
 export const SortableColumnCard = ({
@@ -27,6 +30,8 @@ export const SortableColumnCard = ({
   canEdit,
   autoOpenCardId,
   onAutoOpenHandled,
+  searchState,
+  currentUserId,
 }: SortableColumnCardProps) => {
   const {
     attributes,
@@ -70,6 +75,8 @@ export const SortableColumnCard = ({
         autoOpenCardId={autoOpenCardId}
         onAutoOpenHandled={onAutoOpenHandled}
         dragHandleProps={canEdit ? listeners : undefined}
+        searchState={searchState}
+        currentUserId={currentUserId}
       />
     </div>
   );

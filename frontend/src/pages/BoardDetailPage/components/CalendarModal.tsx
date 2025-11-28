@@ -1,4 +1,5 @@
-import { Card } from '@/types/card';
+import { searchService } from '@/services/searchService';
+import { CardSearchResult } from '@/types/search';
 import { useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { HiCalendar, HiCheck, HiChevronLeft, HiChevronRight, HiClock, HiLightningBolt, HiPlus, HiX } from 'react-icons/hi';
@@ -6,7 +7,7 @@ import { HiCalendar, HiCheck, HiChevronLeft, HiChevronRight, HiClock, HiLightnin
 interface CalendarModalProps {
   isOpen: boolean;
   onClose: () => void;
-  cards: Card[];
+  boardId: number;
   onCardSelect: (cardId: number) => void;
 }
 
@@ -28,16 +29,32 @@ const MONTHS = [
   'July', 'August', 'September', 'October', 'November', 'December'
 ];
 
-export const CalendarModal = ({ isOpen, onClose, cards, onCardSelect }: CalendarModalProps) => {
+export const CalendarModal = ({ isOpen, onClose, boardId, onCardSelect }: CalendarModalProps) => {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [filterStarted, setFilterStarted] = useState(false);
   const [filterCompleted, setFilterCompleted] = useState(false);
+  const [cards, setCards] = useState<CardSearchResult[]>([]);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
       setCurrentDate(new Date());
+      fetchCards();
     }
-  }, [isOpen]);
+  }, [isOpen, boardId]);
+
+  const fetchCards = async () => {
+    try {
+      setLoading(true);
+      // Fetch all cards for the board
+      const results = await searchService.searchCardsInBoard(boardId, {});
+      setCards(results);
+    } catch (error) {
+      console.error('Failed to fetch cards for calendar:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Handle ESC key
   useEffect(() => {
@@ -81,9 +98,9 @@ export const CalendarModal = ({ isOpen, onClose, cards, onCardSelect }: Calendar
       if (filterStarted && !filterCompleted) {
         if (!card.startedAt) return;
       } else if (!filterStarted && filterCompleted) {
-        if (!card.completedAt) return;
+        if (!card.isCompleted) return;
       } else if (filterStarted && filterCompleted) {
-        if (!card.startedAt || !card.completedAt) return;
+        if (!card.startedAt || !card.isCompleted) return;
       }
 
       const cardEvents: CalendarEvent[] = [];

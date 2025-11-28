@@ -8,7 +8,10 @@ import { useDialog } from '@/context/DialogContext';
 import { useColumnScrollPersistence } from '@/hooks/useColumnScrollPersistence';
 import type { Card } from '@/types/card';
 import { Column } from '@/types/column';
+import type { CardSearchState } from '@/types/search';
+import { filterCardsBySearch, hasActiveSearchFilter } from '@/utils/searchFilters';
 import React, { useEffect, useRef, useState } from 'react';
+import { HiArchive, HiPencilAlt, HiTrash } from 'react-icons/hi';
 
 interface ColumnCardProps {
   column: Column;
@@ -19,14 +22,28 @@ interface ColumnCardProps {
   autoOpenCardId?: number | null;
   onAutoOpenHandled?: () => void;
   dragHandleProps?: React.HTMLAttributes<HTMLDivElement>;
+  searchState: CardSearchState;
+  currentUserId?: number;
 }
 
-const ColumnCardComponent: React.FC<ColumnCardProps> = ({ column, workspaceId, boardId, boardOwnerId, canEdit, autoOpenCardId, onAutoOpenHandled, dragHandleProps }) => {
+const ColumnCardComponent: React.FC<ColumnCardProps> = ({
+  column,
+  workspaceId,
+  boardId,
+  boardOwnerId,
+  canEdit,
+  autoOpenCardId,
+  onAutoOpenHandled,
+  dragHandleProps,
+  searchState,
+  currentUserId,
+}) => {
   const { deleteColumn } = useColumn();
-  const { cards, loadCards, updateCard } = useCard();
+  const { cards, loadCards, updateCard, archiveCardsInColumn } = useCard();
   const { confirm } = useDialog();
   const [showMenu, setShowMenu] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isArchiving, setIsArchiving] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [showCreateCardModal, setShowCreateCardModal] = useState(false);
   const [modalKey, setModalKey] = useState(0); // Key to force modal remount
@@ -38,6 +55,7 @@ const ColumnCardComponent: React.FC<ColumnCardProps> = ({ column, workspaceId, b
   const [animatedCardIds, setAnimatedCardIds] = useState<Set<number>>(new Set());
   const [recentlyCreatedCardId, setRecentlyCreatedCardId] = useState<number | null>(null);
   const highlightTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const columnCards = cards[column.id] || [];
 
   useColumnScrollPersistence({
     boardId,
@@ -62,7 +80,6 @@ const ColumnCardComponent: React.FC<ColumnCardProps> = ({ column, workspaceId, b
   }, [column.id, workspaceId, boardId, loadCards]);
 
   useEffect(() => {
-    const columnCards = cards[column.id] || [];
     if (columnCards.length === 0) {
       return;
     }
@@ -79,7 +96,7 @@ const ColumnCardComponent: React.FC<ColumnCardProps> = ({ column, workspaceId, b
 
       return hasChanges ? next : prev;
     });
-  }, [cards, column.id]);
+  }, [columnCards]);
 
   useEffect(() => {
     return () => {
@@ -127,6 +144,36 @@ const ColumnCardComponent: React.FC<ColumnCardProps> = ({ column, workspaceId, b
       console.error('Failed to delete column:', err);
     } finally {
       setIsDeleting(false);
+      setShowMenu(false);
+    }
+  };
+
+  const handleArchiveAll = async () => {
+    const columnCards = cards[column.id] || [];
+    if (columnCards.length === 0) {
+      setShowMenu(false);
+      return;
+    }
+
+    const confirmed = await confirm(`이 칼럼의 ${columnCards.length}개 카드를 모두 아카이브하시겠습니까?`, {
+      confirmText: '아카이브',
+      cancelText: '취소',
+      isDestructive: true,
+    });
+
+    if (!confirmed) return;
+
+    try {
+      setIsArchiving(true);
+      setErrorMessage(null);
+      await archiveCardsInColumn(workspaceId, boardId, column.id);
+      await loadCards(workspaceId, boardId, column.id);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : '카드 아카이브에 실패했습니다';
+      setErrorMessage(message);
+      console.error('Failed to archive cards in column:', err);
+    } finally {
+      setIsArchiving(false);
       setShowMenu(false);
     }
   };
@@ -209,6 +256,22 @@ const ColumnCardComponent: React.FC<ColumnCardProps> = ({ column, workspaceId, b
 
   const bgStyle = isHexColor ? { backgroundColor: hexToRgba(bgColorClass, 0.33) } : {};
   const bgClassName = isHexColor ? '' : bgColorClass;
+  const sortCardsForColumn = (a: Card, b: Card) => {
+    const parseDate = (value?: string) => {
+      if (!value) return 0;
+      const timestamp = Date.parse(value);
+      return Number.isNaN(timestamp) ? 0 : timestamp;
+    };
+    const createdDiff = parseDate(a.createdAt) - parseDate(b.createdAt);
+    if (createdDiff !== 0) {
+      return createdDiff;
+    }
+    return a.id - b.id;
+  };
+
+  const filteredCards = filterCardsBySearch(columnCards, searchState, currentUserId);
+  const isFilterActive = hasActiveSearchFilter(searchState);
+  const sortedVisibleCards = [...filteredCards].sort(sortCardsForColumn);
 
   return (
     <>
@@ -273,7 +336,7 @@ const ColumnCardComponent: React.FC<ColumnCardProps> = ({ column, workspaceId, b
                 <button
                   onClick={() => setShowMenu(!showMenu)}
                   className="menu-button p-1.5 hover:bg-white/20 rounded-lg transition text-pastel-blue-900 font-bold text-lg"
-                  disabled={isDeleting}
+                  disabled={isDeleting || isArchiving}
                 >
                   ⋮
                 </button>
@@ -284,16 +347,26 @@ const ColumnCardComponent: React.FC<ColumnCardProps> = ({ column, workspaceId, b
                         setShowEditColumnModal(true);
                         setShowMenu(false);
                       }}
-                      className="w-full text-left px-3 py-1.5 text-xs text-slate-700 hover:bg-white/30 transition"
+                      className="w-full text-left px-3 py-1.5 text-xs text-slate-700 hover:bg-white/30 transition flex items-center gap-2"
                     >
-                      ✏️ 수정
+                      <HiPencilAlt className="w-4 h-4" />
+                      <span>수정</span>
+                    </button>
+                    <button
+                      onClick={handleArchiveAll}
+                      disabled={isArchiving || cardsLoading}
+                      className="w-full text-left px-3 py-1.5 text-xs text-slate-700 hover:bg-white/30 transition disabled:opacity-50 flex items-center gap-2"
+                    >
+                      <HiArchive className="w-4 h-4" />
+                      <span>{isArchiving ? '아카이브 중...' : '전체 카드 아카이브'}</span>
                     </button>
                     <button
                       onClick={handleDelete}
                       disabled={isDeleting}
-                      className="w-full text-left px-3 py-1.5 text-xs text-pastel-pink-600 hover:bg-white/30 transition disabled:opacity-50"
+                      className="w-full text-left px-3 py-1.5 text-xs text-pastel-pink-600 hover:bg-white/30 transition disabled:opacity-50 flex items-center gap-2"
                     >
-                      {isDeleting ? '삭제 중...' : '🗑️ 삭제'}
+                      <HiTrash className="w-4 h-4" />
+                      <span>{isDeleting ? '삭제 중...' : '삭제'}</span>
                     </button>
                   </div>
                 )}
@@ -316,36 +389,27 @@ const ColumnCardComponent: React.FC<ColumnCardProps> = ({ column, workspaceId, b
             </div>
           ) : (
             <>
-              {cards[column.id] && cards[column.id].length > 0 && (
+              {sortedVisibleCards.length > 0 ? (
                 <div className="space-y-1.5 w-full">
-                  {[...(cards[column.id] || [])]
-                    .sort((a, b) => {
-                      const parseDate = (value?: string) => {
-                        if (!value) return 0;
-                        const timestamp = Date.parse(value);
-                        return Number.isNaN(timestamp) ? 0 : timestamp;
-                      };
-                      const createdDiff = parseDate(a.createdAt) - parseDate(b.createdAt);
-                      if (createdDiff !== 0) {
-                        return createdDiff;
-                      }
-                      return a.id - b.id;
-                    })
-                    .map((card) => (
-                      <CardItem
-                        key={card.id}
-                        card={card}
-                        workspaceId={workspaceId}
-                        boardId={boardId}
-                        boardOwnerId={boardOwnerId}
-                        columnId={column.id}
-                        canEdit={canEdit}
-                        autoOpen={autoOpenCardId === card.id}
-                        onAutoOpenHandled={onAutoOpenHandled}
-                        animateOnMount={!animatedCardIds.has(card.id)}
-                        isRecentlyCreated={card.id === recentlyCreatedCardId}
-                      />
-                    ))}
+                  {sortedVisibleCards.map((card) => (
+                    <CardItem
+                      key={card.id}
+                      card={card}
+                      workspaceId={workspaceId}
+                      boardId={boardId}
+                      boardOwnerId={boardOwnerId}
+                      columnId={column.id}
+                      canEdit={canEdit}
+                      autoOpen={autoOpenCardId === card.id}
+                      onAutoOpenHandled={onAutoOpenHandled}
+                      animateOnMount={!animatedCardIds.has(card.id)}
+                      isRecentlyCreated={card.id === recentlyCreatedCardId}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <div className="w-full rounded-xl border border-white/40 bg-white/40 text-center text-xs text-slate-500 py-6">
+                  {isFilterActive ? '필터에 맞는 카드가 없습니다' : '카드가 없습니다'}
                 </div>
               )}
 

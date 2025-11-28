@@ -1,7 +1,8 @@
 import { Avatar } from '@/components/common/Avatar';
 import { userService } from '@/services/userService';
 import type { UserSearchResult } from '@/types/user';
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 
 interface AssigneeSelectorProps {
   currentAssignee: { id: number; name: string; avatarUrl?: string } | null;
@@ -18,20 +19,54 @@ export const AssigneeSelector = ({
   const [results, setResults] = useState<UserSearchResult[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
+  const [dropdownStyle, setDropdownStyle] = useState<{ top: number; left: number; width: number } | null>(null);
 
   const containerRef = useRef<HTMLDivElement>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const updateDropdownPosition = useCallback(() => {
+    const anchorEl = containerRef.current;
+    if (!anchorEl) return;
+
+    const rect = anchorEl.getBoundingClientRect();
+    setDropdownStyle({
+      top: rect.bottom + window.scrollY,
+      left: rect.left + window.scrollX,
+      width: rect.width,
+    });
+  }, []);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
-        setIsOpen(false);
+      const target = event.target as Node;
+      if (
+        (containerRef.current && containerRef.current.contains(target)) ||
+        (dropdownRef.current && dropdownRef.current.contains(target))
+      ) {
+        return;
       }
+      setIsOpen(false);
     };
 
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  useLayoutEffect(() => {
+    if (!isOpen) return;
+
+    updateDropdownPosition();
+
+    const handleResizeOrScroll = () => updateDropdownPosition();
+    window.addEventListener('resize', handleResizeOrScroll, true);
+    window.addEventListener('scroll', handleResizeOrScroll, true);
+
+    return () => {
+      window.removeEventListener('resize', handleResizeOrScroll, true);
+      window.removeEventListener('scroll', handleResizeOrScroll, true);
+    };
+  }, [isOpen, updateDropdownPosition]);
 
   const performSearch = async (keyword: string) => {
     if (!keyword.trim()) {
@@ -126,8 +161,16 @@ export const AssigneeSelector = ({
         </div>
       )}
 
-      {isOpen && results.length > 0 && (
-        <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-slate-200 rounded-lg shadow-lg z-50 max-h-48 overflow-y-auto min-w-[150px]">
+      {isOpen && results.length > 0 && dropdownStyle && createPortal(
+        <div
+          ref={dropdownRef}
+          className="absolute mt-1 bg-white border border-slate-200 rounded-lg shadow-lg z-[120] max-h-48 overflow-y-auto min-w-[150px]"
+          style={{
+            top: dropdownStyle.top,
+            left: dropdownStyle.left,
+            width: dropdownStyle.width,
+          }}
+        >
           {results.map((user) => (
             <button
               key={user.id}
@@ -141,7 +184,8 @@ export const AssigneeSelector = ({
               </div>
             </button>
           ))}
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

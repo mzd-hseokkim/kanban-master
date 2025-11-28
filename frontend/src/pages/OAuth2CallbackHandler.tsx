@@ -1,6 +1,6 @@
+import { useAuth } from '@/context/AuthContext';
 import { useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { useAuth } from '@/context/AuthContext';
 
 /**
  * OAuth2 콜백 핸들러 컴포넌트
@@ -40,7 +40,7 @@ const OAuth2CallbackHandler = () => {
           console.log('🎉 [OAuth2Callback] Token saved and profile fetched, redirecting to dashboard');
 
           // 대시보드로 리다이렉트
-          navigate('/', { replace: true });
+          navigate('/', { replace: true, state: { showDidYouKnow: true } });
         } catch (err) {
           console.error('❌ [OAuth2Callback] Failed to set token:', err);
           navigate('/login?error=로그인 처리 중 오류가 발생했습니다', { replace: true });

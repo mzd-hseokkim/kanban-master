@@ -1,20 +1,18 @@
 package com.kanban.auth;
 
+import java.util.List;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import com.kanban.auth.dto.UserIdentityResponse;
 import com.kanban.exception.ResourceNotFoundException;
 import com.kanban.user.User;
 import com.kanban.user.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
-import java.util.List;
-import java.util.stream.Collectors;
 
 /**
- * Service for managing user social login identities.
- * Handles listing and unlinking OAuth2 provider accounts.
+ * Service for managing user social login identities. Handles listing and unlinking OAuth2 provider
+ * accounts.
  */
 @Slf4j
 @Service
@@ -36,14 +34,12 @@ public class UserIdentityService {
 
         List<UserIdentity> identities = userIdentityRepository.findByUserId(userId);
 
-        return identities.stream()
-                .map(UserIdentityResponse::from)
-                .toList();
+        return identities.stream().map(UserIdentityResponse::from).toList();
     }
 
     /**
-     * Unlink an OAuth2 identity from a user.
-     * Allows unlinking even if it's the last authentication method.
+     * Unlink an OAuth2 identity from a user. Allows unlinking even if it's the last authentication
+     * method.
      *
      * @param userId the user ID
      * @param identityId the identity ID to unlink
@@ -65,13 +61,13 @@ public class UserIdentityService {
         // Delete the identity (no minimum authentication method check)
         userIdentityRepository.delete(identity);
 
-        log.info("Successfully unlinked OAuth2 identity {} (provider: {}) for user {}",
-                identityId, identity.getProvider(), userId);
+        log.info("Successfully unlinked OAuth2 identity {} (provider: {}) for user {}", identityId,
+                identity.getProvider(), userId);
     }
 
     /**
-     * Check if a user has a password set.
-     * Used by frontend to determine if user can unlink all social accounts.
+     * Check if a user has a password set. Used by frontend to determine if user can unlink all
+     * social accounts.
      *
      * @param userId the user ID
      * @return true if user has a password

@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 import com.kanban.card.Card;
 import com.kanban.label.CardLabelRepository;
 import com.kanban.label.dto.LabelResponse;
@@ -14,7 +15,6 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.criteria.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.util.StringUtils;
 
 /**
  * 검색 서비스 카드 검색 및 필터링 기능 제공
@@ -139,6 +139,10 @@ public class SearchService {
         if (request.getSprintId() != null) {
             predicates.add(cb.equal(card.get("sprint").get("id"), request.getSprintId()));
         }
+
+        // 기본적으로 아카이브된 카드는 제외 (명시적 요청이 없는 한)
+        // TODO: CardSearchRequest에 includeArchived 필드 추가 고려
+        predicates.add(cb.equal(card.get("isArchived"), false));
 
         return predicates;
     }

@@ -2,10 +2,12 @@ package com.kanban.card;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -770,6 +772,34 @@ public class CardService {
     }
 
     /**
+     * 칼럼의 모든 미아카이브 카드 일괄 아카이브
+     */
+    @org.springframework.cache.annotation.CacheEvict(value = "dashboardSummary", allEntries = true)
+    public List<CardResponse> archiveAllCardsInColumn(Long boardId, Long columnId, Long userId) {
+        roleValidator.validateRole(boardId, BoardMemberRole.EDITOR);
+
+        BoardColumn column = columnRepository.findById(columnId)
+                .orElseThrow(() -> new ResourceNotFoundException("Column not found"));
+
+        if (!column.getBoard().getId().equals(boardId)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Column does not belong to board");
+        }
+
+        List<Card> activeCards = cardRepository.findActiveByColumnIdOrderByPosition(columnId);
+
+        if (activeCards.isEmpty()) {
+            return List.of();
+        }
+
+        List<CardResponse> archivedCards = new ArrayList<>();
+        for (Card card : activeCards) {
+            archivedCards.add(archiveCardInternal(columnId, card.getId(), userId));
+        }
+
+        return archivedCards;
+    }
+
+    /**
      * 카드 아카이브 (내부 사용)
      */
     @org.springframework.cache.annotation.CacheEvict(value = "dashboardSummary", allEntries = true)
@@ -874,6 +904,107 @@ public class CardService {
                     CardResponse.from(card, labelsByCardId.getOrDefault(card.getId(), List.of()));
             return enrichWithAssigneeInfo(response);
         }).toList();
+    }
+
+    /**
+     * 아카이브된 카드 일괄 복구 (보드 단위 요약 이벤트만 기록)
+     */
+    @org.springframework.cache.annotation.CacheEvict(value = "dashboardSummary", allEntries = true)
+    public List<CardResponse> unarchiveCardsInBulk(Long boardId, List<Long> cardIds, Long userId) {
+        roleValidator.validateRole(boardId, BoardMemberRole.EDITOR);
+
+        if (cardIds == null || cardIds.isEmpty()) {
+            return List.of();
+        }
+
+        List<Card> cards = cardRepository.findByBoardIdAndIdIn(boardId, cardIds);
+        if (cards.size() != cardIds.size()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "Invalid cardIds detected for this board");
+        }
+
+        for (Card card : cards) {
+            if (Boolean.FALSE.equals(card.getIsArchived())) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                        "Only archived cards can be unarchived in bulk");
+            }
+            card.setIsArchived(false);
+            card.setArchivedAt(null);
+        }
+
+        List<Card> saved = cardRepository.saveAll(cards);
+        Map<Long, Card> savedById = saved.stream()
+                .collect(Collectors.toMap(Card::getId, Function.identity()));
+
+        Map<Long, List<LabelResponse>> labelsByCardId =
+                getLabelsByCardIds(saved.stream().map(Card::getId).toList());
+
+        List<CardResponse> responses = new ArrayList<>();
+        for (Long cardId : cardIds) {
+            Card card = savedById.get(cardId);
+            CardResponse response = CardResponse.from(card,
+                    labelsByCardId.getOrDefault(cardId, List.of()));
+            responses.add(enrichWithAssigneeInfo(response));
+        }
+
+        activityService.recordActivity(ActivityScopeType.BOARD, boardId,
+                ActivityEventType.CARD_UPDATED, userId,
+                cardIds.size() + "개의 아카이브 카드가 일괄 복구되었습니다");
+
+        redisPublisher.publish(new com.kanban.notification.event.BoardEvent(
+                com.kanban.notification.event.BoardEvent.EventType.CARD_UPDATED.name(), boardId,
+                Map.of("action", "BULK_UNARCHIVE", "cards", responses), userId,
+                System.currentTimeMillis()));
+
+        return responses;
+    }
+
+    /**
+     * 아카이브된 카드 일괄 영구 삭제 (보드 단위 요약 이벤트만 기록)
+     */
+    @org.springframework.cache.annotation.CacheEvict(value = "dashboardSummary", allEntries = true)
+    public void permanentlyDeleteCardsInBulk(Long boardId, List<Long> cardIds, Long userId) {
+        roleValidator.validateRole(boardId, BoardMemberRole.MANAGER);
+
+        if (cardIds == null || cardIds.isEmpty()) {
+            return;
+        }
+
+        List<Card> cards = cardRepository.findByBoardIdAndIdIn(boardId, cardIds);
+        if (cards.size() != cardIds.size()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "Invalid cardIds detected for this board");
+        }
+
+        for (Card card : cards) {
+            if (Boolean.FALSE.equals(card.getIsArchived())) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                        "Only archived cards can be permanently deleted in bulk");
+            }
+
+            int childCount = cardRepository.countByParentCardId(card.getId());
+            if (childCount > 0) {
+                throw new CardHasChildrenException(childCount);
+            }
+        }
+
+        List<Map<String, Object>> deletedSummaries = cards.stream()
+                .map(card -> Map.<String, Object>of("cardId", card.getId(),
+                        "columnId", card.getColumn().getId()))
+                .toList();
+
+        // 라벨 매핑 제거 후 카드 일괄 삭제
+        cards.forEach(card -> cardLabelRepository.deleteByCardId(card.getId()));
+        cardRepository.deleteAllInBatch(cards);
+
+        activityService.recordActivity(ActivityScopeType.BOARD, boardId,
+                ActivityEventType.CARD_DELETED, userId,
+                cardIds.size() + "개의 아카이브 카드가 일괄 영구 삭제되었습니다");
+
+        redisPublisher.publish(new com.kanban.notification.event.BoardEvent(
+                com.kanban.notification.event.BoardEvent.EventType.CARD_DELETED.name(), boardId,
+                Map.of("action", "BULK_DELETE", "cards", deletedSummaries), userId,
+                System.currentTimeMillis()));
     }
 
     /**

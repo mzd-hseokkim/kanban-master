@@ -23,6 +23,7 @@ interface CardContextType {
   updateCard: (workspaceId: number, boardId: number, columnId: number, cardId: number, request: UpdateCardRequest) => Promise<Card>;
   deleteCard: (workspaceId: number, boardId: number, columnId: number, cardId: number) => Promise<void>;
   updateCardPosition: (workspaceId: number, boardId: number, columnId: number, cardId: number, newPosition: number) => Promise<Card>;
+  archiveCardsInColumn: (workspaceId: number, boardId: number, columnId: number) => Promise<Card[]>;
   handleCardEvent: (event: any) => void;
 }
 
@@ -88,28 +89,60 @@ export const CardProvider: React.FC<{ children: React.ReactNode }> = ({ children
         break;
       }
       case 'CARD_UPDATED': {
-        const updatedCard = payload;
-        // 카드가 아카이브되면 목록에서 제거
-        if (updatedCard.isArchived) {
-          setCards(prev => ({
-            ...prev,
-            [updatedCard.columnId]: (prev[updatedCard.columnId] || []).filter(c => c.id !== updatedCard.id)
-          }));
+        if (payload?.action === 'BULK_UNARCHIVE') {
+          const bulkCards = payload.cards || [];
+          setCards(prev => {
+            const next = { ...prev };
+            bulkCards.forEach((card: any) => {
+              const colId = card.columnId;
+              if (!colId) return;
+              const existing = next[colId] || [];
+              const found = existing.find((c: any) => c.id === card.id);
+              if (found) {
+                next[colId] = existing.map((c: any) => (c.id === card.id ? card : c));
+              } else {
+                next[colId] = [...existing, card];
+              }
+            });
+            return next;
+          });
         } else {
-          setCards(prev => ({
-            ...prev,
-            [updatedCard.columnId]: (prev[updatedCard.columnId] || []).map(c => c.id === updatedCard.id ? updatedCard : c)
-          }));
+          const updatedCard = payload;
+          // 카드가 아카이브되면 목록에서 제거
+          if (updatedCard.isArchived) {
+            setCards(prev => ({
+              ...prev,
+              [updatedCard.columnId]: (prev[updatedCard.columnId] || []).filter(c => c.id !== updatedCard.id)
+            }));
+          } else {
+            setCards(prev => ({
+              ...prev,
+              [updatedCard.columnId]: (prev[updatedCard.columnId] || []).map(c => c.id === updatedCard.id ? updatedCard : c)
+            }));
+          }
         }
         break;
       }
       case 'CARD_DELETED': {
-        // Payload is Map { cardId, columnId }
-        const { cardId, columnId } = payload;
-        setCards(prev => ({
-          ...prev,
-          [columnId]: (prev[columnId] || []).filter(c => c.id !== Number(cardId))
-        }));
+        if (payload?.action === 'BULK_DELETE') {
+          const cardsToRemove = payload.cards || [];
+          setCards(prev => {
+            const next = { ...prev };
+            cardsToRemove.forEach((item: any) => {
+              const { cardId, columnId } = item;
+              if (!columnId) return;
+              next[columnId] = (next[columnId] || []).filter(c => c.id !== Number(cardId));
+            });
+            return next;
+          });
+        } else {
+          // Payload is Map { cardId, columnId }
+          const { cardId, columnId } = payload;
+          setCards(prev => ({
+            ...prev,
+            [columnId]: (prev[columnId] || []).filter(c => c.id !== Number(cardId))
+          }));
+        }
         break;
       }
       case 'CARD_MOVED': {
@@ -204,6 +237,26 @@ export const CardProvider: React.FC<{ children: React.ReactNode }> = ({ children
     []
   );
 
+  const archiveCardsInColumn = useCallback(
+    async (workspaceId: number, boardId: number, columnId: number): Promise<Card[]> => {
+      try {
+        setError(null);
+        const archivedCards = await cardService.archiveCardsInColumn(workspaceId, boardId, columnId);
+        setCards(prev => ({
+          ...prev,
+          [columnId]: []
+        }));
+        return archivedCards;
+      } catch (err) {
+        const message = err instanceof Error ? err.message : '카드 아카이브에 실패했습니다';
+        setError(message);
+        console.error('Failed to archive cards in column:', err);
+        throw err;
+      }
+    },
+    []
+  );
+
   const updateCardPosition = useCallback(
     async (workspaceId: number, boardId: number, columnId: number, cardId: number, newPosition: number): Promise<Card> => {
       try {
@@ -234,6 +287,7 @@ export const CardProvider: React.FC<{ children: React.ReactNode }> = ({ children
       updateCard,
       deleteCard,
       updateCardPosition,
+      archiveCardsInColumn,
       handleCardEvent,
     }),
     [
@@ -245,6 +299,7 @@ export const CardProvider: React.FC<{ children: React.ReactNode }> = ({ children
       updateCard,
       deleteCard,
       updateCardPosition,
+      archiveCardsInColumn,
       handleCardEvent,
     ],
   );

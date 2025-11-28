@@ -24,6 +24,7 @@ interface BoardHeaderProps {
   isDownloadingTemplate?: boolean;
   boardMode?: 'KANBAN' | 'SPRINT';
   onEnableSprint?: () => void;
+  isFilterActive?: boolean;
 }
 
 export const BoardHeader = ({
@@ -48,6 +49,7 @@ export const BoardHeader = ({
   isDownloadingTemplate,
   boardMode,
   onEnableSprint,
+  isFilterActive = false,
 }: BoardHeaderProps) => {
   const [isArchiveDropTarget, setIsArchiveDropTarget] = useState(false);
   const [isExcelMenuOpen, setIsExcelMenuOpen] = useState(false);
@@ -211,7 +213,21 @@ export const BoardHeader = ({
             <span>분석</span>
           </button>
 
+          <HeaderButton
+            icon={<HiSearch />}
+            label="검색"
+            onClick={onSearch}
+            badge={isFilterActive ? (
+              <span
+                className="absolute -right-0.5 -top-0.5 w-2.5 h-2.5 rounded-full bg-rose-500 ring-2 ring-white shadow-sm"
+                aria-label="필터 적용됨"
+                title="필터 적용됨"
+              />
+            ) : undefined}
+          />
+
           <div className="relative" ref={menuRef}>
+
             <button
               type="button"
               onClick={() => setIsExcelMenuOpen((prev) => !prev)}
@@ -270,11 +286,6 @@ export const BoardHeader = ({
             onClick={onCalendar}
           />
           <HeaderButton
-            icon={<HiSearch />}
-            label="검색"
-            onClick={onSearch}
-          />
-          <HeaderButton
             icon={<HiTag />}
             label="라벨"
             onClick={onLabelManager}
@@ -312,20 +323,22 @@ interface HeaderButtonProps {
   onDragOver?: (e: DragEvent<HTMLButtonElement>) => void;
   onDragLeave?: (e: DragEvent<HTMLButtonElement>) => void;
   isDropActive?: boolean;
+  badge?: ReactNode;
 }
 
-const HeaderButton = ({ icon, label, onClick, onDrop, onDragOver, onDragLeave, isDropActive }: HeaderButtonProps) => (
+const HeaderButton = ({ icon, label, onClick, onDrop, onDragOver, onDragLeave, isDropActive, badge }: HeaderButtonProps) => (
   <button
     type="button"
     onClick={onClick}
     onDrop={onDrop}
     onDragOver={onDragOver}
     onDragLeave={onDragLeave}
-    className={`flex items-center gap-2 px-3 py-2 rounded-lg text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition-all duration-200 font-medium text-sm group focus:outline-none ${
+    className={`relative flex items-center gap-2 px-3 py-2 rounded-lg text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition-all duration-200 font-medium text-sm group focus:outline-none ${
       isDropActive ? 'ring-2 ring-pastel-blue-300 bg-pastel-blue-50 text-pastel-blue-700' : ''
     }`}
   >
     <span className="text-lg text-slate-400 group-hover:text-slate-900 transition-colors">{icon}</span>
     <span className="hidden xl:inline">{label}</span>
+    {badge}
   </button>
 );

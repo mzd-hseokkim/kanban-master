@@ -1,6 +1,7 @@
 import { CommandPalette } from '@/components/common/CommandPalette';
 import { KeyboardShortcutsHelp } from '@/components/common/KeyboardShortcutsHelp';
 import { ConnectionStatusScanner } from '@/components/ConnectionStatusScanner';
+import { DidYouKnowModal } from '@/components/DidYouKnowModal';
 import { Footer } from '@/components/Footer';
 import { GlobalNavBar } from '@/components/GlobalNavBar';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
@@ -11,6 +12,7 @@ import { ColumnProvider } from '@/context/ColumnContext';
 import { DialogProvider } from '@/context/DialogContext';
 import { SprintProvider } from '@/context/SprintContext';
 import { WebSocketProvider } from '@/context/WebSocketContext';
+import { useDidYouKnowModal } from '@/hooks/useDidYouKnowModal';
 import AuditLogPage from '@/pages/AuditLogPage';
 import BoardDetailPage from '@/pages/BoardDetailPage';
 import BoardsPage from '@/pages/BoardsPage';
@@ -37,6 +39,7 @@ const App = () => {
   const [isAnimating, setIsAnimating] = useState(false);
   const { isAuthenticated } = useAuth();
   const shouldShowAppChrome = isAuthenticated && !AUTH_CHROME_EXCLUDED_PATHS.includes(location.pathname);
+  const { isOpen: didYouKnowOpen, open: openDidYouKnow, close: closeDidYouKnow, shouldShow } = useDidYouKnowModal();
 
   useEffect(() => {
     if (location !== displayLocation) {
@@ -45,6 +48,19 @@ const App = () => {
       setIsAnimating(true);
     }
   }, [location, displayLocation]);
+
+  // Did You Know 모달 자동 표시 (로그인 후)
+  useEffect(() => {
+    const state = location.state as { showDidYouKnow?: boolean } | null;
+    if (state?.showDidYouKnow && shouldShow()) {
+      // 페이지 로드 완료 대기 후 모달 표시
+      const timer = setTimeout(() => {
+        openDidYouKnow();
+      }, 500);
+
+      return () => clearTimeout(timer);
+    }
+  }, [location.state, shouldShow, openDidYouKnow]);
 
   const handleAnimationEnd = () => {
     setIsAnimating(false);
@@ -177,6 +193,7 @@ const App = () => {
             </div>
             <CommandPalette />
             <KeyboardShortcutsHelp />
+            <DidYouKnowModal isOpen={didYouKnowOpen} onClose={closeDidYouKnow} />
             </SprintProvider>
           </CardProvider>
         </ColumnProvider>

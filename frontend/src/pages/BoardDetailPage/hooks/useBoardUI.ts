@@ -1,5 +1,5 @@
-import type { CardSearchResult } from '@/types/search';
-import { useCallback, useEffect, useState } from 'react';
+import type { CardSearchResult, CardSearchState } from '@/types/search';
+import { useCallback, useEffect, useState, type Dispatch, type SetStateAction } from 'react';
 
 interface UIState {
   viewMode: 'BOARD' | 'LIST' | 'ANALYTICS' | 'PLANNING';
@@ -16,18 +16,7 @@ interface UIState {
   showEnableSprintModal: boolean;
   showCreateSprintModal: boolean;
   archiveError: string | null;
-  searchState: {
-    keyword: string;
-    selectedPriorities: string[];
-    selectedLabelIds: number[];
-    selectedAssigneeIds: number[];
-    isCompleted: boolean | undefined;
-    overdue: boolean;
-    dueDateFrom: string;
-    dueDateTo: string;
-    sortBy: 'PRIORITY' | 'DUE_DATE' | 'CREATED_AT' | 'UPDATED_AT';
-    sortDir: 'ASC' | 'DESC';
-  };
+  searchState: CardSearchState;
 }
 
 interface UIActions {
@@ -45,7 +34,7 @@ interface UIActions {
   setShowEnableSprintModal: (show: boolean) => void;
   setShowCreateSprintModal: (show: boolean) => void;
   setArchiveError: (error: string | null) => void;
-  setSearchState: (state: any) => void;
+  setSearchState: Dispatch<SetStateAction<CardSearchState>>;
   handleCardSelect: (result: CardSearchResult) => void;
 }
 
@@ -71,7 +60,7 @@ export const useBoardUI = (
   const [showCreateSprintModal, setShowCreateSprintModal] = useState(false);
   const [archiveError, setArchiveError] = useState<string | null>(null);
 
-  const [searchState, setSearchState] = useState({
+  const [searchState, setSearchState] = useState<CardSearchState>({
     keyword: '',
     selectedPriorities: [] as string[],
     selectedLabelIds: [] as number[],
@@ -82,6 +71,8 @@ export const useBoardUI = (
     dueDateTo: '',
     sortBy: 'UPDATED_AT' as 'PRIORITY' | 'DUE_DATE' | 'CREATED_AT' | 'UPDATED_AT',
     sortDir: 'DESC' as 'ASC' | 'DESC',
+    isFilterActive: false,
+    onlyMine: false,
   });
 
   useEffect(() => {

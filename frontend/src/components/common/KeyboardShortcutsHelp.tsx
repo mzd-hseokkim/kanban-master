@@ -26,7 +26,8 @@ const KeyboardShortcutsModal = ({ onClose }: { onClose: () => void }) => {
             category: 'Global',
             items: [
                 { keys: ['Cmd', 'K'], description: 'Command Palette 열기' },
-                { keys: ['?'], description: '단축키 도움말 (이 모달)' },
+                { keys: ['Shift', 'T'], description: '오늘의 팁 보기' },
+                { keys: ['Shift', '/'], description: '단축키 도움말 (이 모달)' },
             ]
         },
         {

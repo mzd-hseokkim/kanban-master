@@ -2,6 +2,7 @@ import { useModalAnimation } from '@/hooks/useModalAnimation';
 import { labelService } from '@/services/labelService';
 import { memberService } from '@/services/memberService';
 import { searchService } from '@/services/searchService';
+import { hasSearchCriteria } from '@/utils/searchFilters';
 import {
   modalInputClass,
   modalLabelClass,
@@ -12,8 +13,9 @@ import {
 } from '@/styles/modalStyles';
 import type { Label } from '@/types/label';
 import type { BoardMember } from '@/types/member';
-import type { CardSearchRequest, CardSearchResult } from '@/types/search';
-import { useEffect, useState } from 'react';
+import type { CardSearchRequest, CardSearchResult, CardSearchState } from '@/types/search';
+import { useAuth } from '@/context/AuthContext';
+import { useEffect, useMemo, useState } from 'react';
 import { HiSortAscending, HiSortDescending } from 'react-icons/hi';
 import { IoClose, IoFilter, IoRefresh } from 'react-icons/io5';
 import { Avatar } from './common/Avatar';
@@ -22,30 +24,8 @@ interface SearchPanelProps {
   boardId: number;
   onClose: () => void;
   onCardSelect: (result: CardSearchResult) => void;
-  searchState: {
-    keyword: string;
-    selectedPriorities: string[];
-    selectedLabelIds: number[];
-    selectedAssigneeIds: number[];
-    isCompleted: boolean | undefined;
-    overdue: boolean;
-    dueDateFrom: string;
-    dueDateTo: string;
-    sortBy: SortOption;
-    sortDir: SortDirection;
-  };
-  setSearchState: React.Dispatch<React.SetStateAction<{
-    keyword: string;
-    selectedPriorities: string[];
-    selectedLabelIds: number[];
-    selectedAssigneeIds: number[];
-    isCompleted: boolean | undefined;
-    overdue: boolean;
-    dueDateFrom: string;
-    dueDateTo: string;
-    sortBy: SortOption;
-    sortDir: SortDirection;
-  }>>;
+  searchState: CardSearchState;
+  setSearchState: React.Dispatch<React.SetStateAction<CardSearchState>>;
 }
 
 const PRIORITIES = ['HIGH', 'MEDIUM', 'LOW'];
@@ -66,31 +46,37 @@ export const SearchPanel: React.FC<SearchPanelProps> = ({ boardId, onClose, onCa
     dueDateTo,
     sortBy,
     sortDir: sortDirection,
+    onlyMine,
   } = searchState;
+  const { user } = useAuth();
 
-  // Helper to update specific fields in state
-  const updateState = (updates: Partial<typeof searchState>) => {
-    setSearchState(prev => ({ ...prev, ...updates }));
+  // Helper to update specific fields in state and recompute filter 활성 여부
+  const updateState = (updates: Partial<CardSearchState> | ((prev: CardSearchState) => CardSearchState)) => {
+    setSearchState(prev => {
+      const next = typeof updates === 'function' ? updates(prev) : { ...prev, ...updates };
+      const withFlag = { ...next, isFilterActive: hasSearchCriteria(next) };
+      return withFlag;
+    });
   };
 
   const setKeyword = (val: string) => updateState({ keyword: val });
   const setSelectedPriorities = (val: string[] | ((prev: string[]) => string[])) => {
     if (typeof val === 'function') {
-        setSearchState(prev => ({ ...prev, selectedPriorities: val(prev.selectedPriorities) }));
+        updateState(prev => ({ ...prev, selectedPriorities: val(prev.selectedPriorities) }));
     } else {
         updateState({ selectedPriorities: val });
     }
   };
   const setSelectedLabelIds = (val: number[] | ((prev: number[]) => number[])) => {
     if (typeof val === 'function') {
-        setSearchState(prev => ({ ...prev, selectedLabelIds: val(prev.selectedLabelIds) }));
+        updateState(prev => ({ ...prev, selectedLabelIds: val(prev.selectedLabelIds) }));
     } else {
         updateState({ selectedLabelIds: val });
     }
   };
   const setSelectedAssigneeIds = (val: number[] | ((prev: number[]) => number[])) => {
     if (typeof val === 'function') {
-        setSearchState(prev => ({ ...prev, selectedAssigneeIds: val(prev.selectedAssigneeIds) }));
+        updateState(prev => ({ ...prev, selectedAssigneeIds: val(prev.selectedAssigneeIds) }));
     } else {
         updateState({ selectedAssigneeIds: val });
     }
@@ -102,28 +88,45 @@ export const SearchPanel: React.FC<SearchPanelProps> = ({ boardId, onClose, onCa
   const setSortBy = (val: SortOption) => updateState({ sortBy: val });
   const setSortDirection = (val: SortDirection | ((prev: SortDirection) => SortDirection)) => {
     if (typeof val === 'function') {
-        setSearchState(prev => ({ ...prev, sortDir: val(prev.sortDir) }));
+        updateState(prev => ({ ...prev, sortDir: val(prev.sortDir) }));
     } else {
         updateState({ sortDir: val });
     }
   };
+  const toggleOnlyMine = () => updateState({ onlyMine: !onlyMine });
 
   const [results, setResults] = useState<CardSearchResult[]>([]);
   const [labels, setLabels] = useState<Label[]>([]);
   const [members, setMembers] = useState<BoardMember[]>([]);
   const [searching, setSearching] = useState(false);
-  const [showFilters, setShowFilters] = useState(false);
+  const [showFilters, setShowFilters] = useState(true);
+
+  const memberMap = useMemo(() => {
+    const map = new Map<number, BoardMember>();
+    members.forEach((member) => {
+      map.set(member.userId, member);
+    });
+    return map;
+  }, [members]);
+
+  const buildAvatarUrl = (userId?: number) => {
+    if (!userId) return undefined;
+    return `/users/${userId}/avatar`;
+  };
+
+  const getAssigneeMeta = (result: CardSearchResult) => {
+    const memberInfo = result.assigneeId ? memberMap.get(result.assigneeId) : undefined;
+    const name = result.assignee || memberInfo?.userName || '';
+    const avatarUrl = buildAvatarUrl(result.assigneeId ?? memberInfo?.userId);
+
+    return { name, avatarUrl };
+  };
 
   const { stage, close } = useModalAnimation(onClose);
 
   useEffect(() => {
     loadLabels();
     loadMembers();
-    // Initial search if there are already filters applied (persistence)
-    if (keyword || selectedPriorities.length || selectedLabelIds.length || selectedAssigneeIds.length || isCompleted !== undefined || overdue || dueDateFrom || dueDateTo) {
-        handleSearch();
-        setShowFilters(true);
-    }
   }, [boardId]);
 
   const loadLabels = async () => {
@@ -147,11 +150,12 @@ export const SearchPanel: React.FC<SearchPanelProps> = ({ boardId, onClose, onCa
   const handleSearch = async () => {
     try {
       setSearching(true);
+      const assigneeFilter = onlyMine && user ? [user.id] : (selectedAssigneeIds.length > 0 ? selectedAssigneeIds : undefined);
       const request: CardSearchRequest = {
         keyword: keyword.trim() || undefined,
         priorities: selectedPriorities.length > 0 ? selectedPriorities : undefined,
         labelIds: selectedLabelIds.length > 0 ? selectedLabelIds : undefined,
-        assigneeIds: selectedAssigneeIds.length > 0 ? selectedAssigneeIds : undefined,
+        assigneeIds: assigneeFilter,
         isCompleted,
         overdue: overdue || undefined,
         dueDateFrom: dueDateFrom || undefined,
@@ -230,9 +234,16 @@ export const SearchPanel: React.FC<SearchPanelProps> = ({ boardId, onClose, onCa
         overdue: false,
         dueDateFrom: '',
         dueDateTo: '',
+        isFilterActive: false,
+        onlyMine: false,
     }));
     setResults([]);
   };
+
+  useEffect(() => {
+    if (!showFilters) return;
+    handleSearch();
+  }, [keyword, selectedPriorities, selectedLabelIds, selectedAssigneeIds, isCompleted, overdue, dueDateFrom, dueDateTo, boardId, showFilters, onlyMine, user?.id]);
 
   const priorityActiveClasses: { [key: string]: string } = {
     HIGH: 'bg-pastel-pink-200/80 text-pastel-pink-800 ring-1 ring-pastel-pink-300',
@@ -418,15 +429,27 @@ export const SearchPanel: React.FC<SearchPanelProps> = ({ boardId, onClose, onCa
 
                 {/* Right Column */}
                 <div className="space-y-4">
-                    {/* Assignee Filter */}
-                    {members.length > 0 && (
-                        <div>
-                            <label className={modalLabelClass}>담당자</label>
-                            <div className="flex gap-2 flex-wrap max-h-24 overflow-y-auto p-1">
-                                {members.map((member) => (
-                                    <button
-                                        key={member.userId}
-                                        onClick={() => toggleAssignee(member.userId)}
+          {/* Assignee Filter */}
+          {members.length > 0 && (
+            <div>
+              <div className="flex items-center justify-between gap-3">
+                <label className={`${modalLabelClass} !mb-0`}>담당자</label>
+                <label className="inline-flex items-center gap-2 text-sm text-pastel-blue-700 font-medium">
+                  <input
+                    type="checkbox"
+                    checked={onlyMine}
+                    onChange={toggleOnlyMine}
+                    disabled={!user}
+                    className="w-4 h-4 rounded border border-slate-300 text-pastel-green-600 focus:ring-pastel-green-400"
+                  />
+                  <span className={!user ? 'text-slate-400' : ''}>내게 할당된 카드</span>
+                </label>
+              </div>
+              <div className="flex gap-2 flex-wrap max-h-24 overflow-y-auto p-1">
+                {members.map((member) => (
+                  <button
+                    key={member.userId}
+                    onClick={() => toggleAssignee(member.userId)}
                                         className={`flex items-center gap-1.5 px-2 py-1 rounded-full border transition ${
                                             selectedAssigneeIds.includes(member.userId)
                                                 ? 'bg-pastel-blue-100 border-pastel-blue-300 ring-1 ring-pastel-blue-200'
@@ -434,7 +457,12 @@ export const SearchPanel: React.FC<SearchPanelProps> = ({ boardId, onClose, onCa
                                         }`}
                                         title={member.userName}
                                     >
-                                        <Avatar userName={member.userName} avatarUrl={member.avatarUrl} size="sm" className="!w-5 !h-5 !text-[10px]" />
+                                        <Avatar
+                                          userName={member.userName}
+                                          avatarUrl={buildAvatarUrl(member.userId)}
+                                          size="sm"
+                                          className="!w-5 !h-5 !text-[10px]"
+                                        />
                                         <span className="text-xs text-pastel-blue-800 truncate max-w-[80px]">{member.userName}</span>
                                     </button>
                                 ))}
@@ -454,7 +482,7 @@ export const SearchPanel: React.FC<SearchPanelProps> = ({ boardId, onClose, onCa
                                     <button
                                         key={label.id}
                                         onClick={() => toggleLabel(label.id)}
-                                        className={`px-3 py-1 rounded text-sm font-medium border-2 transition ${
+                                        className={`px-3 py-1 rounded text-sm font-medium border-2 transition text-slate-900 ${
                                         isSelected
                                             ? 'border-pastel-blue-600'
                                             : 'border-white/40'
@@ -513,83 +541,93 @@ export const SearchPanel: React.FC<SearchPanelProps> = ({ boardId, onClose, onCa
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-              {results.map((result) => (
-                <button
-                  key={result.id}
-                  onClick={() => handleResultSelect(result)}
-                  className="text-left h-full rounded-2xl border border-pastel-blue-200 bg-white/90 shadow-sm hover:shadow-glass hover:border-pastel-blue-500 transition px-4 py-3 flex flex-col gap-3"
-                  type="button"
-                >
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <h3 className="font-semibold text-pastel-blue-900 truncate">{result.title}</h3>
-                        {result.isCompleted && (
-                          <span className="text-xs px-2 py-0.5 rounded-full bg-pastel-green-100 text-pastel-green-700 inline-flex whitespace-nowrap">
-                            완료
-                          </span>
-                        )}
+              {results.map((result) => {
+                const assigneeMeta = getAssigneeMeta(result);
+
+                return (
+                  <button
+                    key={result.id}
+                    onClick={() => handleResultSelect(result)}
+                    className="text-left h-full rounded-2xl border border-pastel-blue-200 bg-white/90 shadow-sm hover:shadow-glass hover:border-pastel-blue-500 transition px-4 py-3 flex flex-col gap-3"
+                    type="button"
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <h3 className="font-semibold text-pastel-blue-900 truncate">{result.title}</h3>
+                          {result.isCompleted && (
+                            <span className="text-xs px-2 py-0.5 rounded-full bg-pastel-green-100 text-pastel-green-700 inline-flex whitespace-nowrap">
+                              완료
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-xs text-pastel-blue-500 truncate">
+                          {result.boardName} → {result.columnName}
+                        </p>
                       </div>
-                      <p className="text-xs text-pastel-blue-500 truncate">
-                        {result.boardName} → {result.columnName}
-                      </p>
-                    </div>
-                    {result.priority && (
-                      <span
-                        className={`text-xs px-2 py-1 rounded-full font-semibold whitespace-nowrap ${
-                          priorityBadgeClasses[result.priority] || 'bg-pastel-blue-100 text-pastel-blue-700'
-                        }`}
-                      >
-                        {result.priority}
-                      </span>
-                    )}
-                  </div>
-
-                  {result.description && (
-                    <p className="text-sm text-pastel-blue-600 line-clamp-2">
-                      {result.description}
-                    </p>
-                  )}
-
-                  {result.labels && result.labels.length > 0 && (
-                    <div className="flex gap-1 flex-wrap">
-                      {result.labels.slice(0, 3).map((label) => {
-                        const bgColor = labelColorMap[label.colorToken] || '#8fb3ff';
-                        return (
-                          <span
-                            key={label.id}
-                            className="text-xs px-2 py-1 rounded-full font-medium"
-                            style={{ backgroundColor: bgColor }}
-                          >
-                            {label.name}
-                          </span>
-                        );
-                      })}
-                      {result.labels.length > 3 && (
-                        <span className="text-xs text-pastel-blue-600">
-                          +{result.labels.length - 3}
+                      {result.priority && (
+                        <span
+                          className={`text-xs px-2 py-1 rounded-full font-semibold whitespace-nowrap ${
+                            priorityBadgeClasses[result.priority] || 'bg-pastel-blue-100 text-pastel-blue-700'
+                          }`}
+                        >
+                          {result.priority}
                         </span>
                       )}
                     </div>
-                  )}
 
-                  {/* Result Footer: Due Date & Assignee */}
-                  <div className="flex items-center justify-between pt-2 border-t border-pastel-blue-100/50 mt-auto">
-                    <div className="text-xs text-pastel-blue-500">
-                        {result.dueDate && (
-                            <span className={new Date(result.dueDate) < new Date() && !result.isCompleted ? 'text-pastel-pink-600 font-semibold' : ''}>
-                                📅 {result.dueDate}
-                            </span>
-                        )}
-                    </div>
-                    {result.assignee && (
-                        <div className="text-xs text-pastel-blue-600 font-medium">
-                            👤 {result.assignee}
-                        </div>
+                    {result.description && (
+                      <p className="text-sm text-pastel-blue-600 line-clamp-2">
+                        {result.description}
+                      </p>
                     )}
-                  </div>
-                </button>
-              ))}
+
+                        {result.labels && result.labels.length > 0 && (
+                      <div className="flex gap-1 flex-wrap">
+                        {result.labels.slice(0, 3).map((label) => {
+                          const bgColor = labelColorMap[label.colorToken] || '#8fb3ff';
+                          return (
+                            <span
+                              key={label.id}
+                              className="text-xs px-2 py-1 rounded-full font-medium text-slate-900"
+                              style={{ backgroundColor: bgColor }}
+                            >
+                              {label.name}
+                            </span>
+                          );
+                        })}
+                        {result.labels.length > 3 && (
+                          <span className="text-xs text-pastel-blue-600">
+                            +{result.labels.length - 3}
+                          </span>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Result Footer: Due Date & Assignee */}
+                    <div className="flex items-center justify-between pt-2 border-t border-pastel-blue-100/50 mt-auto">
+                      <div className="text-xs text-pastel-blue-500">
+                          {result.dueDate && (
+                              <span className={new Date(result.dueDate) < new Date() && !result.isCompleted ? 'text-pastel-pink-600 font-semibold' : ''}>
+                                  📅 {result.dueDate}
+                              </span>
+                          )}
+                      </div>
+                      {assigneeMeta.name && (
+                        <div className="flex items-center gap-1.5 text-xs text-pastel-blue-600 font-medium">
+                          <Avatar
+                            avatarUrl={assigneeMeta.avatarUrl || undefined}
+                            userName={assigneeMeta.name}
+                            size="xs"
+                            className="!w-5 !h-5 !text-[10px]"
+                          />
+                          <span className="truncate max-w-[110px]">{assigneeMeta.name}</span>
+                        </div>
+                      )}
+                    </div>
+                  </button>
+                );
+              })}
             </div>
           )}
         </div>

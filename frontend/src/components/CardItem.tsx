@@ -342,7 +342,7 @@ const CardItemComponent: React.FC<CardItemProps> = ({
               {card.isCompleted && <svg className="w-3.5 h-3.5 text-pastel-green-500" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg>}
             </div>
             {card.sprintId && <SprintBadge sprintId={card.sprintId} />}
-            <h4 className={`text-sm flex-1 min-w-0 line-clamp-2 transition ${
+            <h4 className={`text-base sm:text-[15px] flex-1 min-w-0 leading-tight line-clamp-2 transition ${
               card.isCompleted
                 ? 'text-slate-400 line-through font-medium'
                 : 'text-slate-700 font-bold'

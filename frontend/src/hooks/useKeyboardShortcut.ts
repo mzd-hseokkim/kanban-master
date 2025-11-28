@@ -9,8 +9,8 @@ import { useHotkeys, type Options } from 'react-hotkeys-hook';
  * @param options - Additional options including scope and dependencies
  */
 export const useKeyboardShortcut = (
-  keys: string,
-  callback: () => void,
+  keys: string | string[],
+  callback: (event: KeyboardEvent) => void,
   options: Options = {}
 ) => {
   const defaultOptions: Options = {

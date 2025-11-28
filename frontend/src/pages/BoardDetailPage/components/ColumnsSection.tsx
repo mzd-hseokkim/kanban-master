@@ -6,6 +6,7 @@
 import { SortableColumnCard } from '@/components/SortableColumnCard';
 import { useColumn } from '@/context/ColumnContext';
 import type { Column } from '@/types/column';
+import type { CardSearchState } from '@/types/search';
 import {
     closestCenter,
     DndContext,
@@ -34,6 +35,8 @@ type ColumnsSectionProps = {
   autoOpenCardId: number | null;
   autoOpenColumnId: number | null;
   onAutoOpenHandled: () => void;
+  searchState: CardSearchState;
+  currentUserId?: number;
 };
 
 export const ColumnsSection = ({
@@ -47,6 +50,8 @@ export const ColumnsSection = ({
   autoOpenCardId,
   autoOpenColumnId,
   onAutoOpenHandled,
+  searchState,
+  currentUserId,
 }: ColumnsSectionProps) => {
   const { updateColumnPosition, setColumnsOptimistic } = useColumn();
   const [localColumns, setLocalColumns] = useState<Column[]>(columns);
@@ -169,6 +174,8 @@ export const ColumnsSection = ({
                   canEdit={canEdit}
                   autoOpenCardId={cardIdForColumn}
                   onAutoOpenHandled={onAutoOpenHandled}
+                  searchState={searchState}
+                  currentUserId={currentUserId}
                 />
               );
             })}

@@ -8,6 +8,7 @@
 
 import { useState } from 'react';
 import type { Comment } from '../types/comment';
+import { Avatar } from './common/Avatar';
 import HtmlContent from './HtmlContent';
 import RichTextEditor from './RichTextEditor';
 
@@ -94,17 +95,12 @@ export const CommentItem = ({
     <div className="flex gap-3 py-3 border-b border-gray-200 last:border-0">
       {/* 작성자 아바타 */}
       <div className="flex-shrink-0">
-        {comment.authorAvatarUrl ? (
-          <img
-            src={comment.authorAvatarUrl}
-            alt={comment.authorName}
-            className="w-8 h-8 rounded-full"
-          />
-        ) : (
-          <div className="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center text-sm font-medium text-gray-700">
-            {comment.authorName.charAt(0).toUpperCase()}
-          </div>
-        )}
+        <Avatar
+          avatarUrl={comment.authorAvatarUrl}
+          userName={comment.authorName}
+          size="sm"
+          className="w-8 h-8"
+        />
       </div>
 
       {/* 댓글 내용 */}

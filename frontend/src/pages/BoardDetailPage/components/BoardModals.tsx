@@ -7,10 +7,10 @@ import { SearchPanel } from '@/components/SearchPanel';
 import { CreateSprintModal } from '@/components/sprint/CreateSprintModal';
 import { EnableSprintModal } from '@/components/sprint/EnableSprintModal';
 import { usePresenceTransition } from '@/hooks/usePresenceTransition';
-import type { Card } from '@/types/card';
 import type { Column } from '@/types/column';
 import type { ImportJobStartResponse } from '@/types/excel';
-import type { CardSearchResult } from '@/types/search';
+import type { CardSearchResult, CardSearchState } from '@/types/search';
+import type { Dispatch, SetStateAction } from 'react';
 import { ActivityPanel } from './ActivityPanel';
 import { CalendarModal } from './CalendarModal';
 import { ExcelImportModal } from './ExcelImportModal';
@@ -23,7 +23,6 @@ interface BoardModalsProps {
   boardName: string;
   canManage: boolean;
   columns: Column[];
-  cards: Card[];
 
   // UI State
   showCreateColumnModal: boolean;
@@ -60,8 +59,8 @@ interface BoardModalsProps {
   loadCards: (workspaceId: number, boardId: number, columnId: number, options?: any) => Promise<any>;
 
   // Search State
-  searchState: any;
-  setSearchState: (state: any) => void;
+  searchState: CardSearchState;
+  setSearchState: Dispatch<SetStateAction<CardSearchState>>;
 
   // Excel Import State
   activeImportJobId: string | null;
@@ -82,7 +81,6 @@ export const BoardModals = ({
   boardName,
   canManage,
   columns,
-  cards,
   showCreateColumnModal,
   showInviteModal,
   showMembersPanel,
@@ -159,17 +157,14 @@ export const BoardModals = ({
       <CalendarModal
         isOpen={showCalendarModal}
         onClose={onCloseCalendarModal}
-        cards={cards}
+        boardId={boardId}
         onCardSelect={(cardId) => {
-          const card = cards.find(c => c.id === cardId);
-          if (card) {
             onCardSelect({
-              id: card.id,
+              id: cardId,
               columnId: undefined,
               // eslint-disable-next-line @typescript-eslint/no-explicit-any
             } as any);
             setTimeout(() => onCloseCalendarModal(), 50);
-          }
         }}
       />
 

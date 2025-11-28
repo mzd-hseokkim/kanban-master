@@ -42,7 +42,7 @@ export const modalPanelClass = ({
         extra
     );
 
-export const modalLabelClass = 'block text-sm font-semibold text-pastel-blue-900 mb-2';
+export const modalLabelClass = 'block text-sm font-semibold text-slate-900 mb-2';
 
 export const modalInputClass =
     'w-full px-4 py-3 rounded-xl border border-white/40 bg-white/40 backdrop-blur-sm text-pastel-blue-900 placeholder-pastel-blue-500 focus:outline-none focus:border-pastel-blue-400 focus:ring-2 focus:ring-pastel-blue-300/50 transition';

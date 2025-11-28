@@ -28,6 +28,12 @@ public interface CardRepository extends JpaRepository<Card, Long>, CardRepositor
                         @Param("columnId") Long columnId);
 
         /**
+         * 특정 칼럼의 아카이브되지 않은(또는 null) 카드를 위치 순서대로 조회
+         */
+        @Query("SELECT c FROM Card c WHERE c.column.id = :columnId AND (c.isArchived = false OR c.isArchived IS NULL) ORDER BY c.position ASC")
+        List<Card> findActiveByColumnIdOrderByPosition(@Param("columnId") Long columnId);
+
+        /**
          * 특정 칼럼의 아카이브된 카드를 아카이브 시각 역순으로 조회
          */
         @Query("SELECT c FROM Card c WHERE c.column.id = :columnId AND c.isArchived = true ORDER BY c.archivedAt DESC")
@@ -39,6 +45,13 @@ public interface CardRepository extends JpaRepository<Card, Long>, CardRepositor
          */
         @Query("SELECT c FROM Card c WHERE c.column.board.id = :boardId AND c.isArchived = true ORDER BY c.archivedAt DESC")
         List<Card> findByBoardIdAndIsArchivedTrueOrderByArchivedAt(@Param("boardId") Long boardId);
+
+        /**
+         * 특정 보드의 카드 중 ID 목록으로 조회
+         */
+        @Query("SELECT c FROM Card c WHERE c.column.board.id = :boardId AND c.id IN :cardIds")
+        List<Card> findByBoardIdAndIdIn(@Param("boardId") Long boardId,
+                        @Param("cardIds") List<Long> cardIds);
 
         /**
          * 마감일이 특정 기간 내에 있는 카드 조회 (아카이브되지 않은 카드만)

@@ -1,5 +1,6 @@
 import { useAuth } from '@/context/AuthContext';
 import { useWebSocket } from '@/context/WebSocketContext';
+import { useKeyboardShortcut } from '@/hooks/useKeyboardShortcut';
 import { usePresenceTransition } from '@/hooks/usePresenceTransition';
 import { notificationService } from '@/services/notificationService';
 import { watchService } from '@/services/watchService';
@@ -9,6 +10,7 @@ import type { WatchedCard } from '@/types/watch';
 import React, { useEffect, useRef, useState } from 'react';
 import { HiClipboardList, HiEye, HiInbox, HiShieldCheck, HiViewGrid } from 'react-icons/hi';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { DidYouKnowModal } from './DidYouKnowModal';
 import { InvitationResponseModal } from './InvitationResponseModal';
 import { SettingsModal } from './SettingsModal';
 import { Avatar } from './common/Avatar';
@@ -96,6 +98,7 @@ export const GlobalNavBar: React.FC = () => {
     const [selectedInvitation, setSelectedInvitation] = useState<BoardMember | null>(null);
     const [showInvitationModal, setShowInvitationModal] = useState(false);
     const [showSettingsModal, setShowSettingsModal] = useState(false);
+    const [showDidYouKnowModal, setShowDidYouKnowModal] = useState(false);
     const menuRef = useRef<HTMLDivElement>(null);
     const inboxRef = useRef<HTMLDivElement>(null);
     const watchListRef = useRef<HTMLDivElement>(null);
@@ -122,6 +125,14 @@ export const GlobalNavBar: React.FC = () => {
     const handleBoards = () => {
         navigate('/boards');
     };
+
+    // Shift+T : Open Did You Know Modal
+    useKeyboardShortcut('shift+t', (e: KeyboardEvent) => {
+        e.preventDefault();
+        setShowDidYouKnowModal(true);
+    }, { preventDefault: true });
+
+    const searchInputRef = useRef<HTMLInputElement>(null);
 
     const loadInbox = async () => {
         try {
@@ -450,6 +461,7 @@ export const GlobalNavBar: React.FC = () => {
                                 </svg>
                             </div>
                             <input
+                                ref={searchInputRef}
                                 type="text"
                                 placeholder="검색"
                                 className="block w-full pl-10 pr-3 py-2.5 rounded-lg !bg-white/90 !text-slate-900 !placeholder-slate-500 border border-white/20 focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-400/50 !focus:bg-white shadow-lg shadow-black/20 transition-all duration-200"
@@ -616,6 +628,16 @@ export const GlobalNavBar: React.FC = () => {
             <SettingsModal
                 isOpen={showSettingsModal}
                 onClose={() => setShowSettingsModal(false)}
+                onOpenDidYouKnow={() => {
+                    setShowDidYouKnowModal(true);
+                    setShowSettingsModal(false);
+                }}
+            />
+
+            {/* Did You Know Modal */}
+            <DidYouKnowModal
+                isOpen={showDidYouKnowModal}
+                onClose={() => setShowDidYouKnowModal(false)}
             />
 
             {/* Toast Notification */}

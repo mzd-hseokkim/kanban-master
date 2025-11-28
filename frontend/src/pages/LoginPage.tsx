@@ -1,7 +1,7 @@
-import { FormEvent, useState } from 'react';
-import { isAxiosError } from 'axios';
-import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
+import { isAxiosError } from 'axios';
+import { FormEvent, useState } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 
 const LoginPage = () => {
   const { login } = useAuth();
@@ -25,7 +25,7 @@ const LoginPage = () => {
       console.log('📧 [LoginPage] Attempting login with email:', email);
       await login({ email, password });
       console.log('🎉 [LoginPage] Login successful, redirecting to:', redirectTo);
-      navigate(redirectTo, { replace: true });
+      navigate(redirectTo, { replace: true, state: { showDidYouKnow: true } });
     } catch (err) {
       console.error('❌ [LoginPage] Login failed:', err);
       let message = '로그인에 실패했습니다.';

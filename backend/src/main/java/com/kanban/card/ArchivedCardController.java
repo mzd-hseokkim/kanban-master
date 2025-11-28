@@ -3,10 +3,15 @@ package com.kanban.card;
 import java.util.List;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import com.kanban.card.dto.CardResponse;
+import com.kanban.card.dto.BulkCardIdsRequest;
+import com.kanban.common.SecurityUtil;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 /**
@@ -27,5 +32,28 @@ public class ArchivedCardController {
             @PathVariable Long boardId) {
         List<CardResponse> cards = cardService.getArchivedCards(boardId);
         return ResponseEntity.ok(cards);
+    }
+
+    /**
+     * 아카이브된 카드 일괄 복구
+     */
+    @PostMapping("/archived-cards/unarchive")
+    public ResponseEntity<List<CardResponse>> unarchiveCards(@PathVariable Long workspaceId,
+            @PathVariable Long boardId, @Valid @RequestBody BulkCardIdsRequest request) {
+        Long userId = SecurityUtil.getCurrentUserId();
+        List<CardResponse> cards =
+                cardService.unarchiveCardsInBulk(boardId, request.getCardIds(), userId);
+        return ResponseEntity.ok(cards);
+    }
+
+    /**
+     * 아카이브된 카드 일괄 영구 삭제
+     */
+    @PostMapping("/archived-cards/permanent-delete")
+    public ResponseEntity<Void> permanentlyDeleteCards(@PathVariable Long workspaceId,
+            @PathVariable Long boardId, @Valid @RequestBody BulkCardIdsRequest request) {
+        Long userId = SecurityUtil.getCurrentUserId();
+        cardService.permanentlyDeleteCardsInBulk(boardId, request.getCardIds(), userId);
+        return ResponseEntity.noContent().build();
     }
 }

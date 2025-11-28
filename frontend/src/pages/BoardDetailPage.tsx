@@ -1,6 +1,7 @@
 import { ErrorNotification } from "@/components/ErrorNotification";
 import { PlanningView } from "@/components/sprint/PlanningView";
 import { SprintHeader } from "@/components/sprint/SprintHeader";
+import { useAuth } from "@/context/AuthContext";
 import { useCard } from "@/context/CardContext";
 import { useColumn } from "@/context/ColumnContext";
 import { useDialog } from "@/context/DialogContext";
@@ -10,24 +11,25 @@ import { useImportProgress } from "@/hooks/useImportProgress";
 import { useKeyboardShortcut } from "@/hooks/useKeyboardShortcut";
 import { usePermissions } from "@/hooks/usePermissions";
 import cardService from "@/services/cardService";
+import { hasActiveSearchFilter } from "@/utils/searchFilters";
 import { useCallback, useEffect, useRef } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import AnalyticsDashboard from "./BoardDetailPage/components/AnalyticsDashboard";
 import { BoardHeader } from "./BoardDetailPage/components/BoardHeader";
 import { BoardModals } from "./BoardDetailPage/components/BoardModals";
 import {
-  BoardErrorState,
-  BoardLoadingState,
+    BoardErrorState,
+    BoardLoadingState,
 } from "./BoardDetailPage/components/BoardStateFallbacks";
 import { ColumnsSection } from "./BoardDetailPage/components/ColumnsSection";
 import { ListView } from "./BoardDetailPage/components/ListView";
 import {
-  useAutoOpenTargets,
-  useBoardData,
-  useBoardExcel,
-  useBoardSprint,
-  useBoardUI,
-  useOverdueCardCount,
+    useAutoOpenTargets,
+    useBoardData,
+    useBoardExcel,
+    useBoardSprint,
+    useBoardUI,
+    useOverdueCardCount,
 } from "./BoardDetailPage/hooks";
 
 const BoardDetailPage = () => {
@@ -41,6 +43,7 @@ const BoardDetailPage = () => {
   const { cards, loadCards, handleCardEvent } = useCard();
   const { alert } = useDialog();
   const { loadSprints, activeSprint } = useSprint();
+  const { user } = useAuth();
 
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
@@ -144,7 +147,7 @@ const BoardDetailPage = () => {
     }
   });
 
-  useKeyboardShortcut('/', () => {
+  useKeyboardShortcut(['/', 'shift+/'], () => {
     uiActions.setShowSearchPanel(true);
   }, { preventDefault: true });
 
@@ -191,6 +194,7 @@ const BoardDetailPage = () => {
         overdueCardCount={overdueCardCount}
         canEdit={canEdit}
         viewMode={uiState.viewMode}
+        isFilterActive={hasActiveSearchFilter(uiState.searchState)}
         onViewModeChange={uiActions.setViewMode}
         onBack={handleNavigateBack}
         onSearch={() => uiActions.setShowSearchPanel(true)}
@@ -232,6 +236,8 @@ const BoardDetailPage = () => {
                   autoOpenCardId={effectiveAutoOpenCardId}
                   autoOpenColumnId={effectiveAutoOpenColumnId}
                   onAutoOpenHandled={handleInlineAutoOpenHandled}
+                  searchState={uiState.searchState}
+                  currentUserId={user?.id}
                 />
               ) : uiState.viewMode === 'LIST' ? (
                 <ListView
@@ -243,6 +249,8 @@ const BoardDetailPage = () => {
                   canEdit={canEdit}
                   onCreateColumn={() => uiActions.setShowCreateColumnModal(true)}
                   scrollContainerRef={scrollContainerRef}
+                  searchState={uiState.searchState}
+                  currentUserId={user?.id}
                 />
               ) : uiState.viewMode === 'PLANNING' ? (
                 <PlanningView
@@ -260,7 +268,6 @@ const BoardDetailPage = () => {
         boardName={board.name}
         canManage={canManage}
         columns={columns}
-        cards={Object.values(cards).flat()}
         showCreateColumnModal={uiState.showCreateColumnModal}
         showInviteModal={uiState.showInviteModal}
         showMembersPanel={uiState.showMembersPanel}

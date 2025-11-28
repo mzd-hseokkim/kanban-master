@@ -1,5 +1,6 @@
 package com.kanban.card;
 
+import java.util.List;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -112,6 +113,19 @@ public class CardController {
         Long userId = SecurityUtil.getCurrentUserId();
         CardResponse card = cardService.archiveCard(boardId, columnId, cardId, userId);
         return ResponseEntity.ok(card);
+    }
+
+    /**
+     * 칼럼의 모든 미아카이브 카드 일괄 아카이브
+     */
+    @PostMapping("/archive-all")
+    public ResponseEntity<List<CardResponse>> archiveAllCardsInColumn(
+            @PathVariable Long workspaceId, @PathVariable Long boardId,
+            @PathVariable Long columnId) {
+        Long userId = SecurityUtil.getCurrentUserId();
+        List<CardResponse> archivedCards =
+                cardService.archiveAllCardsInColumn(boardId, columnId, userId);
+        return ResponseEntity.ok(archivedCards);
     }
 
     /**
