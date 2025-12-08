@@ -4,6 +4,7 @@ import { memberService } from "@/services/memberService";
 import type { BoardMember, BoardMemberRole, InvitationStatus } from "@/types/member";
 import { forwardRef, useEffect, useImperativeHandle, useState } from "react";
 import { FiTrash2 } from "react-icons/fi";
+import { useTranslation } from "react-i18next";
 
 interface BoardMemberTableProps {
   boardId: number;
@@ -22,10 +23,10 @@ const roleBadgeColor: Record<BoardMemberRole, string> = {
   MANAGER: "bg-purple-100 text-purple-800",
 };
 
-const roleLabel: Record<BoardMemberRole, string> = {
-  VIEWER: "보기",
-  EDITOR: "편집",
-  MANAGER: "관리",
+const roleLabelKey: Record<BoardMemberRole, string> = {
+  VIEWER: "board:members.role.viewer",
+  EDITOR: "board:members.role.editor",
+  MANAGER: "board:members.role.manager",
 };
 
 const GRID_TEMPLATES = {
@@ -35,11 +36,11 @@ const GRID_TEMPLATES = {
     "grid-cols-[minmax(0,1.5fr)_minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)]",
 } as const;
 
-const statusBadgeStyles: Record<InvitationStatus, { label: string; className: string }> = {
-  PENDING: { label: "초대 대기중", className: "bg-yellow-100 text-yellow-800" },
-  DECLINED: { label: "거절됨", className: "bg-red-100 text-red-800" },
-  EXPIRED: { label: "만료됨", className: "bg-gray-100 text-gray-800" },
-  ACCEPTED: { label: "활동 중", className: "bg-green-100 text-green-800" },
+const statusBadgeStyles: Record<InvitationStatus, { labelKey: string; className: string }> = {
+  PENDING: { labelKey: "board:members.status.pending", className: "bg-yellow-100 text-yellow-800" },
+  DECLINED: { labelKey: "board:members.status.declined", className: "bg-red-100 text-red-800" },
+  EXPIRED: { labelKey: "board:members.status.expired", className: "bg-gray-100 text-gray-800" },
+  ACCEPTED: { labelKey: "board:members.status.accepted", className: "bg-green-100 text-green-800" },
 };
 
 const formatAvatarUrl = (avatarUrl?: string | null) => {
@@ -62,13 +63,14 @@ interface BoardMemberRowProps {
 }
 
 const StatusBadge = ({ status }: { status: InvitationStatus }) => {
+  const { t } = useTranslation();
   const statusInfo = statusBadgeStyles[status];
 
   return (
     <span
       className={`inline-block px-2 py-1 text-xs rounded whitespace-nowrap ${statusInfo.className}`}
     >
-      {statusInfo.label}
+      {t(statusInfo.labelKey)}
     </span>
   );
 };
@@ -84,6 +86,7 @@ const BoardMemberRow = ({
   onRoleChange,
   onRemove,
 }: BoardMemberRowProps) => {
+  const { t } = useTranslation(['board', 'common']);
   const avatarUrl = formatAvatarUrl(member.avatarUrl);
 
   const isOwner = member.userId === boardOwnerId;
@@ -92,7 +95,7 @@ const BoardMemberRow = ({
     if (isOwner) {
       return (
         <span className="inline-block px-2 py-1 text-xs rounded font-medium bg-indigo-100 text-indigo-800">
-          Owner
+          {t('board:members.role.owner')}
         </span>
       );
     }
@@ -102,7 +105,7 @@ const BoardMemberRow = ({
         <span
           className={`inline-block px-2 py-1 text-xs rounded font-medium ${roleBadgeColor[member.role]}`}
         >
-          {roleLabel[member.role]}
+          {t(roleLabelKey[member.role])}
         </span>
       );
     }
@@ -116,9 +119,9 @@ const BoardMemberRow = ({
           roleBadgeColor[member.role]
         } disabled:opacity-50`}
       >
-        <option value="VIEWER">{roleLabel.VIEWER}</option>
-        <option value="EDITOR">{roleLabel.EDITOR}</option>
-        <option value="MANAGER">{roleLabel.MANAGER}</option>
+        <option value="VIEWER">{t(roleLabelKey.VIEWER)}</option>
+        <option value="EDITOR">{t(roleLabelKey.EDITOR)}</option>
+        <option value="MANAGER">{t(roleLabelKey.MANAGER)}</option>
       </select>
     );
   };
@@ -150,7 +153,7 @@ const BoardMemberRow = ({
             onClick={() => onRemove(member.userId)}
             disabled={removingMember === member.userId || loading}
             className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 disabled:opacity-50 rounded-md transition-colors flex items-center justify-center"
-            title="멤버 제거"
+            title={useTranslation().t('board:members.remove')}
           >
             {removingMember === member.userId ? (
               <svg
@@ -184,12 +187,13 @@ const BoardMemberRow = ({
   );
 };
 
-export const BoardMemberTable = forwardRef<BoardMemberTableRef, BoardMemberTableProps>(({
+export const BoardMemberTable = forwardRef<BoardMemberTableRef, BoardMemberTableProps>(({ 
   boardId,
   boardOwnerId,
   canManage,
   onMemberCountChange,
 }, ref) => {
+  const { t } = useTranslation(['board', 'common']);
   const { confirm } = useDialog();
   const [members, setMembers] = useState<BoardMember[]>([]);
   const [loading, setLoading] = useState(false);
@@ -215,7 +219,7 @@ export const BoardMemberTable = forwardRef<BoardMemberTableRef, BoardMemberTable
       onMemberCountChange?.(response.totalElements);
     } catch (err) {
       const errorMessage =
-        err instanceof Error ? err.message : "Failed to load members";
+        err instanceof Error ? err.message : t('board:members.loadFailed', { defaultValue: 'Failed to load members' });
       setError(errorMessage);
       console.error("Failed to load members:", err);
     } finally {
@@ -245,7 +249,7 @@ export const BoardMemberTable = forwardRef<BoardMemberTableRef, BoardMemberTable
       await loadMembers(currentPage);
     } catch (err) {
       const errorMessage =
-        err instanceof Error ? err.message : "Failed to change role";
+        err instanceof Error ? err.message : t('board:members.roleChangeFailed', { defaultValue: 'Failed to change role' });
       setError(errorMessage);
       console.error("Failed to change role:", err);
     } finally {
@@ -254,9 +258,9 @@ export const BoardMemberTable = forwardRef<BoardMemberTableRef, BoardMemberTable
   };
 
   const handleRemoveMember = async (memberId: number) => {
-    const confirmed = await confirm("이 멤버를 제거하시겠습니까?", {
-      confirmText: "제거",
-      cancelText: "취소",
+    const confirmed = await confirm(t('board:members.removeConfirm'), {
+      confirmText: t('common:button.delete'),
+      cancelText: t('common:button.cancel'),
       isDestructive: true,
     });
 
@@ -268,7 +272,7 @@ export const BoardMemberTable = forwardRef<BoardMemberTableRef, BoardMemberTable
       await loadMembers(currentPage);
     } catch (err) {
       const errorMessage =
-        err instanceof Error ? err.message : "Failed to remove member";
+        err instanceof Error ? err.message : t('board:members.removeFailed', { defaultValue: 'Failed to remove member' });
       setError(errorMessage);
       console.error("Failed to remove member:", err);
     } finally {
@@ -290,14 +294,14 @@ export const BoardMemberTable = forwardRef<BoardMemberTableRef, BoardMemberTable
     <div className="flex flex-col h-full bg-white rounded-lg border border-gray-200">
       {/* Header */}
       <div className="flex-shrink-0 px-4 py-3 border-b border-gray-200 bg-gray-50">
-        <h3 className="text-sm font-semibold text-gray-900">보드 멤버</h3>
+        <h3 className="text-sm font-semibold text-gray-900">{t('board:members.tableTitle')}</h3>
       </div>
 
       {/* Table */}
       <div className="flex-1 overflow-y-auto">
         {members.length === 0 ? (
           <div className="flex items-center justify-center h-full text-gray-500 p-4">
-            <p className="text-sm">멤버가 없습니다</p>
+            <p className="text-sm">{t('board:members.empty')}</p>
           </div>
         ) : (
           <div className="w-full">
@@ -305,12 +309,12 @@ export const BoardMemberTable = forwardRef<BoardMemberTableRef, BoardMemberTable
             <div
               className={`grid ${gridTemplate} gap-4 bg-gray-50 border-b border-gray-200 px-4 py-3 text-xs font-medium text-gray-700 sticky top-0`}
             >
-              <div className="col-span-1">이름</div>
-              <div className="col-span-1">이메일</div>
-              <div className="col-span-1">권한</div>
-              <div className="col-span-1">상태</div>
+              <div className="col-span-1">{t('board:members.name')}</div>
+              <div className="col-span-1">{t('board:members.email')}</div>
+              <div className="col-span-1">{t('board:members.roleLabel')}</div>
+              <div className="col-span-1">{t('board:members.statusLabel')}</div>
               {canManage && (
-                <div className="col-span-1 flex justify-end">작업</div>
+                <div className="col-span-1 flex justify-end">{t('board:members.actions')}</div>
               )}
             </div>
 

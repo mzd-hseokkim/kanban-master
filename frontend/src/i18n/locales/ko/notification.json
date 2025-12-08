@@ -1,0 +1,16 @@
+{
+  "inbox": "받은편지함",
+  "watchList": "관심 목록",
+  "noNotifications": "알림이 없습니다",
+  "markAsRead": "읽음으로 표시",
+  "viewAll": "전체 보기",
+  "title": {
+    "inbox": "알림함",
+    "watchList": "관심 카드 목록",
+    "notification": "알림"
+  },
+  "empty": {
+    "inbox": "새로운 알림이 없습니다",
+    "watchList": "관심 카드가 없습니다"
+  }
+}

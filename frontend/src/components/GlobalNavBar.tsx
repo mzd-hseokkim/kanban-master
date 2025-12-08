@@ -14,6 +14,8 @@ import { DidYouKnowModal } from './DidYouKnowModal';
 import { InvitationResponseModal } from './InvitationResponseModal';
 import { SettingsModal } from './SettingsModal';
 import { Avatar } from './common/Avatar';
+import { LanguageSwitcher } from './common/LanguageSwitcher';
+import { useTranslation } from 'react-i18next';
 
 // NavButton 컴포넌트
 interface NavButtonProps {
@@ -50,6 +52,8 @@ interface Toast {
 }
 
 const ToastMessage: React.FC<{ toast: Toast; onClose: () => void; onClick: () => void }> = ({ toast, onClose, onClick }) => {
+    const { t } = useTranslation(['common']);
+
     useEffect(() => {
         const timer = setTimeout(() => {
             onClose();
@@ -68,7 +72,7 @@ const ToastMessage: React.FC<{ toast: Toast; onClose: () => void; onClick: () =>
                 </div>
                 <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium truncate">{toast.message}</p>
-                    <p className="text-xs text-slate-400 mt-0.5">지금 확인하기</p>
+                    <p className="text-xs text-slate-400 mt-0.5">{t('common:action.viewNow')}</p>
                 </div>
                 <button
                     onClick={(e) => {
@@ -85,6 +89,7 @@ const ToastMessage: React.FC<{ toast: Toast; onClose: () => void; onClick: () =>
 };
 
 export const GlobalNavBar: React.FC = () => {
+    const { t } = useTranslation(['common', 'notification']);
     const navigate = useNavigate();
     const location = useLocation();
     const { user, logout } = useAuth();
@@ -259,7 +264,7 @@ export const GlobalNavBar: React.FC = () => {
                 const newItem: InboxItem = {
                     id: `notif-${event.id}`,
                     type: 'NOTIFICATION',
-                    title: '알림',
+                    title: t('notification:title.notification'),
                     message: event.message,
                     actionUrl: event.actionUrl,
                     createdAt: event.createdAt,
@@ -285,7 +290,7 @@ export const GlobalNavBar: React.FC = () => {
         return () => {
             subscription.unsubscribe();
         };
-    }, [client, isConnected, user]);
+    }, [client, isConnected, t, user]);
 
     // Watch list 초기 로드 및 이벤트 리스너 설정
     useEffect(() => {
@@ -346,8 +351,8 @@ export const GlobalNavBar: React.FC = () => {
 
         if (watchedCards.length === 0) {
             return (
-                <div className="px-4 py-8 text-center text-slate-400 text-sm">
-                    관심 카드가 없습니다
+                                <div className="px-4 py-8 text-center text-slate-400 text-sm">
+                    {t('notification:empty.watchList')}
                 </div>
             );
         }
@@ -394,7 +399,7 @@ export const GlobalNavBar: React.FC = () => {
         if (inboxItems.length === 0) {
             return (
                 <div className="px-4 py-8 text-center text-slate-400 text-sm">
-                    새로운 알림이 없습니다
+                    {t('notification:empty.inbox')}
                 </div>
             );
         }
@@ -454,19 +459,19 @@ export const GlobalNavBar: React.FC = () => {
                                 <div className="hidden lg:flex items-center gap-2">
                                     <NavButton
                                         icon={<HiViewGrid className="text-xl" />}
-                                        label="대시보드"
+                                        label={t('common:nav.dashboard')}
                                         onClick={handleHome}
                                         isActive={location.pathname === '/'}
                                     />
                                     <NavButton
                                         icon={<HiClipboardList className="text-xl" />}
-                                        label="보드"
+                                        label={t('common:nav.boards')}
                                         onClick={handleBoards}
                                         isActive={location.pathname.startsWith('/boards')}
                                     />
                                     <NavButton
                                         icon={<HiShieldCheck className="text-xl" />}
-                                        label="감사 로그"
+                                        label={t('common:nav.auditLogs')}
                                         onClick={() => navigate('/audit-logs')}
                                         isActive={location.pathname.startsWith('/audit-logs')}
                                     />
@@ -486,7 +491,7 @@ export const GlobalNavBar: React.FC = () => {
                             <input
                                 ref={searchInputRef}
                                 type="text"
-                                placeholder="검색"
+                                placeholder={t('common:label.search')}
                                 className="block w-full pl-10 pr-3 py-2.5 rounded-lg !bg-white/90 !text-slate-900 !placeholder-slate-500 border border-white/20 focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-400/50 !focus:bg-white shadow-lg shadow-black/20 transition-all duration-200"
                                 onKeyDown={(e) => {
                                     if (e.key === 'Enter' && !e.nativeEvent.isComposing) {
@@ -504,12 +509,16 @@ export const GlobalNavBar: React.FC = () => {
                     {/* 우측: Inbox + Watch List + 유저 메뉴 */}
                     {user && (
                         <div className="flex items-center gap-3">
+                            <div className="hidden md:block">
+                                <LanguageSwitcher />
+                            </div>
+
                             {/* Watch List Button */}
                             <div className="relative z-[310]" ref={watchListRef}>
                                 <button
                                     onClick={handleWatchListClick}
                                     className="relative w-10 h-10 hover:bg-white/10 rounded-lg transition-all duration-200 flex items-center justify-center group"
-                                    title="관심 카드 목록"
+                                    title={t('notification:title.watchList')}
                                 >
                                     <HiEye className="text-2xl text-slate-300 group-hover:text-white transition-colors" />
                                     {watchedCards.length > 0 && (
@@ -525,7 +534,7 @@ export const GlobalNavBar: React.FC = () => {
                                         className={`dropdown-panel dropdown-panel-${watchListTransition.stage} absolute right-0 top-[calc(100%+0.5rem)] w-96 bg-slate-800 rounded-lg shadow-xl border border-white/10 text-slate-200 z-[320]`}
                                     >
                                         <div className="px-4 py-3 border-b border-white/10 flex justify-between items-center">
-                                            <p className="text-sm font-semibold text-white">관심 카드 목록</p>
+                                            <p className="text-sm font-semibold text-white">{t('notification:title.watchList')}</p>
                                         </div>
 
                                         {renderWatchListContent()}
@@ -538,7 +547,7 @@ export const GlobalNavBar: React.FC = () => {
                                 <button
                                     onClick={handleInboxClick}
                                     className="relative w-10 h-10 hover:bg-white/10 rounded-lg transition-all duration-200 flex items-center justify-center group"
-                                    title="알림함"
+                                    title={t('notification:title.inbox')}
                                 >
                                     <HiInbox className="text-2xl text-slate-300 group-hover:text-white transition-colors" />
                                     {inboxItems.filter(i => !i.isRead).length > 0 && (
@@ -554,7 +563,7 @@ export const GlobalNavBar: React.FC = () => {
                                         className={`dropdown-panel dropdown-panel-${inboxTransition.stage} absolute right-0 top-[calc(100%+0.5rem)] w-96 bg-slate-800 rounded-lg shadow-xl border border-white/10 text-slate-200 z-[320]`}
                                     >
                                         <div className="px-4 py-3 border-b border-white/10 flex justify-between items-center">
-                                            <p className="text-sm font-semibold text-white">알림함</p>
+                                            <p className="text-sm font-semibold text-white">{t('notification:title.inbox')}</p>
                                         </div>
 
                                         {renderInboxContent()}
@@ -584,47 +593,47 @@ export const GlobalNavBar: React.FC = () => {
                                         className={`dropdown-panel dropdown-panel-${menuTransition.stage} absolute right-0 top-full mt-2 w-64 bg-slate-800 rounded-lg shadow-xl border border-white/10 py-1 text-slate-200 z-[320]`}
                                     >
                                         <div className="px-4 py-2 border-b border-white/10">
-                                            <p className="text-xs text-slate-400">로그인 정보</p>
-                                            <p className="text-sm font-semibold text-white truncate">
-                                                {user.email}
-                                            </p>
-                                        </div>
-                                        <button
+                                <p className="text-xs text-slate-400">{t('common:userMenu.info')}</p>
+                                <p className="text-sm font-semibold text-white truncate">
+                                    {user.email}
+                                </p>
+                            </div>
+                            <button
                                             onClick={() => {
                                                 setShowMenu(false);
                                                 handleHome();
                                             }}
                                             className="w-full text-left px-4 py-2 text-sm text-slate-300 hover:bg-white/5 transition md:hidden"
-                                        >
-                                            대시보드
-                                        </button>
-                                        <button
+                                >
+                                    {t('common:nav.dashboard')}
+                                </button>
+                            <button
                                             onClick={() => {
                                                 setShowMenu(false);
                                                 handleBoards();
                                             }}
                                             className="w-full text-left px-4 py-2 text-sm text-slate-300 hover:bg-white/5 transition md:hidden"
-                                        >
-                                            보드
-                                        </button>
-                                        <button
+                                >
+                                    {t('common:nav.boards')}
+                                </button>
+                            <button
                                             onClick={() => {
                                                 setShowMenu(false);
                                                 setShowSettingsModal(true);
                                             }}
                                             className="w-full text-left px-4 py-2 text-sm text-slate-300 hover:bg-white/5 transition border-t border-white/10"
-                                        >
-                                            프로필 설정
-                                        </button>
-                                        <button
+                                >
+                                    {t('common:userMenu.profileSettings')}
+                                </button>
+                            <button
                                             onClick={() => {
                                                 setShowMenu(false);
                                                 handleLogout();
                                             }}
                                             className="w-full text-left px-4 py-2 text-sm text-rose-400 hover:bg-rose-500/10 transition border-t border-white/10"
-                                        >
-                                            로그아웃
-                                        </button>
+                                >
+                                    {t('common:userMenu.logout')}
+                                </button>
                                     </div>
                                 )}
                             </div>

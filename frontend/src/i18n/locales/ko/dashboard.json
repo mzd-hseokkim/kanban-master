@@ -1,0 +1,41 @@
+{
+  "header": {
+    "title": "대시보드",
+    "welcome": "{{name}}님, 환영합니다!"
+  },
+  "actions": {
+    "createBoard": "새 보드"
+  },
+  "empty": {
+    "title": "보드가 없습니다",
+    "subtitle": "첫 번째 보드를 만들어 시작하세요.",
+    "cta": "보드 만들기"
+  },
+  "loading": {
+    "banner": "대시보드 데이터 동기화 중…"
+  },
+  "highlight": {
+    "overdue": "지연 중인 작업",
+    "inProgress": "진행 중인 작업",
+    "upcoming": "임박한 작업",
+    "inProgressBadge": "진행 중",
+    "overdueBadge": "{{date}} ({{days}}일 전)",
+    "todayBadge": "{{date}} (오늘)",
+    "tomorrowBadge": "{{date}} (내일)",
+    "dateBadge": "{{date}}",
+    "cardsCount": "{{count}}개의 카드",
+    "noDescription": "설명 없음"
+  },
+  "boards": {
+    "title": "내 보드",
+    "count": "{{count}}"
+  },
+  "kpi": {
+    "totalBoards": "전체 보드",
+    "totalCards": "전체 카드",
+    "completedVsIncomplete": "{{completed}} 완료 / {{incomplete}} 미완료",
+    "overdueCards": "지연된 카드",
+    "dueSoon": "임박한 카드",
+    "highPriorityUnassigned": "높은 우선순위(미할당)"
+  }
+}

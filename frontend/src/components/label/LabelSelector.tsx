@@ -2,6 +2,7 @@ import { useDialog } from '@/context/DialogContext';
 import { labelService } from '@/services/labelService';
 import type { Label } from '@/types/label';
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 interface LabelSelectorProps {
   boardId: number;
@@ -20,6 +21,7 @@ export const LabelSelector = ({
   selectedLabelIds,
   onChange,
 }: LabelSelectorProps) => {
+  const { t } = useTranslation(['board', 'common']);
   const { alert } = useDialog();
   const [labels, setLabels] = useState<Label[]>([]);
   const [loading, setLoading] = useState(false);
@@ -56,7 +58,7 @@ export const LabelSelector = ({
 
     // 중복 체크
     if (labels.some((label) => label.name.toLowerCase() === trimmedName.toLowerCase())) {
-      await alert('동일한 이름의 라벨이 이미 존재합니다');
+      await alert(t('board:labels.duplicate'));
       return;
     }
 
@@ -91,7 +93,7 @@ export const LabelSelector = ({
       setNewLabelName('');
     } catch (err) {
       console.error('Failed to create label:', err);
-      await alert('라벨 생성에 실패했습니다');
+      await alert(t('board:labels.createFailed'));
     } finally {
       setCreating(false);
     }
@@ -125,7 +127,7 @@ export const LabelSelector = ({
             value={newLabelName}
             onChange={(e) => setNewLabelName(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="라벨 이름 입력 후 Enter..."
+            placeholder={t('board:labels.placeholder')}
             className="borderless-input w-full bg-transparent text-sm text-pastel-blue-900 placeholder-pastel-blue-400 focus:outline-none"
             disabled={creating || loading}
           />
@@ -136,7 +138,7 @@ export const LabelSelector = ({
           disabled={!newLabelName.trim() || creating || loading}
           className="px-4 py-2 text-sm rounded-lg bg-pastel-blue-500 text-white font-medium hover:bg-pastel-blue-600 transition disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          {creating ? '...' : '추가'}
+          {creating ? '...' : t('common:button.add', { defaultValue: '추가' })}
         </button>
       </div>
 
@@ -148,7 +150,7 @@ export const LabelSelector = ({
 
       {!loading && labels.length === 0 && (
         <div className="text-center py-4 text-sm text-pastel-blue-600">
-          라벨이 없습니다. 위에서 라벨을 생성해주세요.
+          {t('board:labels.empty')}
         </div>
       )}
 

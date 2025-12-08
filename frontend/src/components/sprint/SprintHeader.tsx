@@ -5,6 +5,7 @@ import { differenceInDays, parseISO } from 'date-fns';
 import { useEffect, useState } from 'react';
 import { useDialog } from '@/context/DialogContext';
 import './SprintHeader.css';
+import { useTranslation } from 'react-i18next';
 
 interface SprintHeaderProps {
   boardId: number;
@@ -21,6 +22,7 @@ interface SprintStats {
 export const SprintHeader = ({ boardId, refreshTrigger }: SprintHeaderProps) => {
   const { activeSprint, loading, completeSprint } = useSprint();
   const { confirm, alert } = useDialog();
+  const { t } = useTranslation(['sprint', 'common']);
   const [stats, setStats] = useState<SprintStats>({ totalCards: 0, completedCards: 0, totalPoints: 0, completedPoints: 0 });
   const [completing, setCompleting] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(() => {
@@ -67,10 +69,10 @@ export const SprintHeader = ({ boardId, refreshTrigger }: SprintHeaderProps) => 
     if (!activeSprint) return;
 
     const confirmed = await confirm(
-      '이 스프린트를 완료하시겠습니까?\n미완료된 카드는 백로그로 이동됩니다.',
+      t('sprint:complete.confirmMessage', { defaultValue: '이 스프린트를 완료하시겠습니까?\n미완료된 카드는 백로그로 이동됩니다.' }),
       {
-        confirmText: '완료',
-        cancelText: '취소',
+        confirmText: t('sprint:complete.confirm'),
+        cancelText: t('common:button.cancel'),
         isDestructive: true
       }
     );
@@ -82,7 +84,7 @@ export const SprintHeader = ({ boardId, refreshTrigger }: SprintHeaderProps) => 
       window.location.reload();
     } catch (error) {
       console.error('Failed to complete sprint:', error);
-      await alert(error instanceof Error ? error.message : '스프린트 완료에 실패했습니다.');
+      await alert(error instanceof Error ? error.message : t('sprint:complete.failed'));
     } finally {
       setCompleting(false);
     }
@@ -116,6 +118,7 @@ interface SprintInfoProps {
 }
 
 const SprintInfo = ({ sprint, stats, onComplete, completing, isCollapsed, onToggleCollapse }: SprintInfoProps) => {
+  const { t } = useTranslation(['sprint']);
   const daysLeft = sprint.endDate
     ? differenceInDays(parseISO(sprint.endDate), new Date())
     : null;
@@ -138,7 +141,11 @@ const SprintInfo = ({ sprint, stats, onComplete, completing, isCollapsed, onTogg
           <h2 className="sprint-header__title" onClick={onToggleCollapse}>{sprint.name}</h2>
           {daysLeft !== null && (
             <span className={`sprint-header__days ${daysLeft < 0 ? 'sprint-header__days--overdue' : ''}`}>
-              {daysLeft > 0 ? `D-${daysLeft}` : daysLeft === 0 ? 'Today' : `D+${Math.abs(daysLeft)}`}
+              {daysLeft > 0
+                ? t('sprint:header.daysLeft.left', { count: daysLeft })
+                : daysLeft === 0
+                  ? t('sprint:header.daysLeft.today')
+                  : t('sprint:header.daysLeft.overdue', { count: Math.abs(daysLeft) })}
             </span>
           )}
         </div>
@@ -148,7 +155,7 @@ const SprintInfo = ({ sprint, stats, onComplete, completing, isCollapsed, onTogg
           disabled={completing}
           className="sprint-header__complete-btn"
         >
-          {completing ? 'Completing...' : 'Complete Sprint'}
+          {completing ? t('sprint:header.completing') : t('sprint:header.complete')}
         </button>
       </div>
 
@@ -159,19 +166,19 @@ const SprintInfo = ({ sprint, stats, onComplete, completing, isCollapsed, onTogg
 
         <div className="sprint-header__stats">
           <div className="sprint-header__stat">
-            <span className="sprint-header__stat-label">Cards</span>
+            <span className="sprint-header__stat-label">{t('sprint:header.cards')}</span>
             <span className="sprint-header__stat-value">{stats.completedCards} / {stats.totalCards}</span>
           </div>
           <div className="sprint-header__stat">
-            <span className="sprint-header__stat-label">Points</span>
+            <span className="sprint-header__stat-label">{t('sprint:header.points')}</span>
             <span className="sprint-header__stat-value">{stats.completedPoints} / {stats.totalPoints}</span>
           </div>
           {sprint.capacity && (
             <div
               className="sprint-header__stat"
-              title="Sprint Capacity: 팀이 이번 Sprint에서 완료할 수 있는 총 스토리 포인트 목표량입니다."
+              title={t('sprint:header.capacityTooltip')}
             >
-              <span className="sprint-header__stat-label">Capacity</span>
+              <span className="sprint-header__stat-label">{t('sprint:header.capacity')}</span>
               <span className="sprint-header__stat-value">{sprint.capacity} pts</span>
             </div>
           )}
@@ -184,7 +191,9 @@ const SprintInfo = ({ sprint, stats, onComplete, completing, isCollapsed, onTogg
               style={{ width: `${progressPercentage}%` }}
             />
           </div>
-          <span className="sprint-header__progress-text">{progressPercentage}% Complete</span>
+          <span className="sprint-header__progress-text">
+            {t('sprint:header.progress', { percent: progressPercentage })}
+          </span>
         </div>
       </div>
     </div>

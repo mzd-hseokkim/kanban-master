@@ -3,6 +3,7 @@ import excelService from '@/services/excelService';
 import type { ExcelImportMode, ImportJobStartResponse } from '@/types/excel';
 import { useState } from 'react';
 import { HiUpload } from 'react-icons/hi';
+import { useTranslation } from 'react-i18next';
 
 interface ExcelImportModalProps {
   isOpen: boolean;
@@ -19,6 +20,7 @@ export const ExcelImportModal = ({
   onClose,
   onStarted,
 }: ExcelImportModalProps) => {
+  const { t } = useTranslation(['board', 'common']);
   const { alert } = useDialog();
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [mode, setMode] = useState<ExcelImportMode>('MERGE');
@@ -37,7 +39,7 @@ export const ExcelImportModal = ({
 
   const handleSubmit = async () => {
     if (!selectedFile) {
-      setError('가져올 엑셀 파일을 선택해주세요.');
+      setError(t('board:excel.selectFileError'));
       return;
     }
     setIsSubmitting(true);
@@ -48,7 +50,7 @@ export const ExcelImportModal = ({
       onClose();
     } catch (err) {
       const message =
-        err instanceof Error ? err.message : '가져오기 작업을 시작하지 못했습니다.';
+        err instanceof Error ? err.message : t('board:excel.startFailed');
       setError(message);
       await alert(message);
     } finally {
@@ -62,12 +64,12 @@ export const ExcelImportModal = ({
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
           <div>
             <p className="text-xs uppercase tracking-wide text-slate-400 font-semibold">Excel Import</p>
-            <h2 className="text-lg font-bold text-slate-900 mt-1">보드로 엑셀 데이터 가져오기</h2>
+            <h2 className="text-lg font-bold text-slate-900 mt-1">{t('board:excel.title')}</h2>
           </div>
           <button
             onClick={onClose}
             className="text-slate-400 hover:text-slate-700 transition-colors"
-            aria-label="닫기"
+            aria-label={t('common:button.close')}
           >
             ✕
           </button>
@@ -79,15 +81,15 @@ export const ExcelImportModal = ({
               <HiUpload />
             </div>
             <div className="flex-1">
-              <p className="text-sm text-slate-800 font-semibold">템플릿과 동일한 형식의 XLSX 파일을 선택하세요.</p>
-              <p className="text-xs text-slate-500 mt-1">라벨, 담당자 이메일, 마감일(UTC ISO8601), 체크리스트를 포함할 수 있습니다. 25MB 이하 파일만 지원합니다.</p>
+              <p className="text-sm text-slate-800 font-semibold">{t('board:excel.description')}</p>
+              <p className="text-xs text-slate-500 mt-1">{t('board:excel.hint')}</p>
               <div className="mt-3 flex items-center gap-3">
                 <label className="inline-flex cursor-pointer items-center gap-2 px-4 py-2 rounded-lg bg-white border border-slate-200 text-sm font-medium text-slate-700 hover:border-blue-400 hover:text-blue-600 transition-colors">
                   <input type="file" accept=".xlsx" className="hidden" onChange={handleFileChange} />
-                  <span>파일 선택</span>
+                  <span>{t('board:excel.chooseFile')}</span>
                 </label>
                 <span className="text-sm text-slate-600">
-                  {selectedFile ? selectedFile.name : '선택된 파일 없음'}
+                  {selectedFile ? selectedFile.name : t('board:excel.noFile')}
                 </span>
               </div>
             </div>
@@ -104,7 +106,7 @@ export const ExcelImportModal = ({
                 className="hidden"
               />
               <p className="text-sm font-semibold">병합</p>
-              <p className="text-xs text-slate-500 mt-1">기존 데이터에 카드와 칼럼을 추가하거나 업데이트합니다.</p>
+              <p className="text-xs text-slate-500 mt-1">{t('board:excel.mergeHint')}</p>
             </label>
             <label className={`rounded-xl border px-4 py-3 cursor-pointer transition-all ${mode === 'OVERWRITE' ? 'border-rose-400 bg-rose-50 text-rose-700 shadow-sm' : 'border-slate-200 hover:border-slate-300 text-slate-700'}`}>
               <input
@@ -115,8 +117,8 @@ export const ExcelImportModal = ({
                 onChange={() => setMode('OVERWRITE')}
                 className="hidden"
               />
-              <p className="text-sm font-semibold">덮어쓰기</p>
-              <p className="text-xs text-slate-500 mt-1">동일 제목 카드를 대체하고, 기존 카드를 아카이브 처리합니다.</p>
+              <p className="text-sm font-semibold">{t('board:excel.overwrite')}</p>
+              <p className="text-xs text-slate-500 mt-1">{t('board:excel.overwriteHint')}</p>
             </label>
           </div>
 
@@ -129,14 +131,14 @@ export const ExcelImportModal = ({
             className="px-4 py-2 rounded-lg text-sm font-medium text-slate-600 hover:bg-white border border-transparent hover:border-slate-200 transition-colors"
             disabled={isSubmitting}
           >
-            취소
+            {t('common:button.cancel')}
           </button>
           <button
             onClick={handleSubmit}
             className="px-4 py-2 rounded-lg text-sm font-semibold text-white bg-gradient-to-r from-blue-600 to-cyan-500 shadow-md hover:from-blue-500 hover:to-cyan-500 transition-all disabled:opacity-60"
             disabled={isSubmitting}
           >
-            {isSubmitting ? '업로드 중...' : '업로드 시작'}
+            {isSubmitting ? t('board:excel.uploading') : t('board:excel.start')}
           </button>
         </div>
       </div>

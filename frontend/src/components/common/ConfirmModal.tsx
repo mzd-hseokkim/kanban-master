@@ -1,6 +1,7 @@
 import { useModalAnimation } from '@/hooks/useModalAnimation';
 import { modalOverlayClass, modalPanelClass } from '@/styles/modalStyles';
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 
 interface ConfirmModalProps {
   isOpen: boolean;
@@ -21,6 +22,7 @@ export const ConfirmModal: React.FC<ConfirmModalProps> = ({
   cancelText = '취소',
   isDestructive = false,
 }) => {
+  const { t } = useTranslation(['common']);
   // confirm 모달은 닫힐 때 취소로 간주하므로 onClose에 onCancel을 연결
   const { stage, close } = useModalAnimation(onCancel);
 
@@ -42,14 +44,14 @@ export const ConfirmModal: React.FC<ConfirmModalProps> = ({
         className={`${modalPanelClass({ stage })} max-w-sm w-full p-6 text-center`}
         onClick={(e) => e.stopPropagation()}
       >
-        <h3 className="text-lg font-medium text-gray-900 mb-4">확인</h3>
+        <h3 className="text-lg font-medium text-gray-900 mb-4">{t('common:confirm.title', { defaultValue: '확인' })}</h3>
         <p className="text-sm text-gray-500 mb-6 whitespace-pre-wrap">{message}</p>
         <div className="flex justify-center gap-3">
           <button
             onClick={close}
             className="px-4 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-200 transition focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
           >
-            {cancelText}
+            {cancelText || t('common:button.cancel')}
           </button>
           <button
             onClick={handleConfirm}
@@ -59,7 +61,7 @@ export const ConfirmModal: React.FC<ConfirmModalProps> = ({
                 : 'bg-pastel-blue-500 hover:bg-pastel-blue-600 focus:ring-pastel-blue-500'
             }`}
           >
-            {confirmText}
+            {confirmText || t('common:button.confirm')}
           </button>
         </div>
       </div>

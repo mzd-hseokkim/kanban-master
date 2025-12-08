@@ -6,6 +6,7 @@ import com.kanban.card.Card;
 import com.kanban.card.CardRepository;
 import com.kanban.checklist.dto.*;
 import com.kanban.exception.ResourceNotFoundException;
+import com.kanban.util.MessageSourceService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 
@@ -17,10 +18,9 @@ import lombok.RequiredArgsConstructor;
 @Transactional
 public class ChecklistItemService {
 
-    private static final String CHECKLIST_NOT_FOUND = "Checklist item not found";
-
     private final ChecklistItemRepository checklistItemRepository;
     private final CardRepository cardRepository;
+    private final MessageSourceService messageSourceService;
 
     /**
      * 카드의 체크리스트 항목 조회
@@ -46,7 +46,8 @@ public class ChecklistItemService {
     public ChecklistItemResponse createChecklistItem(Long cardId,
             CreateChecklistItemRequest request) {
         Card card = cardRepository.findById(cardId)
-                .orElseThrow(() -> new ResourceNotFoundException("Card not found"));
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        messageSourceService.getMessage("error.card.not-found", cardId)));
 
         // 마지막 위치 계산
         long currentCount = checklistItemRepository.countByCardId(cardId);
@@ -65,7 +66,8 @@ public class ChecklistItemService {
     public ChecklistItemResponse updateChecklistItem(Long itemId,
             UpdateChecklistItemRequest request) {
         ChecklistItem item = checklistItemRepository.findById(itemId)
-                .orElseThrow(() -> new ResourceNotFoundException(CHECKLIST_NOT_FOUND));
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        messageSourceService.getMessage("error.checklist.not-found")));
 
         if (request.getContent() != null) {
             item.setContent(request.getContent());
@@ -84,7 +86,8 @@ public class ChecklistItemService {
      */
     public void deleteChecklistItem(Long itemId) {
         ChecklistItem item = checklistItemRepository.findById(itemId)
-                .orElseThrow(() -> new ResourceNotFoundException(CHECKLIST_NOT_FOUND));
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        messageSourceService.getMessage("error.checklist.not-found")));
 
         Long cardId = item.getCard().getId();
         int deletedPosition = item.getPosition();
@@ -102,7 +105,8 @@ public class ChecklistItemService {
     public ChecklistItemResponse reorderChecklistItem(Long itemId,
             ReorderChecklistItemRequest request) {
         ChecklistItem item = checklistItemRepository.findById(itemId)
-                .orElseThrow(() -> new ResourceNotFoundException(CHECKLIST_NOT_FOUND));
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        messageSourceService.getMessage("error.checklist.not-found")));
 
         int oldPosition = item.getPosition();
         int newPosition = request.getNewPosition();

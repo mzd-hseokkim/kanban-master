@@ -1,6 +1,7 @@
 import { activityService } from "@/services/activityService";
 import type { Activity } from "@/types/activity";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
     FaArrowsAltH,
     FaChalkboard,
@@ -67,6 +68,7 @@ export const ActivityTimeline = ({
   const [currentPage, setCurrentPage] = useState(0);
   const [hasMore, setHasMore] = useState(true);
   const pageSize = 20;
+  const { t } = useTranslation(['board', 'common']);
 
   const loadActivities = async (page: number) => {
     try {
@@ -105,7 +107,7 @@ export const ActivityTimeline = ({
       setHasMore(page < response.totalPages - 1);
     } catch (err) {
       const errorMessage =
-        err instanceof Error ? err.message : "Failed to load activities";
+        err instanceof Error ? err.message : t('board:activity.loadFailed', { defaultValue: 'Failed to load activities' });
       setError(errorMessage);
       console.error("Failed to load activities:", err);
     } finally {
@@ -167,7 +169,7 @@ export const ActivityTimeline = ({
       <div className="flex-1 overflow-y-auto p-4 space-y-3">
         {activities.length === 0 ? (
           <div className="flex items-center justify-center h-full text-gray-500">
-            <p className="text-sm">활동 이력이 없습니다</p>
+            <p className="text-sm">{t('board:activity.empty')}</p>
           </div>
         ) : (
           activities.map((activity) => {
@@ -207,7 +209,7 @@ export const ActivityTimeline = ({
             disabled={loading}
             className="w-full px-3 py-2 text-sm font-medium text-pastel-blue-600 hover:bg-white/20 disabled:opacity-50 rounded-lg transition-colors"
           >
-            {loading ? "로딩 중…" : "이전 활동 보기"}
+            {loading ? t('common:action.loading') : t('board:activity.loadMore')}
           </button>
         </div>
       )}

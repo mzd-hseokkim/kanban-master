@@ -1,4 +1,5 @@
 import React, { useId, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 interface CollapsibleSectionProps {
     title: string;
@@ -33,6 +34,7 @@ export const CollapsibleSection: React.FC<CollapsibleSectionProps> = ({
     defaultOpen = false,
     className = '',
 }) => {
+    const { t } = useTranslation(['common']);
     const [isOpen, setIsOpen] = useState(defaultOpen);
     const contentId = useId();
 
@@ -50,7 +52,7 @@ export const CollapsibleSection: React.FC<CollapsibleSectionProps> = ({
                     {summary && <div className="text-xs text-pastel-blue-500 mt-0.5">{summary}</div>}
                 </div>
                 <div className="flex items-center gap-2 text-xs font-medium text-pastel-blue-500">
-                    <span>{isOpen ? '접기' : '펼치기'}</span>
+                    <span>{isOpen ? t('common:collapse.hide') : t('common:collapse.show')}</span>
                     <ChevronIcon isOpen={isOpen} />
                 </div>
             </button>

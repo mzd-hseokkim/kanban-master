@@ -1,0 +1,41 @@
+{
+  "header": {
+    "title": "Dashboard",
+    "welcome": "Welcome, {{name}}!"
+  },
+  "actions": {
+    "createBoard": "New board"
+  },
+  "empty": {
+    "title": "No boards yet",
+    "subtitle": "Create your first board to get started.",
+    "cta": "Create board"
+  },
+  "loading": {
+    "banner": "Syncing dashboard data…"
+  },
+  "highlight": {
+    "overdue": "Overdue tasks",
+    "inProgress": "In-progress tasks",
+    "upcoming": "Upcoming tasks",
+    "inProgressBadge": "In progress",
+    "overdueBadge": "{{date}} ({{days}} days ago)",
+    "todayBadge": "{{date}} (Today)",
+    "tomorrowBadge": "{{date}} (Tomorrow)",
+    "dateBadge": "{{date}}",
+    "cardsCount": "{{count}} cards",
+    "noDescription": "No description"
+  },
+  "boards": {
+    "title": "My boards",
+    "count": "{{count}}"
+  },
+  "kpi": {
+    "totalBoards": "Total Boards",
+    "totalCards": "Total Cards",
+    "completedVsIncomplete": "{{completed}} Completed / {{incomplete}} Incomplete",
+    "overdueCards": "Overdue Cards",
+    "dueSoon": "Due Soon",
+    "highPriorityUnassigned": "High Priority (Unassigned)"
+  }
+}

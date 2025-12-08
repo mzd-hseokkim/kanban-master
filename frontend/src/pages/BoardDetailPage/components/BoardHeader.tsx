@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type DragEvent, type ReactNode } from 'react';
 import { HiArrowLeft, HiCalendar, HiChartBar, HiChevronDown, HiClipboardList, HiDotsHorizontal, HiDownload, HiLightningBolt, HiPlus, HiSearch, HiTag, HiUpload, HiUsers, HiViewBoards, HiViewList } from 'react-icons/hi';
 import { MdArchive } from 'react-icons/md';
+import { useTranslation } from 'react-i18next';
 
 interface BoardHeaderProps {
   boardName: string;
@@ -51,6 +52,7 @@ export const BoardHeader = ({
   onEnableSprint,
   isFilterActive = false,
 }: BoardHeaderProps) => {
+  const { t } = useTranslation(['board', 'common', 'card']);
   const [isArchiveDropTarget, setIsArchiveDropTarget] = useState(false);
   const [isExcelMenuOpen, setIsExcelMenuOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -106,7 +108,7 @@ export const BoardHeader = ({
           <button
             onClick={onBack}
             className="p-2 rounded-full text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition-all"
-            title="돌아가기"
+            title={t('board:header.back')}
           >
             <HiArrowLeft className="text-xl" />
           </button>
@@ -121,16 +123,16 @@ export const BoardHeader = ({
               <button
                 onClick={onEnableSprint}
                 className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-semibold text-xs shadow-md shadow-purple-500/20 hover:from-purple-500 hover:to-indigo-500 transition-all duration-200 whitespace-nowrap"
-                title="Sprint 모드 활성화"
+                title={t('board:header.enableSprint')}
               >
                 <HiLightningBolt className="text-sm" />
-                <span>Sprint 활성화</span>
+                <span>{t('board:header.enableSprint')}</span>
               </button>
             )}
 
             {overdueCardCount > 0 && (
               <span className="inline-flex items-center justify-center px-2.5 py-0.5 rounded-full bg-rose-100 border border-rose-200 text-rose-600 text-xs font-bold shadow-sm">
-                지연 {overdueCardCount}
+                {t('board:header.overdue', { count: overdueCardCount })}
               </span>
             )}
           </div>
@@ -158,9 +160,10 @@ export const BoardHeader = ({
                     : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                 }`}
                 title={viewMode === 'PLANNING' ? '보드로 돌아가기' : '스프린트 계획'}
+                title={viewMode === 'PLANNING' ? t('board:header.toBoard') : t('board:header.toPlanning')}
               >
                 <HiClipboardList className="text-base" />
-                <span>스프린트 관리</span>
+                <span>{t('board:header.sprintManagement')}</span>
               </button>
 
               <div className="h-6 w-px bg-slate-200 mx-2" />
@@ -175,7 +178,7 @@ export const BoardHeader = ({
                   ? 'bg-white text-pastel-blue-600 shadow-sm'
                   : 'text-slate-400 hover:text-slate-600'
               }`}
-              title="보드 뷰"
+              title={t('board:header.view.board')}
             >
               <HiViewBoards className="text-lg" />
             </button>
@@ -186,7 +189,7 @@ export const BoardHeader = ({
                   ? 'bg-white text-pastel-blue-600 shadow-sm'
                   : 'text-slate-400 hover:text-slate-600'
               }`}
-              title="리스트 뷰"
+              title={t('board:header.view.list')}
             >
               <HiViewList className="text-lg" />
             </button>
@@ -200,7 +203,7 @@ export const BoardHeader = ({
               className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-blue-600 to-cyan-600 text-white font-semibold text-sm shadow-md shadow-blue-500/20 hover:from-blue-500 hover:to-cyan-500 transition-all duration-200 whitespace-nowrap"
             >
               <HiPlus className="text-base" />
-              <span className="hidden md:inline">칼럼 추가</span>
+              <span className="hidden md:inline">{t('card:column.addColumn', { defaultValue: '칼럼 추가' })}</span>
             </button>
           )}
 
@@ -212,23 +215,23 @@ export const BoardHeader = ({
                 ? 'bg-gradient-to-r from-blue-600 to-cyan-600 text-white shadow-md shadow-blue-500/20'
                 : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
             }`}
-            title="분석 대시보드"
+            title={t('board:header.analytics')}
           >
             <HiChartBar className="text-base" />
-            <span>분석</span>
+            <span>{t('board:header.analytics')}</span>
           </button>
 
           {/* Desktop Menu Items (Hidden on Mobile/Tablet) */}
           <div className="hidden xl:flex items-center gap-2">
             <HeaderButton
               icon={<HiSearch />}
-              label="검색"
+              label={t('common:label.search')}
               onClick={onSearch}
               badge={isFilterActive ? (
                 <span
                   className="absolute -right-0.5 -top-0.5 w-2.5 h-2.5 rounded-full bg-rose-500 ring-2 ring-white shadow-sm"
-                  aria-label="필터 적용됨"
-                  title="필터 적용됨"
+                  aria-label={t('board:header.filterActive')}
+                  title={t('board:header.filterActive')}
                 />
               ) : undefined}
             />
@@ -240,7 +243,7 @@ export const BoardHeader = ({
                 className="flex items-center gap-2 px-3 py-2 rounded-lg text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition-all duration-200 font-medium text-sm whitespace-nowrap"
               >
                 <HiDownload className="text-lg" />
-                <span className="hidden xl:inline">엑셀</span>
+                <span className="hidden xl:inline">{t('board:header.excel')}</span>
                 <HiChevronDown className="text-sm" />
               </button>
               {isExcelMenuOpen && (
@@ -255,7 +258,7 @@ export const BoardHeader = ({
                     }}
                   >
                     <HiDownload className="text-slate-500" />
-                    템플릿 다운로드
+                    {t('board:header.templateDownload')}
                   </button>
                   <button
                     className="w-full flex items-center gap-2 px-4 py-3 text-sm text-slate-700 hover:bg-slate-50 transition-colors"
@@ -266,7 +269,7 @@ export const BoardHeader = ({
                     disabled={isExporting}
                   >
                     <HiArrowLeft className="text-slate-500 rotate-180" />
-                    {isExporting ? '내보내는 중...' : '엑셀로 내보내기'}
+                    {isExporting ? t('board:header.exporting') : t('board:header.exportExcel')}
                   </button>
                   <button
                     className={`w-full flex items-center gap-2 px-4 py-3 text-sm transition-colors ${
@@ -281,34 +284,34 @@ export const BoardHeader = ({
                     }}
                   >
                     <HiUpload className="text-slate-500" />
-                    엑셀 가져오기
+                    {t('board:header.importExcel')}
                   </button>
                 </div>
               )}
             </div>
             <HeaderButton
               icon={<HiCalendar />}
-              label="일정"
+              label={t('board:header.calendar')}
               onClick={onCalendar}
             />
             <HeaderButton
               icon={<HiTag />}
-              label="라벨"
+              label={t('board:header.label')}
               onClick={onLabelManager}
             />
             <HeaderButton
               icon={<HiLightningBolt />}
-              label="활동"
+              label={t('board:header.activity')}
               onClick={onToggleActivity}
             />
             <HeaderButton
               icon={<HiUsers />}
-              label="멤버"
+              label={t('board:header.members')}
               onClick={onToggleMembers}
             />
             <HeaderButton
               icon={<MdArchive />}
-              label="아카이브"
+              label={t('board:header.archive')}
               onClick={onToggleArchive}
               onDragOver={handleArchiveDragOver}
               onDragLeave={handleArchiveDragLeave}

@@ -1,10 +1,11 @@
 import { HiCalendar, HiExclamationCircle, HiFire, HiPlay } from 'react-icons/hi2';
+import { useTranslation } from 'react-i18next';
 import type { DashboardCard } from '../hooks';
 
 type HighlightVariant = 'overdue' | 'inProgress' | 'upcoming';
 
 type VariantConfig = {
-  title: string;
+  titleKey: string;
   Icon: React.ElementType;
   subtitleColor: string;
   titleColor: string;
@@ -15,7 +16,7 @@ type VariantConfig = {
 
 const VARIANT_CONFIG: Record<HighlightVariant, VariantConfig> = {
   overdue: {
-    title: '지연 중인 작업',
+    titleKey: 'dashboard:highlight.overdue',
     Icon: HiExclamationCircle,
     subtitleColor: 'text-pastel-pink-500',
     titleColor: 'text-pastel-pink-700',
@@ -24,7 +25,7 @@ const VARIANT_CONFIG: Record<HighlightVariant, VariantConfig> = {
     iconColor: 'text-pastel-pink-500',
   },
   inProgress: {
-    title: '진행 중인 작업',
+    titleKey: 'dashboard:highlight.inProgress',
     Icon: HiPlay,
     subtitleColor: 'text-pastel-cyan-500',
     titleColor: 'text-pastel-cyan-700',
@@ -33,7 +34,7 @@ const VARIANT_CONFIG: Record<HighlightVariant, VariantConfig> = {
     iconColor: 'text-pastel-cyan-500',
   },
   upcoming: {
-    title: '임박한 작업',
+    titleKey: 'dashboard:highlight.upcoming',
     Icon: HiFire,
     subtitleColor: 'text-pastel-blue-500',
     titleColor: 'text-pastel-blue-700',
@@ -55,16 +56,21 @@ const priorityColorMap: Record<string, string> = {
   LOW: 'bg-pastel-green-100 text-pastel-green-700',
 };
 
-const formatDueDate = (dueDate?: string | null) => {
+const formatDueDate = (dueDate: string | null | undefined, locale: string) => {
   if (!dueDate) {
     return null;
   }
-  return new Date(dueDate).toLocaleDateString('ko-KR', { month: 'numeric', day: 'numeric' });
+  return new Date(dueDate).toLocaleDateString(locale || undefined, { month: 'numeric', day: 'numeric' });
 };
 
-const getDueDateBadge = (variant: HighlightVariant, card: DashboardCard) => {
+const getDueDateBadge = (
+  variant: HighlightVariant,
+  card: DashboardCard,
+  t: ReturnType<typeof useTranslation>['t'],
+  locale: string
+) => {
   if (!card.dueDate) {
-    return variant === 'inProgress' ? '진행 중' : null;
+    return variant === 'inProgress' ? t('dashboard:highlight.inProgressBadge') : null;
   }
 
   const dueDate = new Date(card.dueDate);
@@ -72,29 +78,41 @@ const getDueDateBadge = (variant: HighlightVariant, card: DashboardCard) => {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const diff = Math.floor((dueDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-  const formatted = formatDueDate(card.dueDate);
+  const formatted = formatDueDate(card.dueDate, locale);
 
   if (variant === 'overdue') {
     const daysOverdue = Math.abs(Math.min(diff, 0));
-    return `${formatted} (${daysOverdue}일 전)`;
+    return t('dashboard:highlight.overdueBadge', { date: formatted, days: daysOverdue });
   }
 
   if (variant === 'upcoming') {
     if (diff === 0) {
-      return `${formatted} (오늘!)`;
+      return t('dashboard:highlight.todayBadge', { date: formatted });
     }
     if (diff === 1) {
-      return `${formatted} (내일)`;
+      return t('dashboard:highlight.tomorrowBadge', { date: formatted });
     }
-    return `${formatted}`;
+    return t('dashboard:highlight.dateBadge', { date: formatted });
   }
 
-  return `${formatted}`;
+  return t('dashboard:highlight.dateBadge', { date: formatted });
 };
 
-const HighlightCard = ({ variant, card, onClick }: { variant: HighlightVariant; card: DashboardCard; onClick: () => void }) => {
+const HighlightCard = ({
+  variant,
+  card,
+  onClick,
+  t,
+  locale,
+}: {
+  variant: HighlightVariant;
+  card: DashboardCard;
+  onClick: () => void;
+  t: ReturnType<typeof useTranslation>['t'];
+  locale: string;
+}) => {
   const config = VARIANT_CONFIG[variant];
-  const badgeLabel = getDueDateBadge(variant, card);
+  const badgeLabel = getDueDateBadge(variant, card, t, locale);
   const priorityClass = card.priority ? priorityColorMap[card.priority] ?? 'bg-pastel-blue-100 text-pastel-blue-700' : '';
 
   return (
@@ -107,7 +125,7 @@ const HighlightCard = ({ variant, card, onClick }: { variant: HighlightVariant; 
         <div className="flex-1 min-w-0">
           <h3 className="font-semibold text-pastel-blue-900 truncate">{card.title}</h3>
           <p className="text-xs text-pastel-blue-600 mt-1 truncate">
-            {card.boardName} / {card.description || '설명 없음'}
+            {card.boardName} / {card.description || t('dashboard:highlight.noDescription')}
           </p>
         </div>
         <div className="flex items-center gap-2 flex-shrink-0">
@@ -134,16 +152,18 @@ export const CardHighlightSection = ({ variant, cards, onCardClick }: CardHighli
     return null;
   }
 
+  const { t, i18n } = useTranslation(['dashboard']);
   const config = VARIANT_CONFIG[variant];
+  const locale = i18n.language || 'en';
 
   return (
     <section className="flex-shrink-0">
       <div className="mb-3">
         <h2 className={`text-xl font-bold ${config.titleColor} flex items-center gap-2`}>
-          {config.title}
+          {t(config.titleKey)}
           <config.Icon className={`text-2xl ${config.iconColor}`} />
         </h2>
-        <p className={`text-xs mt-1 ${config.subtitleColor}`}>{cards.length}개의 카드</p>
+        <p className={`text-xs mt-1 ${config.subtitleColor}`}>{t('dashboard:highlight.cardsCount', { count: cards.length })}</p>
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
         {cards.map((card) => (
@@ -152,6 +172,8 @@ export const CardHighlightSection = ({ variant, cards, onCardClick }: CardHighli
             variant={variant}
             card={card}
             onClick={() => onCardClick(card)}
+            t={t}
+            locale={locale}
           />
         ))}
       </div>

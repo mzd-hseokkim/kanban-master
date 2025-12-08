@@ -13,6 +13,7 @@ import { filterCardsBySearch, hasActiveSearchFilter } from '@/utils/searchFilter
 import { motion } from 'framer-motion';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { HiArchive, HiPencilAlt, HiTrash } from 'react-icons/hi';
+import { useTranslation } from 'react-i18next';
 
 interface ColumnCardProps {
   column: Column;
@@ -41,6 +42,7 @@ const ColumnCardComponent: React.FC<ColumnCardProps> = ({
   currentUserId,
   onZIndexChange,
 }) => {
+  const { t } = useTranslation(['card', 'common']);
   const { deleteColumn } = useColumn();
   const { cards, loadCards, updateCard, archiveCardsInColumn } = useCard();
   const { confirm } = useDialog();
@@ -157,9 +159,9 @@ const ColumnCardComponent: React.FC<ColumnCardProps> = ({
   };
 
   const handleDelete = async () => {
-    const confirmed = await confirm('정말 이 칼럼을 삭제하시겠습니까?', {
-      confirmText: '삭제',
-      cancelText: '취소',
+    const confirmed = await confirm(t('card:column.deleteConfirm', { defaultValue: '정말 이 칼럼을 삭제하시겠습니까?' }), {
+      confirmText: t('common:button.delete'),
+      cancelText: t('common:button.cancel'),
       isDestructive: true,
     });
 
@@ -170,7 +172,7 @@ const ColumnCardComponent: React.FC<ColumnCardProps> = ({
       setErrorMessage(null);
       await deleteColumn(workspaceId, boardId, column.id);
     } catch (err) {
-      const message = err instanceof Error ? err.message : '칼럼 삭제에 실패했습니다';
+      const message = err instanceof Error ? err.message : t('card:column.deleteFailed', { defaultValue: '칼럼 삭제에 실패했습니다' });
       setErrorMessage(message);
       console.error('Failed to delete column:', err);
     } finally {
@@ -186,9 +188,9 @@ const ColumnCardComponent: React.FC<ColumnCardProps> = ({
       return;
     }
 
-    const confirmed = await confirm(`이 칼럼의 ${columnCards.length}개 카드를 모두 아카이브하시겠습니까?`, {
-      confirmText: '아카이브',
-      cancelText: '취소',
+    const confirmed = await confirm(t('card:column.confirmArchiveAll', { count: columnCards.length, defaultValue: `이 칼럼의 ${columnCards.length}개 카드를 모두 아카이브하시겠습니까?` }), {
+      confirmText: t('card:editModal.archive', { defaultValue: '아카이브' }),
+      cancelText: t('common:button.cancel'),
       isDestructive: true,
     });
 
@@ -200,7 +202,7 @@ const ColumnCardComponent: React.FC<ColumnCardProps> = ({
       await archiveCardsInColumn(workspaceId, boardId, column.id);
       await loadCards(workspaceId, boardId, column.id);
     } catch (err) {
-      const message = err instanceof Error ? err.message : '카드 아카이브에 실패했습니다';
+      const message = err instanceof Error ? err.message : t('card:column.archiveAllFailed', { defaultValue: '칼럼의 카드들을 아카이브하는데 실패했습니다' });
       setErrorMessage(message);
       console.error('Failed to archive cards in column:', err);
     } finally {
@@ -268,7 +270,7 @@ const ColumnCardComponent: React.FC<ColumnCardProps> = ({
         loadCards(workspaceId, boardId, column.id)
       ]);
     } catch (err) {
-      const message = err instanceof Error ? err.message : '카드 이동에 실패했습니다';
+      const message = err instanceof Error ? err.message : t('card:column.moveFailed', { defaultValue: '카드 이동에 실패했습니다' });
       setErrorMessage(message);
       console.error('Failed to move card:', err);
     }
@@ -357,7 +359,7 @@ const ColumnCardComponent: React.FC<ColumnCardProps> = ({
                   setShowCreateCardModal(true);
                 }}
                 className="p-1.5 hover:bg-white/20 rounded-lg transition text-pastel-blue-900 font-bold text-lg"
-                title="카드 추가"
+                title={t('card:column.addCard')}
               >
                 +
               </button>
@@ -381,7 +383,7 @@ const ColumnCardComponent: React.FC<ColumnCardProps> = ({
                       className="w-full text-left px-3 py-1.5 text-xs text-slate-700 hover:bg-white/30 transition flex items-center gap-2"
                     >
                       <HiPencilAlt className="w-4 h-4" />
-                      <span>수정</span>
+                      <span>{t('common:button.edit')}</span>
                     </button>
                     <button
                       onClick={handleArchiveAll}
@@ -389,7 +391,7 @@ const ColumnCardComponent: React.FC<ColumnCardProps> = ({
                       className="w-full text-left px-3 py-1.5 text-xs text-slate-700 hover:bg-white/30 transition disabled:opacity-50 flex items-center gap-2"
                     >
                       <HiArchive className="w-4 h-4" />
-                      <span>{isArchiving ? '아카이브 중...' : '전체 카드 아카이브'}</span>
+                      <span>{isArchiving ? t('card:column.archiving') : t('card:column.archiveAll')}</span>
                     </button>
                     <button
                       onClick={handleDelete}
@@ -397,7 +399,7 @@ const ColumnCardComponent: React.FC<ColumnCardProps> = ({
                       className="w-full text-left px-3 py-1.5 text-xs text-pastel-pink-600 hover:bg-white/30 transition disabled:opacity-50 flex items-center gap-2"
                     >
                       <HiTrash className="w-4 h-4" />
-                      <span>{isDeleting ? '삭제 중...' : '삭제'}</span>
+                      <span>{isDeleting ? t('common:action.deleting') : t('common:button.delete')}</span>
                     </button>
                   </div>
                 )}
@@ -457,7 +459,7 @@ const ColumnCardComponent: React.FC<ColumnCardProps> = ({
                 </div>
               ) : (
                 <div className="w-full rounded-xl border border-white/40 bg-white/40 text-center text-xs text-slate-500 py-6">
-                  {isFilterActive ? '필터에 맞는 카드가 없습니다' : '카드가 없습니다'}
+                  {isFilterActive ? t('card:column.emptyWithFilter') : t('card:column.empty')}
                 </div>
               )}
 
@@ -469,7 +471,7 @@ const ColumnCardComponent: React.FC<ColumnCardProps> = ({
                   }}
                   className="w-full rounded-2xl border-4 border-dashed border-white/70 bg-white/10 text-slate-700 font-semibold text-sm min-h-24 flex items-center justify-center hover:bg-white/20 hover:border-black transition"
                 >
-                  + 카드 추가
+                  + {t('card:column.addCard')}
                 </button>
               )}
             </>

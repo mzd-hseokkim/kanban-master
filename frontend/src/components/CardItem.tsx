@@ -8,6 +8,7 @@ import cardService from '@/services/cardService';
 import { Card } from '@/types/card';
 import React, { useEffect, useMemo, useState } from 'react';
 import { HiCalendar, HiCheckCircle, HiPlay } from 'react-icons/hi2';
+import { useTranslation } from 'react-i18next';
 
 const SprintBadge = ({ sprintId }: { sprintId: number }) => {
   const { sprints } = useSprint();
@@ -63,6 +64,7 @@ const CardItemComponent: React.FC<CardItemProps> = ({
 }) => {
   const { deleteCard, updateCard, loadCards } = useCard();
   const { confirm } = useDialog();
+  const { t, i18n } = useTranslation(['card', 'common']);
   const [isDeleting, setIsDeleting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -70,11 +72,12 @@ const CardItemComponent: React.FC<CardItemProps> = ({
   const [hasAutoOpened, setHasAutoOpened] = useState(false);
   const [cardWithRelations, setCardWithRelations] = useState<Card | null>(null);
   const [isLoadingRelations, setIsLoadingRelations] = useState(false);
+  const locale = i18n.language === 'ko' ? 'ko-KR' : 'en-US';
 
   const handleDelete = async () => {
-    const confirmed = await confirm('정말 이 카드를 삭제하시겠습니까?', {
-      confirmText: '삭제',
-      cancelText: '취소',
+    const confirmed = await confirm(t('card:deleteConfirm'), {
+      confirmText: t('common:button.delete'),
+      cancelText: t('common:button.cancel'),
       isDestructive: true,
     });
 
@@ -85,7 +88,7 @@ const CardItemComponent: React.FC<CardItemProps> = ({
       setErrorMessage(null);
       await deleteCard(workspaceId, boardId, columnId, card.id);
     } catch (err) {
-      const message = err instanceof Error ? err.message : '카드 삭제에 실패했습니다';
+      const message = err instanceof Error ? err.message : t('card:deleteFailed', { defaultValue: '카드 삭제에 실패했습니다' });
       setErrorMessage(message);
       console.error('Failed to delete card:', err);
     } finally {
@@ -101,7 +104,7 @@ const CardItemComponent: React.FC<CardItemProps> = ({
       });
       await loadCards(workspaceId, boardId, columnId);
     } catch (err) {
-      const message = err instanceof Error ? err.message : '카드 상태 변경에 실패했습니다';
+      const message = err instanceof Error ? err.message : t('card:statusChangeFailed', { defaultValue: '카드 상태 변경에 실패했습니다' });
       setErrorMessage(message);
       console.error('Failed to toggle card completion:', err);
     }
@@ -142,7 +145,7 @@ const CardItemComponent: React.FC<CardItemProps> = ({
           onAutoOpenHandled?.();
         } catch (err) {
           console.error('Failed to load card for auto-open:', err);
-          const message = err instanceof Error ? err.message : '카드 정보를 불러오는데 실패했습니다';
+          const message = err instanceof Error ? err.message : t('card:loadFailed', { defaultValue: '카드 정보를 불러오는데 실패했습니다' });
           setErrorMessage(message);
         } finally {
           setIsLoadingRelations(false);
@@ -182,7 +185,7 @@ const CardItemComponent: React.FC<CardItemProps> = ({
         // 카드 목록 새로고침하여 서버 상태 반영
         await loadCards(workspaceId, boardId, columnId);
       } catch (err) {
-        const message = err instanceof Error ? err.message : '카드 위치 변경에 실패했습니다';
+        const message = err instanceof Error ? err.message : t('card:positionUpdateFailed', { defaultValue: '카드 위치 변경에 실패했습니다' });
         setErrorMessage(message);
         console.error('Failed to update card position:', err);
       }
@@ -228,12 +231,12 @@ const CardItemComponent: React.FC<CardItemProps> = ({
   const isOverdue = dueDateInfo && dueDateInfo.isOverdue;
   const completedLabel = useMemo(() => {
     if (!card.completedAt) return null;
-    return new Date(card.completedAt).toLocaleDateString('ko-KR', { month: 'numeric', day: 'numeric' });
-  }, [card.completedAt]);
+    return new Date(card.completedAt).toLocaleDateString(locale, { month: 'numeric', day: 'numeric' });
+  }, [card.completedAt, locale]);
   const startedLabel = useMemo(() => {
     if (!card.startedAt) return null;
-    return new Date(card.startedAt).toLocaleDateString('ko-KR', { month: 'numeric', day: 'numeric' });
-  }, [card.startedAt]);
+    return new Date(card.startedAt).toLocaleDateString(locale, { month: 'numeric', day: 'numeric' });
+  }, [card.startedAt, locale]);
 
   const descriptionPreview = useMemo(() => {
     if (!card.description) return '';
@@ -292,7 +295,7 @@ const CardItemComponent: React.FC<CardItemProps> = ({
       setCardWithRelations(fullCard);
       setShowEditModal(true);
     } catch (err) {
-      const message = err instanceof Error ? err.message : '카드 정보를 불러오는데 실패했습니다';
+      const message = err instanceof Error ? err.message : t('card:loadFailed', { defaultValue: '카드 정보를 불러오는데 실패했습니다' });
       setErrorMessage(message);
       console.error('Failed to load card with relations:', err);
     } finally {
@@ -337,7 +340,7 @@ const CardItemComponent: React.FC<CardItemProps> = ({
                   : 'border-pastel-blue-300 bg-white'
             }`}
               onClick={canEdit ? handleToggleCompletion : undefined}
-              title={canEdit ? (card.isCompleted ? '미완료로 표시' : '완료로 표시') : '읽기 전용'}
+              title={canEdit ? (card.isCompleted ? t('card:due.markIncomplete', { defaultValue: 'Mark as incomplete' }) : t('card:due.markComplete', { defaultValue: 'Mark as complete' })) : t('card:due.readOnly', { defaultValue: 'Read only' })}
             >
               {card.isCompleted && <svg className="w-3.5 h-3.5 text-pastel-green-500" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg>}
             </div>
@@ -349,7 +352,7 @@ const CardItemComponent: React.FC<CardItemProps> = ({
             }`}>{card.title}</h4>
             {card.priority && (
               <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium flex-shrink-0 ${getPriorityClass(card.priority)}`}>
-                {card.priority}
+                {t(`card:priority.${card.priority?.toLowerCase()}`, { defaultValue: card.priority })}
               </span>
             )}
           </div>
@@ -358,8 +361,8 @@ const CardItemComponent: React.FC<CardItemProps> = ({
               <button
                 onClick={handleDelete}
                 disabled={isDeleting}
-                title="카드 삭제"
-                aria-label="카드 삭제"
+                title={t('card:delete')}
+                aria-label={t('card:delete')}
                 className={`w-6 h-6 inline-flex items-center justify-center rounded-full transition border border-transparent self-start -mt-0.5 ${
                   isDeleting
                     ? 'text-pastel-pink-300 cursor-not-allowed'
@@ -367,7 +370,7 @@ const CardItemComponent: React.FC<CardItemProps> = ({
                 }`}
               >
                 {isDeleting ? (
-                  <span className="text-xs font-medium">삭제 중...</span>
+                  <span className="text-xs font-medium">{t('common:action.deleting')}</span>
                 ) : (
                   <svg
                     className="w-3 h-3"
@@ -467,8 +470,8 @@ const CardItemComponent: React.FC<CardItemProps> = ({
               >
                 <HiCalendar className="w-3 h-3" />
                 <span className="truncate">{dueDateInfo.dateStr}</span>
-                {!card.isCompleted && isOverdue && ' (지남)'}
-                {!card.isCompleted && isDueSoon && !isOverdue && ` (${dueDateInfo.daysUntilDue}일)`}
+                {!card.isCompleted && isOverdue && ` (${t('card:due.overdue')})`}
+                {!card.isCompleted && isDueSoon && !isOverdue && ` (${t('card:due.daysLeft', { count: dueDateInfo.daysUntilDue })})`}
               </div>
             );
           }
@@ -480,7 +483,7 @@ const CardItemComponent: React.FC<CardItemProps> = ({
                 className="flex flex-1 min-w-0 items-center justify-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded border border-pastel-blue-200 bg-pastel-blue-50 text-pastel-blue-700"
               >
                 <HiPlay className="w-3 h-3" />
-                <span className="truncate">시작 {startedLabel}</span>
+                <span className="truncate">{t('card:due.started', { date: startedLabel })}</span>
               </div>
             );
           }
@@ -492,7 +495,7 @@ const CardItemComponent: React.FC<CardItemProps> = ({
                 className="flex flex-1 min-w-0 items-center justify-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded border border-pastel-green-200 bg-pastel-green-50 text-pastel-green-700"
               >
                 <HiCheckCircle className="w-3 h-3" />
-                <span className="truncate">완료 {completedLabel}</span>
+                <span className="truncate">{t('card:due.completed', { date: completedLabel })}</span>
               </div>
             );
           }
@@ -509,7 +512,7 @@ const CardItemComponent: React.FC<CardItemProps> = ({
           <div className="flex items-center gap-1 mt-1.5">
             <div className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-pastel-blue-100 text-pastel-blue-700 text-[10px] font-medium border border-pastel-blue-200">
               <span>🔗</span>
-              <span>하위 카드 {card.childCount}개</span>
+              <span>{t('card:children.count', { count: card.childCount })}</span>
             </div>
           </div>
         )}

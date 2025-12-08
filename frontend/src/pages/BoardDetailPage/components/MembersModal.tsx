@@ -5,6 +5,7 @@ import {
   modalPanelClass,
 } from '@/styles/modalStyles';
 import { forwardRef, useImperativeHandle, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 
 interface MembersModalProps {
   isOpen: boolean;
@@ -27,6 +28,7 @@ export const MembersModal = forwardRef<MembersModalRef, MembersModalProps>(({
   canManage,
   onInvite,
 }, ref) => {
+  const { t } = useTranslation(['board', 'common']);
   const { stage, close } = useModalAnimation(() => {
     onClose();
   });
@@ -58,7 +60,7 @@ export const MembersModal = forwardRef<MembersModalRef, MembersModalProps>(({
             <p className="text-xs uppercase tracking-[0.3em] text-pastel-blue-500 font-semibold">
               Team
             </p>
-            <h2 className="text-2xl font-bold text-pastel-blue-900 mt-1">멤버 관리</h2>
+            <h2 className="text-2xl font-bold text-pastel-blue-900 mt-1">{t('board:members.title')}</h2>
           </div>
           <div className="flex items-center gap-3">
             {canManage && (
@@ -66,7 +68,7 @@ export const MembersModal = forwardRef<MembersModalRef, MembersModalProps>(({
                 onClick={onInvite}
                 className="px-4 py-2 rounded-xl bg-pastel-blue-500 text-white hover:bg-pastel-blue-600 transition font-medium text-sm shadow-sm hover:shadow-md"
               >
-                + 멤버 초대
+                + {t('board:members.invite')}
               </button>
             )}
             <button
@@ -80,11 +82,11 @@ export const MembersModal = forwardRef<MembersModalRef, MembersModalProps>(({
 
         {/* Content */}
         <div className="h-[60vh] overflow-hidden rounded-2xl border border-white/40 bg-white/30 backdrop-blur-sm">
-           <BoardMemberTable ref={tableRef} boardId={boardId} boardOwnerId={boardOwnerId} canManage={canManage} />
-        </div>
-      </div>
-    </div>
-  );
+          <BoardMemberTable ref={tableRef} boardId={boardId} boardOwnerId={boardOwnerId} canManage={canManage} />
+       </div>
+     </div>
+   </div>
+ );
 });
 
 MembersModal.displayName = 'MembersModal';

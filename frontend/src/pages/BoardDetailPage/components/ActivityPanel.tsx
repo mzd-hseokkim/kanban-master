@@ -1,5 +1,6 @@
 import { ActivityTimeline } from "@/components/ActivityTimeline";
 import type { PresenceStage } from "@/hooks/usePresenceTransition";
+import { useTranslation } from "react-i18next";
 
 interface PanelTransition {
   shouldRender: boolean;
@@ -17,6 +18,7 @@ export const ActivityPanel = ({
   boardId,
   onClose,
 }: ActivityPanelProps) => {
+  const { t } = useTranslation(['board', 'common']);
   if (!transition.shouldRender) {
     return null;
   }
@@ -29,13 +31,13 @@ export const ActivityPanel = ({
         <div className="h-full flex flex-col">
           <div className="px-4 py-3 border-b border-white/20 flex items-center justify-between">
             <span className="font-semibold text-pastel-blue-800">
-              활동 로그
+              {t('board:activity.title')}
             </span>
             <button
               onClick={onClose}
               className="text-pastel-blue-500 hover:text-pastel-blue-700 text-sm font-medium"
             >
-              닫기
+              {t('common:button.close')}
             </button>
           </div>
           <div className="flex-1 overflow-hidden">

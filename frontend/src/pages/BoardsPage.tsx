@@ -7,8 +7,10 @@ import { useBoard } from '@/context/BoardContext';
 import { Board } from '@/types/board';
 import { useEffect, useState } from 'react';
 import { HiClipboardList, HiPlus, HiTemplate } from 'react-icons/hi';
+import { useTranslation } from 'react-i18next';
 
 export const BoardsPage = () => {
+  const { t } = useTranslation(['board', 'common']);
   const { user } = useAuth();
   const { boards, loading, error, loadBoards, clearError } = useBoard();
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -46,12 +48,12 @@ export const BoardsPage = () => {
     if (boards.length === 0) {
       return (
         <div className="glass rounded-2xl p-12 shadow-glass-lg text-center">
-          <p className="text-xl text-pastel-blue-400 mb-6">아직 보드가 없습니다</p>
+          <p className="text-xl text-pastel-blue-400 mb-6">{t('board:list.empty')}</p>
           <button
             onClick={() => setShowCreateModal(true)}
             className="px-6 py-3 rounded-lg bg-pastel-blue-500 text-white font-semibold hover:bg-pastel-blue-600 transition"
           >
-            첫 보드 만들기
+            {t('board:list.createFirst')}
           </button>
         </div>
       );
@@ -77,7 +79,7 @@ export const BoardsPage = () => {
   if (!selectedWorkspaceId) {
     return (
       <div className="h-full bg-gradient-pastel flex items-center justify-center">
-        <p className="text-pastel-blue-400">워크스페이스를 찾을 수 없습니다</p>
+        <p className="text-pastel-blue-400">{t('board:list.noWorkspace')}</p>
       </div>
     );
   }
@@ -92,7 +94,7 @@ export const BoardsPage = () => {
             <p className="text-sm text-slate-500 mb-1 font-medium">{selectedWorkspaceName}</p>
             <h1 className="text-3xl font-bold text-slate-900 flex items-center gap-3">
               <HiClipboardList className="text-blue-600" />
-              보드 관리
+              {t('board:list.title')}
             </h1>
           </div>
           <div className="flex gap-3">
@@ -101,14 +103,14 @@ export const BoardsPage = () => {
               className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white text-slate-600 font-semibold hover:bg-slate-50 hover:text-blue-600 transition-all border border-slate-200 shadow-sm hover:shadow-md"
             >
               <HiTemplate className="text-lg" />
-              템플릿
+              {t('board:list.template')}
             </button>
             <button
               onClick={() => setShowCreateModal(true)}
               className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-600 text-white text-sm font-bold hover:from-blue-500 hover:to-cyan-500 transition-all duration-300 shadow-lg shadow-blue-500/20 hover:shadow-blue-500/40 transform hover:-translate-y-0.5"
             >
               <HiPlus className="text-lg" />
-              새 보드
+              {t('board:createButton')}
             </button>
           </div>
         </div>

@@ -1,0 +1,53 @@
+{
+  "button": {
+    "confirm": "Confirm",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "save": "Save",
+    "edit": "Edit",
+    "close": "Close",
+    "create": "Create",
+    "add": "Add"
+  },
+  "label": {
+    "search": "Search",
+    "filter": "Filter",
+    "settings": "Settings"
+  },
+  "nav": {
+    "dashboard": "Dashboard",
+    "boards": "Boards",
+    "auditLogs": "Audit logs"
+  },
+  "userMenu": {
+    "info": "Account",
+    "profileSettings": "Profile settings",
+    "logout": "Log out"
+  },
+  "action": {
+    "viewNow": "View now",
+    "loading": "Loading...",
+    "noData": "No data available",
+    "edit": "Edit",
+    "deleting": "Deleting...",
+    "retry": "Retry",
+    "more": "More"
+  },
+  "refresh": {
+    "refresh": "Refresh"
+  },
+  "collapse": {
+    "show": "Show",
+    "hide": "Hide"
+  },
+  "counter": {
+    "chars": "{{current}} / {{max}}"
+  },
+  "confirm": {
+    "title": "Confirm"
+  },
+  "test": {
+    "hello": "Hello, World!",
+    "welcome": "Welcome to Kanban Board, {{name}}!"
+  }
+}

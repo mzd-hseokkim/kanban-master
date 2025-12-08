@@ -2,6 +2,7 @@ import DOMPurify from 'dompurify';
 import 'quill/dist/quill.snow.css';
 import React, { useMemo, useRef } from 'react';
 import ReactQuill from 'react-quill';
+import { useTranslation } from 'react-i18next';
 import '../styles/quill-custom.css';
 
 type ReactQuillPrototype = {
@@ -55,6 +56,7 @@ const RichTextEditor = React.forwardRef<ReactQuill, RichTextEditorProps>(({
   skipSanitization = false,
 }, ref) => {
   const internalRef = useRef<ReactQuill>(null);
+  const { t, i18n } = useTranslation(['common']);
 
   // Combine refs
   React.useImperativeHandle(ref, () => internalRef.current as ReactQuill);
@@ -230,7 +232,11 @@ const RichTextEditor = React.forwardRef<ReactQuill, RichTextEditorProps>(({
             currentLength > maxLength * 0.9 ? 'text-red-500' : 'text-gray-500'
           }`}
         >
-          {currentLength.toLocaleString()} / {maxLength.toLocaleString()}자
+          {t('common:counter.chars', {
+            current: currentLength.toLocaleString(i18n.language),
+            max: maxLength.toLocaleString(i18n.language),
+            defaultValue: `${currentLength.toLocaleString()} / ${maxLength.toLocaleString()}`,
+          })}
         </div>
       )}
 

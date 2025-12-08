@@ -1,0 +1,53 @@
+{
+  "complete": {
+    "title": "확인",
+    "confirmMessage": "이 스프린트를 완료하시겠습니까?\n미완료된 카드는 백로그로 이동됩니다.",
+    "confirm": "완료",
+    "cancel": "취소",
+    "failed": "스프린트 완료에 실패했습니다."
+  },
+  "header": {
+    "complete": "스프린트 완료",
+    "completing": "완료 중...",
+    "cards": "카드",
+    "points": "포인트",
+    "capacity": "용량",
+    "capacityTooltip": "Sprint Capacity: 팀이 이번 스프린트에서 완료하려는 스토리 포인트 목표량입니다.",
+    "progress": "{{percent}}% 완료",
+    "daysLeft": {
+      "left": "D-{{count}}",
+      "today": "오늘",
+      "overdue": "D+{{count}}"
+    }
+  },
+  "enable": {
+    "title": "Sprint 모드 활성화",
+    "irreversible": "이 작업은 되돌릴 수 없습니다",
+    "description": "Sprint 모드를 활성화하면 보드가 스프린트 기반 워크플로우로 전환되며, 다시 칸반 모드로 되돌릴 수 없습니다.",
+    "featuresTitle": "Sprint 모드의 특징:",
+    "feature1": "정해진 기간(Sprint) 단위로 작업 관리",
+    "feature2": "백로그에서 Sprint로 카드 할당",
+    "feature3": "용량 계획 및 번다운 차트",
+    "feature4": "Sprint 완료 시 자동 롤오버",
+    "boardLabel": "보드",
+    "cancel": "취소",
+    "confirm": "Sprint 활성화",
+    "confirming": "활성화 중..."
+  },
+  "create": {
+    "title": "새 Sprint 만들기",
+    "nameLabel": "Sprint 이름",
+    "namePlaceholder": "예: Sprint 1",
+    "startLabel": "시작일",
+    "endLabel": "종료일",
+    "capacityLabel": "용량 (Story Points)",
+    "capacityPlaceholder": "예: 100",
+    "goalLabel": "Sprint 목표",
+    "goalPlaceholder": "이번 Sprint에서 달성할 목표를 작성하세요",
+    "cancel": "취소",
+    "submit": "Sprint 생성",
+    "submitting": "생성 중...",
+    "nameRequired": "스프린트 이름을 입력해주세요.",
+    "failed": "스프린트 생성에 실패했습니다."
+  }
+}

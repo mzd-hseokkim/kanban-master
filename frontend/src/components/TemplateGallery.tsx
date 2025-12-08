@@ -11,6 +11,7 @@ import {
 } from '@/styles/modalStyles';
 import type { ApplyTemplateRequest, BoardTemplate } from '@/types/template';
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 interface TemplateGalleryProps {
   workspaceId: number;
@@ -23,6 +24,7 @@ export const TemplateGallery: React.FC<TemplateGalleryProps> = ({
   onClose,
   onApply,
 }) => {
+  const { t } = useTranslation(['board', 'common']);
   const [templates, setTemplates] = useState<BoardTemplate[]>([]);
   const [categories, setCategories] = useState<string[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
@@ -62,7 +64,7 @@ export const TemplateGallery: React.FC<TemplateGalleryProps> = ({
 
   const handleTemplateClick = (template: BoardTemplate) => {
     setSelectedTemplate(template);
-    setBoardName(`${template.name} 복사본`);
+    setBoardName(t('board:template.copySuffix', { name: template.name, defaultValue: `${template.name} 복사본` }));
     setBoardDescription(template.description || '');
     setShowApplyModal(true);
   };
@@ -82,7 +84,7 @@ export const TemplateGallery: React.FC<TemplateGalleryProps> = ({
       close();
     } catch (err) {
       console.error('Failed to apply template:', err);
-      await alert('템플릿 적용에 실패했습니다');
+      await alert(t('board:template.applyFailed'));
     } finally {
       setApplying(false);
     }
@@ -100,39 +102,39 @@ export const TemplateGallery: React.FC<TemplateGalleryProps> = ({
         >
           <div className="mb-6">
             <p className="text-xs uppercase tracking-[0.2em] text-pastel-blue-500 font-semibold">
-              Apply Template
+              {t('board:template.applySection')}
             </p>
             <h2 className="text-2xl font-bold text-pastel-blue-900 mt-1">
-              템플릿 적용: {selectedTemplate.name}
+              {t('board:template.applyTitle', { name: selectedTemplate.name })}
             </h2>
           </div>
 
           <div className="space-y-4 mb-6">
             <div>
-              <label className={modalLabelClass}>보드 이름</label>
+              <label className={modalLabelClass}>{t('board:template.boardName')}</label>
               <input
                 type="text"
                 value={boardName}
                 onChange={(e) => setBoardName(e.target.value)}
                 className={modalInputClass}
-                placeholder="새 보드 이름"
+                placeholder={t('board:template.boardNamePlaceholder')}
               />
             </div>
 
             <div>
-              <label className={modalLabelClass}>보드 설명 (선택)</label>
+              <label className={modalLabelClass}>{t('board:template.boardDescription')}</label>
               <textarea
                 value={boardDescription}
                 onChange={(e) => setBoardDescription(e.target.value)}
                 className={modalInputClass}
                 rows={3}
-                placeholder="보드 설명"
+                placeholder={t('board:template.boardDescriptionPlaceholder')}
               />
             </div>
 
             <div className="p-4 rounded-xl bg-pastel-blue-50 border border-pastel-blue-100">
               <p className="text-sm font-semibold text-pastel-blue-900 mb-2">
-                포함될 칼럼: {selectedTemplate.columns.length}개
+                {t('board:template.columnsIncluded', { count: selectedTemplate.columns.length })}
               </p>
               <div className="flex flex-wrap gap-2">
                 {selectedTemplate.columns.map((col) => (
@@ -153,14 +155,14 @@ export const TemplateGallery: React.FC<TemplateGalleryProps> = ({
               className={modalSecondaryButtonClass}
               disabled={applying}
             >
-              취소
+              {t('common:button.cancel')}
             </button>
             <button
               onClick={handleApply}
               disabled={applying || !boardName.trim()}
               className={modalPrimaryButtonClass}
             >
-              {applying ? '생성 중...' : '보드 생성'}
+              {applying ? t('board:template.applying') : t('board:template.apply')}
             </button>
           </div>
         </div>
@@ -173,11 +175,11 @@ export const TemplateGallery: React.FC<TemplateGalleryProps> = ({
       className={modalOverlayClass(stage)}
       onClick={(e) => e.target === e.currentTarget && close()}
     >
-      <div
-        className={modalPanelClass({
-          stage,
-          maxWidth: 'max-w-6xl',
-          padding: 'p-0',
+        <div
+          className={modalPanelClass({
+            stage,
+            maxWidth: 'max-w-6xl',
+            padding: 'p-0',
           extra: 'max-h-[85vh] flex flex-col overflow-hidden bg-gradient-to-b from-pastel-blue-50 via-white to-pastel-blue-100/60',
         })}
       >
@@ -186,14 +188,14 @@ export const TemplateGallery: React.FC<TemplateGalleryProps> = ({
           <div className="flex items-center justify-between">
             <div>
               <p className="text-xs uppercase tracking-[0.2em] text-pastel-blue-500 font-semibold">
-                Template Gallery
+                {t('board:template.gallerySection')}
               </p>
-              <h2 className="text-2xl font-bold text-pastel-blue-900 mt-1">템플릿 갤러리</h2>
+              <h2 className="text-2xl font-bold text-pastel-blue-900 mt-1">{t('board:template.galleryTitle')}</h2>
             </div>
             <button
               onClick={close}
               className="w-10 h-10 rounded-full hover:bg-pastel-blue-100 text-xl text-pastel-blue-600 transition flex items-center justify-center"
-              aria-label="닫기"
+              aria-label={t('common:button.close')}
             >
               ✕
             </button>
@@ -212,7 +214,7 @@ export const TemplateGallery: React.FC<TemplateGalleryProps> = ({
                     : 'bg-white text-pastel-blue-600 border border-pastel-blue-200 hover:bg-pastel-blue-50'
                 }`}
               >
-                전체
+                {t('board:template.categoryAll')}
               </button>
               {categories.map((category) => (
                 <button
@@ -236,11 +238,11 @@ export const TemplateGallery: React.FC<TemplateGalleryProps> = ({
           {loading ? (
             <div className="text-center py-16">
               <div className="animate-spin inline-block h-8 w-8 border-4 border-pastel-blue-500 border-t-transparent rounded-full" />
-              <p className="text-pastel-blue-600 mt-4">템플릿 불러오는 중...</p>
+              <p className="text-pastel-blue-600 mt-4">{t('board:template.loading')}</p>
             </div>
           ) : filteredTemplates.length === 0 ? (
             <div className="text-center py-16">
-              <p className="text-pastel-blue-600">사용 가능한 템플릿이 없습니다</p>
+              <p className="text-pastel-blue-600">{t('board:template.empty')}</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -255,7 +257,7 @@ export const TemplateGallery: React.FC<TemplateGalleryProps> = ({
                       <h3 className="font-bold text-pastel-blue-900">{template.name}</h3>
                       {template.isPublic && (
                         <span className="text-xs px-2 py-0.5 rounded-full bg-pastel-green-100 text-pastel-green-700">
-                          공개
+                          {t('board:template.public')}
                         </span>
                       )}
                     </div>
@@ -271,10 +273,10 @@ export const TemplateGallery: React.FC<TemplateGalleryProps> = ({
 
                   <div className="flex items-center justify-between pt-3 border-t border-pastel-blue-100">
                     <span className="text-xs text-pastel-blue-500">
-                      칼럼 {template.columns.length}개
+                      {t('board:template.columnCount', { count: template.columns.length })}
                     </span>
                     <span className="text-xs font-semibold text-pastel-blue-600">
-                      적용하기 →
+                      {t('board:template.applyCta')}
                     </span>
                   </div>
                 </button>

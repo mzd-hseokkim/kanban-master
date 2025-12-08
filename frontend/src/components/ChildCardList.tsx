@@ -1,5 +1,6 @@
 import type { ChildCardSummary } from '@/types/card';
 import { HiCheckCircle, HiPlay } from 'react-icons/hi2';
+import { useTranslation } from 'react-i18next';
 
 /**
  * ChildCardList 컴포넌트
@@ -24,6 +25,7 @@ const ChildCardList: React.FC<ChildCardListProps> = ({
   onCreateChild,
   disabled = false,
 }) => {
+  const { t } = useTranslation(['card']);
   const getPriorityColor = (priority?: string) => {
     switch (priority) {
       case 'HIGH':
@@ -54,22 +56,22 @@ const ChildCardList: React.FC<ChildCardListProps> = ({
     <div className="mt-4">
       <div className="flex items-center justify-between mb-3">
         <h3 className="text-sm font-semibold text-gray-700 flex items-center gap-2">
-          <span>🔗 하위 카드</span>
+          <span>🔗 {t('card:children.title')}</span>
           <span className="text-xs text-gray-500">({childCards.length})</span>
         </h3>
       </div>
 
       {childCards.length === 0 ? (
         <div className="border border-dashed border-gray-300 rounded-lg p-6 text-center bg-gray-50">
-          <p className="text-sm text-gray-500 mb-1">하위 카드가 없습니다.</p>
-          <p className="text-xs text-gray-400 mb-4">첫 하위 카드를 생성해보세요!</p>
+          <p className="text-sm text-gray-500 mb-1">{t('card:children.empty')}</p>
+          <p className="text-xs text-gray-400 mb-4">{t('card:children.cta')}</p>
           <button
             type="button"
             onClick={onCreateChild}
             disabled={disabled}
             className="text-sm text-blue-600 hover:text-blue-700 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            + 하위 카드 생성
+            + {t('card:children.create')}
           </button>
         </div>
       ) : (
@@ -136,7 +138,7 @@ const ChildCardList: React.FC<ChildCardListProps> = ({
             disabled={disabled}
             className="w-full p-3 border-2 border-dashed border-gray-300 rounded-md text-sm text-gray-600 hover:border-blue-400 hover:text-blue-600 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            + 하위 카드 생성
+            + {t('card:children.create')}
           </button>
         </div>
       )}

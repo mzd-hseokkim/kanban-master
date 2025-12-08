@@ -2,6 +2,7 @@ import { useDialog } from '@/context/DialogContext';
 import attachmentService, { Attachment } from '@/services/attachmentService';
 import { useEffect, useRef, useState } from 'react';
 import { HiDocument, HiDownload, HiPaperClip, HiPlus, HiTrash } from 'react-icons/hi';
+import { useTranslation } from 'react-i18next';
 
 interface AttachmentSectionProps {
   cardId: number;
@@ -73,6 +74,7 @@ export const AttachmentSection: React.FC<AttachmentSectionProps> = ({
   canEdit,
 }) => {
   const { alert, confirm } = useDialog();
+  const { t } = useTranslation(['card', 'common']);
   const [attachments, setAttachments] = useState<Attachment[]>([]);
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -106,7 +108,7 @@ export const AttachmentSection: React.FC<AttachmentSectionProps> = ({
 
     // 10MB 제한
     if (file.size > 10 * 1024 * 1024) {
-      await alert('파일 크기는 10MB를 초과할 수 없습니다.');
+      await alert(t('card:attachment.sizeLimit'));
       return;
     }
 
@@ -116,21 +118,21 @@ export const AttachmentSection: React.FC<AttachmentSectionProps> = ({
       await loadAttachments();
     } catch (error) {
       console.error('Failed to upload attachment:', error);
-      await alert('파일 업로드에 실패했습니다.');
+      await alert(t('card:attachment.uploadFailed'));
     } finally {
       setUploading(false);
     }
   };
 
   const handleDelete = async (attachmentId: number) => {
-    if (!(await confirm('정말 이 파일을 삭제하시겠습니까?', { isDestructive: true, confirmText: '삭제' }))) return;
+    if (!(await confirm(t('card:attachment.deleteConfirm'), { isDestructive: true, confirmText: t('common:button.delete'), cancelText: t('common:button.cancel') }))) return;
 
     try {
       await attachmentService.deleteAttachment(attachmentId);
       await loadAttachments();
     } catch (error) {
       console.error('Failed to delete attachment:', error);
-      await alert('파일 삭제에 실패했습니다.');
+      await alert(t('card:attachment.deleteFailed'));
     }
   };
 
@@ -147,7 +149,7 @@ export const AttachmentSection: React.FC<AttachmentSectionProps> = ({
       <div className="flex items-center justify-between mb-2">
         <h3 className="text-sm font-semibold text-pastel-blue-900 flex items-center gap-2">
           <HiPaperClip className="text-pastel-blue-500" />
-          첨부파일
+          {t('card:attachment.title')}
         </h3>
       </div>
 
@@ -188,11 +190,11 @@ export const AttachmentSection: React.FC<AttachmentSectionProps> = ({
                       document.body.removeChild(a);
                     } catch (error) {
                       console.error('Download failed:', error);
-                      await alert('파일 다운로드에 실패했습니다.');
+                      await alert(t('card:attachment.downloadFailed'));
                     }
                   }}
                   className="p-1.5 rounded-lg text-gray-500 hover:bg-white hover:text-pastel-blue-600 transition"
-                  title="다운로드"
+                  title={t('card:attachment.download')}
                 >
                   <HiDownload className="text-lg" />
                 </button>
@@ -200,7 +202,7 @@ export const AttachmentSection: React.FC<AttachmentSectionProps> = ({
                   <button
                     onClick={() => handleDelete(attachment.id)}
                     className="p-1.5 rounded-lg text-gray-500 hover:bg-white hover:text-red-500 transition"
-                    title="삭제"
+                    title={t('common:button.delete')}
                   >
                     <HiTrash className="text-lg" />
                   </button>
@@ -230,7 +232,7 @@ export const AttachmentSection: React.FC<AttachmentSectionProps> = ({
             ) : (
               <HiPlus className="text-lg" />
             )}
-            {uploading ? '업로드 중...' : '파일 추가'}
+            {uploading ? t('card:attachment.uploading') : t('card:attachment.addFile')}
           </button>
         </div>
       )}

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { HiExclamationCircle, HiX } from 'react-icons/hi';
+import { useTranslation } from 'react-i18next';
 
 interface EnableSprintModalProps {
   isOpen: boolean;
@@ -16,6 +17,7 @@ export const EnableSprintModal = ({
   onClose,
   onConfirm,
 }: EnableSprintModalProps) => {
+  const { t } = useTranslation(['sprint', 'common']);
   const [isLoading, setIsLoading] = useState(false);
 
   if (!isOpen) return null;
@@ -39,7 +41,7 @@ export const EnableSprintModal = ({
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-slate-200">
           <h2 className="text-xl font-semibold text-slate-900">
-            Sprint 모드 활성화
+            {t('sprint:enable.title')}
           </h2>
           <button
             onClick={onClose}
@@ -56,39 +58,38 @@ export const EnableSprintModal = ({
             <HiExclamationCircle className="text-2xl text-amber-600 flex-shrink-0 mt-0.5" />
             <div className="space-y-2">
               <p className="font-semibold text-amber-900">
-                이 작업은 되돌릴 수 없습니다
+                {t('sprint:enable.irreversible')}
               </p>
               <p className="text-sm text-amber-800">
-                Sprint 모드를 활성화하면 보드가 스프린트 기반 워크플로우로 전환됩니다.
-                이후 다시 칸반 모드로 되돌릴 수 없습니다.
+                {t('sprint:enable.description')}
               </p>
             </div>
           </div>
 
           <div className="space-y-3">
-            <h3 className="font-semibold text-slate-900">Sprint 모드의 특징:</h3>
+            <h3 className="font-semibold text-slate-900">{t('sprint:enable.featuresTitle')}</h3>
             <ul className="space-y-2 text-sm text-slate-600">
               <li className="flex items-start gap-2">
                 <span className="text-blue-600 mt-1">•</span>
-                <span>정해진 기간(Sprint) 단위로 작업 관리</span>
+                <span>{t('sprint:enable.feature1')}</span>
               </li>
               <li className="flex items-start gap-2">
                 <span className="text-blue-600 mt-1">•</span>
-                <span>백로그에서 Sprint로 카드 할당</span>
+                <span>{t('sprint:enable.feature2')}</span>
               </li>
               <li className="flex items-start gap-2">
                 <span className="text-blue-600 mt-1">•</span>
-                <span>용량 계획 및 번다운 차트</span>
+                <span>{t('sprint:enable.feature3')}</span>
               </li>
               <li className="flex items-start gap-2">
                 <span className="text-blue-600 mt-1">•</span>
-                <span>Sprint 완료 시 자동 롤오버</span>
+                <span>{t('sprint:enable.feature4')}</span>
               </li>
             </ul>
           </div>
 
           <p className="text-sm text-slate-500 italic">
-            보드: <strong>{boardName}</strong>
+            {t('sprint:enable.boardLabel')}: <strong>{boardName}</strong>
           </p>
         </div>
 
@@ -99,14 +100,14 @@ export const EnableSprintModal = ({
             disabled={isLoading}
             className="px-4 py-2 rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-100 transition-colors disabled:opacity-50"
           >
-            취소
+            {t('common:button.cancel')}
           </button>
           <button
             onClick={handleConfirm}
             disabled={isLoading}
             className="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors disabled:opacity-50 font-medium"
           >
-            {isLoading ? '활성화 중...' : 'Sprint 활성화'}
+            {isLoading ? t('sprint:enable.confirming') : t('sprint:enable.confirm')}
           </button>
         </div>
       </div>

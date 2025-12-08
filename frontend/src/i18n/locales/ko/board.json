@@ -1,0 +1,241 @@
+{
+  "title": "보드",
+  "edit": "보드 수정",
+  "delete": "보드 삭제",
+  "notFound": "보드를 찾을 수 없습니다",
+  "deleteConfirm": "이 보드를 삭제하시겠습니까?",
+  "members": "멤버",
+  "inviteMember": "멤버 초대",
+  "createButton": "보드 만들기",
+  "create": {
+    "title": "새 보드 만들기",
+    "nameLabel": "보드 이름 *",
+    "namePlaceholder": "예: 제품 로드맵",
+    "descriptionLabel": "설명 (선택사항)",
+    "descriptionPlaceholder": "보드에 대한 설명을 입력하세요...",
+    "themeColor": "테마 색상",
+    "creating": "생성 중...",
+    "colors": {
+      "blue": "블루",
+      "pink": "핑크",
+      "green": "그린",
+      "purple": "퍼플",
+      "yellow": "옐로우"
+    },
+    "errors": {
+      "required": "보드 이름은 필수입니다",
+      "nameMax": "보드 이름은 100자 미만이어야 합니다"
+    }
+  },
+  "deleteConfirm": {
+    "title": "보드를 삭제하시겠어요?",
+    "subtitle": "30일 이내에 복구할 수 있습니다.",
+    "delete": "삭제",
+    "deleting": "삭제 중..."
+  },
+  "list": {
+    "title": "보드 관리",
+    "empty": "아직 보드가 없습니다",
+    "createFirst": "첫 보드 만들기",
+    "noWorkspace": "워크스페이스를 찾을 수 없습니다",
+    "template": "템플릿"
+  },
+  "state": {
+    "loading": "보드를 불러오는 중…",
+    "back": "돌아가기",
+    "notFound": "보드를 찾을 수 없습니다",
+    "backToList": "보드 목록으로 돌아가기"
+  },
+  "header": {
+    "back": "돌아가기",
+    "enableSprint": "Sprint 모드 활성화",
+    "overdue": "지연 {{count}}",
+    "toBoard": "보드로 돌아가기",
+    "toPlanning": "스프린트 계획",
+    "sprintManagement": "스프린트 관리",
+    "view": {
+      "board": "보드 뷰",
+      "list": "리스트 뷰"
+    },
+    "analytics": "분석",
+    "filterActive": "필터 적용됨",
+    "excel": "엑셀",
+    "templateDownload": "템플릿 다운로드",
+    "exportExcel": "엑셀로 내보내기",
+    "exporting": "내보내는 중...",
+    "importExcel": "엑셀 가져오기",
+    "calendar": "일정",
+    "label": "라벨",
+    "activity": "활동",
+    "members": "멤버",
+    "archive": "아카이브"
+  },
+  "listView": {
+    "header": {
+      "completed": "완료",
+      "title": "제목",
+      "priority": "우선순위",
+      "label": "라벨",
+      "description": "설명",
+      "createdAt": "생성일",
+      "dueDate": "마감일",
+      "startedAt": "시작일",
+      "completedAt": "완료일",
+      "assignee": "담당자"
+    },
+    "editModeOn": "편집 모드",
+    "editModeOff": "편집 종료",
+    "deleteColumnConfirm": "정말 이 칼럼을 삭제하시겠습니까?",
+    "deleteColumnFailed": "칼럼 삭제에 실패했습니다"
+  },
+  "excel": {
+    "title": "보드로 엑셀 데이터 가져오기",
+    "description": "템플릿과 동일한 형식의 XLSX 파일을 선택하세요.",
+    "hint": "라벨, 담당자 이메일, 마감일(UTC ISO8601), 체크리스트 포함 가능. 25MB 이하 지원.",
+    "chooseFile": "파일 선택",
+    "noFile": "선택된 파일 없음",
+    "merge": "병합",
+    "mergeHint": "기존 데이터에 카드와 칼럼을 추가하거나 업데이트합니다.",
+    "overwrite": "덮어쓰기",
+    "overwriteHint": "동일 제목 카드를 대체하고, 기존 카드를 아카이브 처리합니다.",
+    "selectFileError": "가져올 엑셀 파일을 선택해주세요.",
+    "startFailed": "가져오기 작업을 시작하지 못했습니다.",
+    "uploading": "업로드 중...",
+    "start": "업로드 시작"
+  },
+  "excelImport": {
+    "done": "가져오기 완료",
+    "failed": "실패",
+    "processing": "처리 중",
+    "rows": "행",
+    "success": "성공 {{count}}",
+    "failure": "실패 {{count}}",
+    "failedRows": "실패한 행",
+    "moreErrors": "...외 {{count}}건",
+    "completedMessage": "가져오기가 완료되었습니다."
+  },
+  "calendar": {
+    "title": "일정 캘린더",
+    "today": "오늘",
+    "created": "등록",
+    "started": "시작",
+    "completed": "완료",
+    "due": "마감",
+    "weekdays": ["일", "월", "화", "수", "목", "금", "토"],
+    "months": ["1월", "2월", "3월", "4월", "5월", "6월", "7월", "8월", "9월", "10월", "11월", "12월"]
+  },
+  "members": {
+    "title": "멤버 관리",
+    "invite": "멤버 초대",
+    "remove": "멤버 제거",
+    "removeConfirm": "이 멤버를 제거하시겠습니까?",
+    "removeFailed": "멤버 제거에 실패했습니다",
+    "roleChangeFailed": "역할 변경에 실패했습니다",
+    "tableTitle": "보드 멤버",
+    "empty": "멤버가 없습니다",
+    "name": "이름",
+    "email": "이메일",
+    "roleLabel": "권한",
+    "statusLabel": "상태",
+    "actions": "작업",
+    "role": {
+      "owner": "Owner",
+      "viewer": "보기",
+      "editor": "편집",
+      "manager": "관리"
+    },
+    "status": {
+      "pending": "초대 대기중",
+      "declined": "거절됨",
+      "expired": "만료됨",
+      "accepted": "활동 중"
+    },
+    "inviteModal": {
+      "sectionLabel": "COLLABORATION",
+      "title": "멤버 초대",
+      "searchLabel": "사용자 검색",
+      "searchPlaceholder": "이름 또는 이메일로 검색...",
+      "noResults": "검색 결과가 없습니다",
+      "roleLabel": "권한",
+      "roles": {
+        "viewer": "보기",
+        "editor": "편집",
+        "manager": "관리"
+      },
+      "roleDescriptions": {
+        "viewer": "보드 및 카드 조회만 가능",
+        "editor": "카드 생성, 편집, 이동 가능",
+        "manager": "멤버 관리, 보드 설정 변경 가능"
+      },
+      "messageLabel": "초대 메시지 (선택사항)",
+      "messagePlaceholder": "초대 메시지를 입력하세요",
+      "selectRequired": "초대할 사용자를 선택해주세요",
+      "submit": "초대하기",
+      "submitting": "초대 중…",
+      "cancel": "취소",
+      "inviteFailed": "멤버 초대에 실패했습니다"
+    }
+  },
+  "labels": {
+    "placeholder": "라벨 이름 입력 후 Enter...",
+    "duplicate": "동일한 이름의 라벨이 이미 존재합니다",
+    "createFailed": "라벨 생성에 실패했습니다",
+    "empty": "라벨이 없습니다. 위에서 라벨을 생성해주세요."
+  },
+  "archivePanel": {
+    "sectionLabel": "ARCHIVE",
+    "title": "아카이브된 카드",
+    "loadFailed": "아카이브된 카드를 불러오는데 실패했습니다",
+    "empty": "아카이브된 카드가 없습니다",
+    "restore": "복구",
+    "deleteFailed": "카드 삭제에 실패했습니다",
+    "restoreFailed": "카드 복구에 실패했습니다",
+    "bulkRestoreFailed": "일괄 복구에 실패했습니다",
+    "bulkDeleteFailed": "일괄 삭제에 실패했습니다",
+    "confirmDelete": "\"{{title}}\" 카드를 영구적으로 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.",
+    "confirmBulkDelete": "{{count}}개의 카드를 영구 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.",
+    "bulkRestore": "선택 항목 일괄 복구",
+    "bulkDelete": "선택 항목 일괄 삭제",
+    "clearSelection": "선택 해제",
+    "selectedCount": "{{count}}개 선택됨",
+    "selectCard": "{{title}} 선택"
+  },
+  "template": {
+    "gallerySection": "TEMPLATE GALLERY",
+    "galleryTitle": "템플릿 갤러리",
+    "categoryAll": "전체",
+    "loading": "템플릿 불러오는 중...",
+    "empty": "사용 가능한 템플릿이 없습니다",
+    "public": "공개",
+    "applyCta": "적용하기 →",
+    "columnCount": "칼럼 {{count}}개",
+    "applySection": "템플릿 적용",
+    "applyTitle": "템플릿 적용: {{name}}",
+    "boardName": "보드 이름",
+    "boardNamePlaceholder": "새 보드 이름",
+    "boardDescription": "보드 설명 (선택)",
+    "boardDescriptionPlaceholder": "보드 설명",
+    "columnsIncluded": "포함될 칼럼: {{count}}개",
+    "applying": "생성 중...",
+    "apply": "보드 생성",
+    "copySuffix": "{{name}} 복사본",
+    "applyFailed": "템플릿 적용에 실패했습니다"
+  },
+  "activity": {
+    "title": "활동 로그",
+    "loadFailed": "활동을 불러오는데 실패했습니다",
+    "empty": "활동 이력이 없습니다",
+    "loadMore": "이전 활동 보기"
+  },
+  "comments": {
+    "title": "댓글",
+    "loadFailed": "댓글을 불러오는데 실패했습니다",
+    "placeholder": "댓글을 입력하세요...",
+    "required": "댓글 내용을 입력해주세요",
+    "maxLength": "댓글은 10,000자를 초과할 수 없습니다",
+    "createFailed": "댓글 작성에 실패했습니다",
+    "submit": "댓글 작성",
+    "empty": "아직 댓글이 없습니다",
+    "emptyCta": "첫 번째 댓글을 작성해보세요!"
+  }
+}

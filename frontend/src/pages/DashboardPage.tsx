@@ -14,8 +14,10 @@ import { CardHighlightSection } from './DashboardPage/components/CardHighlightSe
 import { DashboardEmptyState } from './DashboardPage/components/DashboardEmptyState';
 import { DashboardLoadingBanner } from './DashboardPage/components/DashboardLoadingBanner';
 import { DashboardCard, useDashboardCards, useDefaultWorkspace } from './DashboardPage/hooks';
+import { useTranslation } from 'react-i18next';
 
 const DashboardPage = () => {
+  const { t } = useTranslation(['dashboard']);
   const { user } = useAuth();
   const { boards, loading: boardsLoading, loadBoards } = useBoard();
   const navigate = useNavigate();
@@ -54,9 +56,11 @@ const DashboardPage = () => {
           <div>
             <h1 className="text-2xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
               <HiViewGrid className="text-blue-600" />
-              대시보드
+              {t('dashboard:header.title')}
             </h1>
-            <p className="text-sm text-slate-500 mt-1 ml-8">환영합니다, {user?.name}님!</p>
+            <p className="text-sm text-slate-500 mt-1 ml-8">
+              {t('dashboard:header.welcome', { name: user?.name ?? '' })}
+            </p>
           </div>
           <button
             onClick={() => setShowCreateBoardModal(true)}
@@ -64,7 +68,7 @@ const DashboardPage = () => {
             type="button"
           >
             <HiPlus className="text-lg" />
-            새 보드
+            {t('dashboard:actions.createBoard')}
           </button>
         </div>
       </header>
@@ -104,9 +108,9 @@ const DashboardPage = () => {
                     <div className="p-2 rounded-lg bg-white shadow-sm border border-slate-100">
                       <HiClipboardList className="text-xl text-blue-600" />
                     </div>
-                    <h2 className="text-xl font-bold text-slate-900">내 보드</h2>
+                    <h2 className="text-xl font-bold text-slate-900">{t('dashboard:boards.title')}</h2>
                     <span className="px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-600 text-xs font-bold border border-slate-200">
-                      {boards.length}
+                      {t('dashboard:boards.count', { count: boards.length })}
                     </span>
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">

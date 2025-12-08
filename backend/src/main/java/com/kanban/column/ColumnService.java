@@ -12,6 +12,7 @@ import com.kanban.board.BoardRepository;
 import com.kanban.board.member.BoardMemberRole;
 import com.kanban.board.member.BoardMemberRoleValidator;
 import com.kanban.column.dto.ColumnResponse;
+import com.kanban.util.MessageSourceService;
 import lombok.RequiredArgsConstructor;
 
 /**
@@ -29,6 +30,7 @@ public class ColumnService {
         private final ActivityService activityService;
         private final BoardMemberRoleValidator roleValidator;
         private final com.kanban.notification.service.RedisPublisher redisPublisher;
+        private final MessageSourceService messageSourceService;
 
         /**
          * 특정 보드의 모든 칼럼 조회
@@ -46,7 +48,7 @@ public class ColumnService {
         public ColumnResponse getColumn(Long columnId) {
                 BoardColumn column = columnRepository.findById(columnId)
                                 .orElseThrow(() -> new NoSuchElementException(
-                                                COLUMN_NOT_FOUND_MESSAGE + columnId));
+                                                messageSourceService.getMessage("error.column.not-found", columnId)));
                 return ColumnResponse.from(column);
         }
 
@@ -69,7 +71,8 @@ public class ColumnService {
         public ColumnResponse createColumn(Long boardId, String name, String description,
                         String bgColor, Long userId) {
                 Board board = boardRepository.findById(boardId).orElseThrow(
-                                () -> new NoSuchElementException("보드를 찾을 수 없습니다: " + boardId));
+                                () -> new NoSuchElementException(
+                                                messageSourceService.getMessage("error.board.not-found", boardId)));
 
                 // 현재 칼럼 개수를 position으로 설정 (마지막에 추가)
                 int position = columnRepository.countByBoardId(boardId);
@@ -81,9 +84,10 @@ public class ColumnService {
                 BoardColumn savedColumn = columnRepository.save(column);
 
                 // 활동 기록
+                String activityMessage = messageSourceService.getMessage("activity.column.created",
+                                name);
                 activityService.recordActivity(ActivityScopeType.BOARD, boardId,
-                                ActivityEventType.COLUMN_CREATED, userId,
-                                "\"" + name + "\" 칼럼이 생성되었습니다");
+                                ActivityEventType.COLUMN_CREATED, userId, activityMessage);
 
                 // Redis 이벤트 발행
                 // Redis 이벤트 발행

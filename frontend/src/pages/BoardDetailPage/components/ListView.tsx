@@ -11,6 +11,7 @@ import { filterCardsBySearch, hasActiveSearchFilter } from '@/utils/searchFilter
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { HiChevronDown, HiChevronRight, HiChevronUp, HiDotsVertical, HiPlus, HiSelector } from 'react-icons/hi';
 import { ListCardRow } from './ListCardRow';
+import { useTranslation } from 'react-i18next';
 
 interface SortConfig {
   key: CardSortKey;
@@ -40,6 +41,7 @@ export const ListView = ({
   searchState,
   currentUserId,
 }: ListViewProps) => {
+  const { t } = useTranslation(['board', 'card', 'common']);
   const { updateCard, loadCards } = useCard();
   const { deleteColumn } = useColumn();
   const { confirm } = useDialog();
@@ -268,9 +270,9 @@ export const ListView = ({
   }, [collapsedColumns, columns, fetchColumnCards, paginationState]);
 
   const handleDeleteColumn = async (columnId: number) => {
-    const confirmed = await confirm('정말 이 칼럼을 삭제하시겠습니까?', {
-      confirmText: '삭제',
-      cancelText: '취소',
+    const confirmed = await confirm(t('board:listView.deleteColumnConfirm'), {
+      confirmText: t('common:button.delete'),
+      cancelText: t('common:button.cancel'),
       isDestructive: true,
     });
     if (!confirmed) return;
@@ -280,7 +282,7 @@ export const ListView = ({
       setColumnError(null);
       await deleteColumn(workspaceId, boardId, columnId);
     } catch (err) {
-      const message = err instanceof Error ? err.message : '칼럼 삭제에 실패했습니다';
+      const message = err instanceof Error ? err.message : t('board:listView.deleteColumnFailed');
       setColumnError(message);
       console.error('Failed to delete column:', err);
     } finally {
@@ -377,28 +379,28 @@ export const ListView = ({
         2xl:grid-cols-[40px_3fr_100px_120px_2fr_110px_100px_100px_100px_150px_90px]"
         style={{ height: `${MAIN_HEADER_HEIGHT}px` }}
       >
-        <div className="text-center">완료</div>
+        <div className="text-center">{t('board:listView.header.completed')}</div>
         <div className="flex items-center gap-2">
-          {renderSortableHeader('제목', 'title')}
+          {renderSortableHeader(t('board:listView.header.title'), 'title')}
         </div>
         <div className="hidden md:flex items-center gap-2">
-          {renderSortableHeader('우선순위', 'priority')}
+          {renderSortableHeader(t('board:listView.header.priority'), 'priority')}
         </div>
-        <div className="hidden lg:block">라벨</div>
-        <div className="hidden xl:block">설명</div>
+        <div className="hidden lg:block">{t('board:listView.header.label')}</div>
+        <div className="hidden xl:block">{t('board:listView.header.description')}</div>
         <div className="hidden 2xl:flex items-center gap-2">
-          {renderSortableHeader('생성일', 'createdAt')}
+          {renderSortableHeader(t('board:listView.header.createdAt'), 'createdAt')}
         </div>
         <div className="hidden md:flex items-center gap-2">
-          {renderSortableHeader('마감일', 'dueDate')}
+          {renderSortableHeader(t('board:listView.header.dueDate'), 'dueDate')}
         </div>
         <div className="hidden 2xl:flex items-center gap-2">
-          {renderSortableHeader('시작일', 'startedAt')}
+          {renderSortableHeader(t('board:listView.header.startedAt'), 'startedAt')}
         </div>
         <div className="hidden 2xl:flex items-center gap-2">
-          {renderSortableHeader('완료일', 'completedAt')}
+          {renderSortableHeader(t('board:listView.header.completedAt'), 'completedAt')}
         </div>
-        <div className="hidden lg:block">담당자</div>
+        <div className="hidden lg:block">{t('board:listView.header.assignee')}</div>
         <div className="flex justify-end">
           {canEdit && (
             <button
@@ -409,7 +411,7 @@ export const ListView = ({
                   : 'bg-white text-slate-600 border border-slate-300 hover:bg-slate-50 hover:text-slate-800 hover:border-slate-400'
               }`}
             >
-              {isEditMode ? '편집 종료' : '편집 모드'}
+              {isEditMode ? t('board:listView.editModeOff') : t('board:listView.editModeOn')}
             </button>
           )}
         </div>
@@ -477,7 +479,7 @@ export const ListView = ({
                                 setCreateCardState({ isOpen: true, columnId: column.id });
                             }}
                             className="p-1.5 hover:bg-white hover:shadow-sm rounded text-slate-500 hover:text-pastel-blue-600 transition-all"
-                            title="카드 추가"
+                            title={t('card:column.addCard')}
                         >
                             <HiPlus className="w-4 h-4" />
                         </button>
@@ -505,14 +507,14 @@ export const ListView = ({
                                     }}
                                     className="w-full px-4 py-2 text-left text-sm text-slate-600 hover:bg-slate-50 hover:text-pastel-blue-600 transition-colors flex items-center gap-2"
                                 >
-                                    <span>수정</span>
+                                    <span>{t('common:action.edit', { defaultValue: '수정' })}</span>
                                 </button>
                                 <button
                                     onClick={() => handleDeleteColumn(column.id)}
                                     disabled={isDeletingColumnId === column.id}
                                     className="w-full px-4 py-2 text-left text-sm text-rose-500 hover:bg-rose-50 transition-colors flex items-center gap-2"
                                 >
-                                  {isDeletingColumnId === column.id ? '삭제 중...' : '삭제'}
+                                  {isDeletingColumnId === column.id ? t('common:action.deleting') : t('common:button.delete')}
                                 </button>
                             </div>
                         )}
@@ -549,12 +551,12 @@ export const ListView = ({
                   ))}
                   {sortedCards.length === 0 && (
                     <div className="px-4 py-4 text-center text-slate-500 text-xs italic bg-slate-50/50 border-b border-slate-100">
-                      {isFilterActive ? '필터에 맞는 카드가 없습니다' : '카드가 없습니다'}
+                      {isFilterActive ? t('card:column.emptyWithFilter') : t('card:column.empty')}
                     </div>
                   )}
                   {pageState.isLoading && (
                     <div className="px-4 py-3 text-center text-slate-400 text-xs">
-                      불러오는 중...
+                      {t('common:action.loading')}
                     </div>
                   )}
                   <div
@@ -575,7 +577,7 @@ export const ListView = ({
               onClick={onCreateColumn}
               className="flex-shrink-0 w-full min-h-28 rounded-2xl border-4 border-dashed border-white/70 bg-white/10 flex items-center justify-center text-pastel-blue-800 font-semibold text-base hover:bg-white/20 hover:border-4 hover:border-dashed hover:border-black transition"
             >
-              + 칼럼 추가
+              + {t('card:column.addColumn')}
             </button>
           </div>
         )}

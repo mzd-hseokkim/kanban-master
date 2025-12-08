@@ -1,6 +1,7 @@
 import type { SprintCreateRequest } from '@/types/sprint';
 import { useState } from 'react';
 import { HiCalendar, HiX } from 'react-icons/hi';
+import { useTranslation } from 'react-i18next';
 
 interface CreateSprintModalProps {
   isOpen: boolean;
@@ -15,6 +16,7 @@ export const CreateSprintModal = ({
   onClose,
   onSubmit,
 }: CreateSprintModalProps) => {
+  const { t } = useTranslation(['sprint', 'common']);
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
@@ -30,7 +32,7 @@ export const CreateSprintModal = ({
     e.preventDefault();
 
     if (!formData.name.trim()) {
-      alert('스프린트 이름을 입력해주세요.');
+      alert(t('sprint:create.nameRequired'));
       return;
     }
 
@@ -54,7 +56,7 @@ export const CreateSprintModal = ({
       });
       onClose();
     } catch (error) {
-      alert('스프린트 생성에 실패했습니다.');
+      alert(t('sprint:create.failed'));
       console.error('Failed to create sprint:', error);
     } finally {
       setIsLoading(false);
@@ -71,7 +73,7 @@ export const CreateSprintModal = ({
               <HiCalendar className="text-xl text-blue-600" />
             </div>
             <h2 className="text-xl font-semibold text-slate-900">
-              새 Sprint 만들기
+              {t('sprint:create.title')}
             </h2>
           </div>
           <button
@@ -87,13 +89,13 @@ export const CreateSprintModal = ({
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-2">
-              Sprint 이름 <span className="text-red-500">*</span>
+              {t('sprint:create.nameLabel')} <span className="text-red-500">*</span>
             </label>
             <input
               type="text"
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              placeholder="예: Sprint 1"
+              placeholder={t('sprint:create.namePlaceholder')}
               className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-slate-900"
               disabled={isLoading}
             />
@@ -102,7 +104,7 @@ export const CreateSprintModal = ({
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-2">
-                시작일
+                {t('sprint:create.startLabel')}
               </label>
               <input
                 type="date"
@@ -114,7 +116,7 @@ export const CreateSprintModal = ({
             </div>
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-2">
-                종료일
+                {t('sprint:create.endLabel')}
               </label>
               <input
                 type="date"
@@ -128,13 +130,13 @@ export const CreateSprintModal = ({
 
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-2">
-              용량 (Story Points)
+              {t('sprint:create.capacityLabel')}
             </label>
             <input
               type="number"
               value={formData.capacity}
               onChange={(e) => setFormData({ ...formData, capacity: e.target.value })}
-              placeholder="예: 100"
+              placeholder={t('sprint:create.capacityPlaceholder')}
               min="0"
               className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-slate-900"
               disabled={isLoading}
@@ -143,12 +145,12 @@ export const CreateSprintModal = ({
 
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-2">
-              Sprint 목표
+              {t('sprint:create.goalLabel')}
             </label>
             <textarea
               value={formData.goalText}
               onChange={(e) => setFormData({ ...formData, goalText: e.target.value })}
-              placeholder="이번 Sprint에서 달성할 목표를 작성하세요"
+              placeholder={t('sprint:create.goalPlaceholder')}
               rows={3}
               className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-slate-900 resize-none"
               disabled={isLoading}
@@ -163,14 +165,14 @@ export const CreateSprintModal = ({
               disabled={isLoading}
               className="px-4 py-2 rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-100 transition-colors disabled:opacity-50"
             >
-              취소
+              {t('common:button.cancel')}
             </button>
             <button
               type="submit"
               disabled={isLoading}
               className="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors disabled:opacity-50 font-medium"
             >
-              {isLoading ? '생성 중...' : 'Sprint 생성'}
+              {isLoading ? t('sprint:create.submitting') : t('sprint:create.submit')}
             </button>
           </div>
         </form>

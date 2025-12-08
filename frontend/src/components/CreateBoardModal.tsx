@@ -13,6 +13,7 @@ import {
   modalErrorClass,
   modalColorButtonClass,
 } from '@/styles/modalStyles';
+import { useTranslation } from 'react-i18next';
 
 interface CreateBoardModalProps {
   workspaceId: number;
@@ -23,6 +24,7 @@ export const CreateBoardModal = ({
   workspaceId,
   onClose,
 }: CreateBoardModalProps) => {
+  const { t } = useTranslation(['board', 'common']);
   const { createBoard, loading, error, clearError } = useBoard();
   const { stage, close } = useModalAnimation(onClose);
   const [formData, setFormData] = useState<CreateBoardRequest>({
@@ -36,10 +38,10 @@ export const CreateBoardModal = ({
   const validateForm = () => {
     const errors: Record<string, string> = {};
     if (!formData.name.trim()) {
-      errors.name = 'Board name is required';
+      errors.name = t('board:create.required');
     }
     if (formData.name.length > 100) {
-      errors.name = 'Board name must be less than 100 characters';
+      errors.name = t('board:create.nameMax');
     }
     setFieldErrors(errors);
     return Object.keys(errors).length === 0;
@@ -63,11 +65,11 @@ export const CreateBoardModal = ({
   };
 
   const themeColors = [
-    { value: 'pastel-blue-500', label: 'Blue', color: '#8fb3ff' },
-    { value: 'pastel-pink-500', label: 'Pink', color: '#ffb3e6' },
-    { value: 'pastel-green-500', label: 'Green', color: '#b3ffc4' },
-    { value: 'pastel-purple-500', label: 'Purple', color: '#d4a5ff' },
-    { value: 'pastel-yellow-500', label: 'Yellow', color: '#fff4b3' },
+    { value: 'pastel-blue-500', label: t('board:create.colors.blue'), color: '#8fb3ff' },
+    { value: 'pastel-pink-500', label: t('board:create.colors.pink'), color: '#ffb3e6' },
+    { value: 'pastel-green-500', label: t('board:create.colors.green'), color: '#b3ffc4' },
+    { value: 'pastel-purple-500', label: t('board:create.colors.purple'), color: '#d4a5ff' },
+    { value: 'pastel-yellow-500', label: t('board:create.colors.yellow'), color: '#fff4b3' },
   ];
 
   return (
@@ -80,7 +82,7 @@ export const CreateBoardModal = ({
       }}
     >
       <div className={modalPanelClass({ stage })}>
-        <h2 className="text-2xl font-bold text-pastel-blue-900 mb-6">새 보드 만들기</h2>
+        <h2 className="text-2xl font-bold text-pastel-blue-900 mb-6">{t('board:create.title')}</h2>
 
         {error && (
           <div className={`mb-4 ${modalErrorClass}`}>
@@ -91,7 +93,7 @@ export const CreateBoardModal = ({
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
             <label className={modalLabelClass}>
-              보드 이름 *
+              {t('board:create.nameLabel')}
             </label>
             <input
               type="text"
@@ -101,7 +103,7 @@ export const CreateBoardModal = ({
                 setFieldErrors({ ...fieldErrors, name: '' });
               }}
               maxLength={100}
-              placeholder="예: 제품 로드맵"
+              placeholder={t('board:create.namePlaceholder')}
               className={modalInputClass}
             />
             {fieldErrors.name && (
@@ -111,13 +113,13 @@ export const CreateBoardModal = ({
 
           <div>
             <label className={modalLabelClass}>
-              설명 (선택사항)
+              {t('board:create.descriptionLabel')}
             </label>
             <textarea
               value={formData.description || ''}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
               maxLength={500}
-              placeholder="보드에 대한 설명을 입력하세요..."
+              placeholder={t('board:create.descriptionPlaceholder')}
               rows={3}
               className={modalTextareaClass}
             />
@@ -125,7 +127,7 @@ export const CreateBoardModal = ({
 
           <div>
             <label className={`${modalLabelClass} !mb-3`}>
-              테마 색상
+              {t('board:create.themeColor')}
             </label>
             <div className="flex gap-3 justify-between">
               {themeColors.map((color) => (
@@ -150,14 +152,14 @@ export const CreateBoardModal = ({
               disabled={loading}
               className={`flex-1 ${modalSecondaryButtonClass}`}
             >
-              취소
+              {t('common:button.cancel')}
             </button>
             <button
               type="submit"
               disabled={loading || !formData.name.trim()}
               className={`flex-1 ${modalPrimaryButtonClass}`}
             >
-              {loading ? '생성 중...' : '생성'}
+              {loading ? t('board:create.creating') : t('common:button.create')}
             </button>
           </div>
         </form>

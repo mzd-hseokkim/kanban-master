@@ -14,6 +14,7 @@ import cardService from '@/services/cardService';
 import { labelService } from '@/services/labelService';
 import { userService } from '@/services/userService';
 import { watchService } from '@/services/watchService';
+import { useTranslation } from 'react-i18next';
 import {
     modalColorButtonClass,
     modalErrorClass,
@@ -63,6 +64,7 @@ export const EditCardModal: React.FC<EditCardModalProps> = ({
     canEdit,
     onClose,
 }) => {
+    const { t } = useTranslation(['card', 'common']);
     const { updateCard, loadCards } = useCard();
     const { user } = useAuth();
     const { stage, close } = useModalAnimation(onClose);
@@ -119,9 +121,9 @@ export const EditCardModal: React.FC<EditCardModalProps> = ({
     };
 
     const getStartButtonLabel = () => {
-        if (startLoading) return '시작 중...';
-        if (currentCard.startedAt) return isCompleted ? '완료됨' : '진행 중';
-        return '작업 시작';
+        if (startLoading) return t('card:editModal.starting', { defaultValue: '시작 중...' });
+        if (currentCard.startedAt) return isCompleted ? t('card:editModal.completed', { defaultValue: '완료됨' }) : t('card:editModal.inProgress', { defaultValue: '진행 중' });
+        return t('card:editModal.start');
     };
 
     const performAssigneeSearch = async (keyword: string) => {
@@ -403,7 +405,7 @@ export const EditCardModal: React.FC<EditCardModalProps> = ({
             close();
         } catch (err) {
             console.error('Failed to archive card:', err);
-            setError(err instanceof Error ? err.message : '카드 아카이브에 실패했습니다');
+            setError(err instanceof Error ? err.message : t('card:editModal.archiveFailed', { defaultValue: '카드 아카이브에 실패했습니다' }));
         } finally {
             setLoading(false);
         }
@@ -476,8 +478,8 @@ export const EditCardModal: React.FC<EditCardModalProps> = ({
                     <div className="flex-shrink-0 px-5 pt-4 pb-2 border-b border-white/30">
                         {/* 타이틀과 설명 */}
                         <div className="mb-2">
-                            <h2 className="text-lg font-bold text-slate-800 mb-0.5">카드 수정</h2>
-                            <p className="text-xs text-slate-500">카드 정보를 수정하세요</p>
+                            <h2 className="text-lg font-bold text-slate-800 mb-0.5">{t('card:editModal.title')}</h2>
+                            <p className="text-xs text-slate-500">{t('card:editModal.subtitle')}</p>
                         </div>
 
                         {/* 카드 제목 입력 + 액션 버튼들 */}
@@ -495,7 +497,7 @@ export const EditCardModal: React.FC<EditCardModalProps> = ({
                                             handleSubmit(e as unknown as React.FormEvent);
                                         }
                                     }}
-                                    placeholder="예: 로그인 기능 구현"
+                                    placeholder={t('card:createModal.titlePlaceholder')}
                                     className={`${modalInputClass} pr-12 ${isCompleted ? 'line-through text-gray-400' : ''}`}
                                     disabled={loading || !canEdit}
                                     readOnly={!canEdit}
@@ -505,7 +507,7 @@ export const EditCardModal: React.FC<EditCardModalProps> = ({
                                     onClick={handleToggleWatch}
                                     disabled={watchLoading}
                                     className={`absolute right-2 top-1/2 -translate-y-1/2 p-2 rounded-lg transition-all ${watchButtonClass} disabled:opacity-50`}
-                                    title={isWatching ? '관심 카드 해제' : '관심 카드 등록'}
+                                    title={isWatching ? t('card:editModal.unwatch') : t('card:editModal.watch')}
                                 >
                                     {renderWatchIcon()}
                                 </button>
@@ -527,7 +529,11 @@ export const EditCardModal: React.FC<EditCardModalProps> = ({
                                             ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
                                             : 'bg-pastel-blue-600 text-white hover:bg-pastel-blue-500 shadow-sm'
                                     }`}
-                                    title={currentCard.startedAt ? `시작 ${formatDateTime(currentCard.startedAt)}` : '아직 시작되지 않은 카드입니다'}
+                                    title={
+                                        currentCard.startedAt
+                                            ? t('card:editModal.startedAt', { time: formatDateTime(currentCard.startedAt) })
+                                            : t('card:editModal.notStarted')
+                                    }
                                 >
                                     <HiPlay className="text-sm" />
                                     {getStartButtonLabel()}
@@ -551,7 +557,7 @@ export const EditCardModal: React.FC<EditCardModalProps> = ({
                                     }`}>
                                         {isCompleted && <HiCheck className="text-pastel-green-500 text-xs font-bold" />}
                                     </div>
-                                    <span className="text-xs font-semibold text-pastel-blue-900">완료</span>
+                                    <span className="text-xs font-semibold text-pastel-blue-900">{t('card:editModal.complete')}</span>
                                 </button>
 
                                 {/* 아카이브 버튼 */}
@@ -563,7 +569,7 @@ export const EditCardModal: React.FC<EditCardModalProps> = ({
                                         className="px-3 py-1.5 rounded-lg border border-pastel-pink-300 bg-pastel-pink-50 text-pastel-pink-700 text-xs font-semibold hover:bg-pastel-pink-100 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5 whitespace-nowrap"
                                     >
                                         <MdArchive className="text-sm" />
-                                        아카이브
+                                        {t('card:column.archiveAll')}
                                     </button>
                                 )}
                             </div>
@@ -596,7 +602,7 @@ export const EditCardModal: React.FC<EditCardModalProps> = ({
                                 <div className="grid grid-cols-2 gap-3">
                                     {/* 우선순위 선택 */}
                                     <div>
-                                        <label className={modalLabelClass}>우선순위</label>
+                                        <label className={modalLabelClass}>{t('card:common.priorityLabel')}</label>
                                         <select
                                             value={priority}
                                             onChange={(e) => setPriority(e.target.value)}
@@ -614,7 +620,7 @@ export const EditCardModal: React.FC<EditCardModalProps> = ({
 
                                     {/* 마감 날짜 입력 */}
                                     <div>
-                                        <label className={modalLabelClass}>마감일</label>
+                                        <label className={modalLabelClass}>{t('card:common.dueDateLabel')}</label>
                                         <input
                                             type="date"
                                             value={dueDate}
@@ -628,7 +634,7 @@ export const EditCardModal: React.FC<EditCardModalProps> = ({
 
                                 {/* 담당자 입력 */}
                                 <div>
-                                    <label className={modalLabelClass}>담당자</label>
+                                    <label className={modalLabelClass}>{t('card:common.assigneeLabel')}</label>
                                     <div className="relative">
                                         <div
                                             ref={assigneeInputContainerRef}
@@ -659,7 +665,7 @@ export const EditCardModal: React.FC<EditCardModalProps> = ({
                                                 onFocus={() =>
                                                     canEdit && assigneeResults.length > 0 && setAssigneeDropdownOpen(true)
                                                 }
-                                                placeholder={selectedAssignee ? '' : '이름 또는 이메일로 검색 (선택사항)'}
+                                                placeholder={selectedAssignee ? '' : t('card:createModal.searchAssigneePlaceholder')}
                                                 className="borderless-input flex-1 min-w-0 bg-transparent text-pastel-blue-900 placeholder-pastel-blue-500 focus:outline-none"
                                                 disabled={loading || !canEdit}
                                                 readOnly={!canEdit}
@@ -693,14 +699,14 @@ export const EditCardModal: React.FC<EditCardModalProps> = ({
                                         )}
                                     </div>
                                     {assigneeSearchInput && assigneeResults.length === 0 && !assigneeSearching && (
-                                        <p className="text-xs text-pastel-blue-500 mt-1">검색 결과가 없습니다</p>
+                                        <p className="text-xs text-pastel-blue-500 mt-1">{t('common:action.noData')}</p>
                                     )}
                                 </div>
 
                                 {/* 라벨 */}
                                 {canEdit && (
                                     <div>
-                                        <label className={modalLabelClass}>라벨</label>
+                                        <label className={modalLabelClass}>{t('card:common.labelLabel')}</label>
                                         <div className="max-h-48 overflow-y-auto rounded-2xl border border-white/30 bg-white/30 p-3">
                                             <LabelSelector
                                                 boardId={boardId}
@@ -714,7 +720,7 @@ export const EditCardModal: React.FC<EditCardModalProps> = ({
 
                                 {/* 색상 선택 */}
                                 <div>
-                                    <label className={modalLabelClass}>색상</label>
+                                    <label className={modalLabelClass}>{t('card:createModal.colorLabel', { defaultValue: '색상' })}</label>
                                     <div className="grid grid-cols-5 gap-3">
                                         {cardColors.map((color) => (
                                             <button
@@ -735,7 +741,7 @@ export const EditCardModal: React.FC<EditCardModalProps> = ({
                                 {/* 설명 */}
                                 <div>
                                     <div className="flex items-center justify-between mb-2">
-                                        <label className={modalLabelClass}>설명</label>
+                                        <label className={modalLabelClass}>{t('card:common.descriptionLabel')}</label>
                                         {canEdit && (
                                             <button
                                                 type="button"
@@ -748,7 +754,7 @@ export const EditCardModal: React.FC<EditCardModalProps> = ({
                                                         // 성공 표시 (선택 사항)
                                                     } catch (err) {
                                                         console.error('Failed to save description:', err);
-                                                        setError(err instanceof Error ? err.message : '설명 저장에 실패했습니다');
+                                                        setError(err instanceof Error ? err.message : t('card:editModal.saveDescriptionFailed', { defaultValue: '설명 저장에 실패했습니다' }));
                                                     } finally {
                                                         setDescriptionSaving(false);
                                                     }
@@ -756,7 +762,7 @@ export const EditCardModal: React.FC<EditCardModalProps> = ({
                                                 disabled={descriptionSaving || description === (currentCard.description || '')}
                                                 className="px-3 py-1 text-xs font-medium rounded-lg bg-pastel-blue-100 text-pastel-blue-700 hover:bg-pastel-blue-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                                             >
-                                                {descriptionSaving ? '저장 중...' : '설명 저장'}
+                                                {descriptionSaving ? t('card:editModal.savingDescription', { defaultValue: '저장 중...' }) : t('card:editModal.saveDescription', { defaultValue: '설명 저장' })}
                                             </button>
                                         )}
                                     </div>
@@ -765,7 +771,7 @@ export const EditCardModal: React.FC<EditCardModalProps> = ({
                                             boardId={boardId}
                                             value={description}
                                             onChange={useCallback((val: string) => setDescription(val), [])}
-                                            placeholder="카드에 대한 설명을 입력하세요 (선택사항)"
+                                            placeholder={t('card:common.descriptionPlaceholder')}
                                             readOnly={!canEdit}
                                             disabled={loading || !canEdit}
                                             maxLength={50000}
@@ -834,7 +840,7 @@ export const EditCardModal: React.FC<EditCardModalProps> = ({
                                 disabled={loading}
                                 className={`px-4 py-1.5 text-sm ${modalSecondaryButtonClass}`}
                             >
-                                {canEdit ? '취소' : '닫기'}
+                                {canEdit ? t('common:button.cancel') : t('common:button.close', { defaultValue: '닫기' })}
                             </button>
                             {canEdit && (
                                 <button
@@ -846,7 +852,7 @@ export const EditCardModal: React.FC<EditCardModalProps> = ({
                                     disabled={loading}
                                     className={`px-4 py-1.5 text-sm ${modalPrimaryButtonClass}`}
                                 >
-                                    {loading ? '수정 중...' : '수정'}
+                                    {loading ? t('card:editModal.updating', { defaultValue: '저장 중...' }) : t('card:editModal.update')}
                                 </button>
                             )}
                         </div>
@@ -888,14 +894,17 @@ export const EditCardModal: React.FC<EditCardModalProps> = ({
             {showArchiveConfirm && (
                 <ConfirmModal
                     isOpen={showArchiveConfirm}
-                    message="이 카드를 아카이브하시겠습니까?&#10;아카이브된 카드는 '아카이브된 카드 보기'에서 복구할 수 있습니다."
+                    message={t('card:editModal.archiveConfirm', {
+                        defaultValue:
+                            "이 카드를 아카이브하시겠습니까?&#10;아카이브된 카드는 '아카이브된 카드 보기'에서 복구할 수 있습니다.",
+                    })}
                     onConfirm={() => {
                         setShowArchiveConfirm(false);
                         handleArchiveCard();
                     }}
                     onCancel={() => setShowArchiveConfirm(false)}
-                    confirmText="아카이브"
-                    cancelText="취소"
+                    confirmText={t('card:editModal.archive', { defaultValue: '아카이브' })}
+                    cancelText={t('common:button.cancel')}
                     isDestructive={true}
                 />
             )}

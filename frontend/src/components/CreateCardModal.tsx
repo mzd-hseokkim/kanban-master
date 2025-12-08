@@ -24,6 +24,7 @@ import {
 import type { Card } from '@/types/card';
 import type { UserSearchResult } from '@/types/user';
 import React, { useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 interface CreateCardModalProps {
     workspaceId: number;
@@ -55,6 +56,7 @@ export const CreateCardModal: React.FC<CreateCardModalProps> = ({
     const { createCard } = useCard();
     const { user } = useAuth();
     const { stage, close } = useModalAnimation(onClose);
+    const { t, i18n } = useTranslation(['card', 'common']);
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
     const [selectedColor, setSelectedColor] = useState(cardColors[0].hex);
@@ -278,7 +280,7 @@ export const CreateCardModal: React.FC<CreateCardModalProps> = ({
         e.preventDefault();
 
         if (!title.trim()) {
-            setError('카드 제목을 입력해주세요');
+            setError(t('card:common.errorTitleRequired'));
             return;
         }
 
@@ -334,16 +336,16 @@ export const CreateCardModal: React.FC<CreateCardModalProps> = ({
                 >
                     {/* 헤더 */}
                     <h2 className="text-xl font-bold text-slate-800 mb-0.5">
-                        {parentCardId ? '🔗 하위 카드 생성' : '카드 생성'}
+                        {parentCardId ? '🔗 ' + t('card:createModal.titleChild') : t('card:createModal.title')}
                     </h2>
                     <p className="text-xs text-slate-500 mb-5">
-                        {parentCardId ? '부모 카드의 하위 카드를 생성하세요' : '새로운 카드를 생성하세요'}
+                        {parentCardId ? t('card:createModal.subtitleChild') : t('card:createModal.subtitle')}
                     </p>
 
                     <form onSubmit={handleSubmit}>
                         {/* 제목 입력 */}
                         <div className="mb-4">
-                            <label className={modalLabelClass}>카드 제목 *</label>
+                            <label className={modalLabelClass}>{t('card:common.titleLabel')}</label>
                             <input
                                 ref={titleInputRef}
                                 type="text"
@@ -355,7 +357,7 @@ export const CreateCardModal: React.FC<CreateCardModalProps> = ({
                                         handleSubmit(e as unknown as React.FormEvent);
                                     }
                                 }}
-                                placeholder="예: 로그인 기능 구현"
+                                placeholder={t('card:createModal.titlePlaceholder')}
                                 className={modalInputClass}
                                 disabled={loading}
                             />
@@ -363,11 +365,11 @@ export const CreateCardModal: React.FC<CreateCardModalProps> = ({
 
                         {/* 설명 입력 */}
                         <div className="mb-4">
-                            <label className={modalLabelClass}>설명</label>
+                            <label className={modalLabelClass}>{t('card:common.descriptionLabel')}</label>
                             <RichTextEditor
                                 value={description}
                                 onChange={setDescription}
-                                placeholder="카드에 대한 설명을 입력하세요 (선택사항)"
+                                placeholder={t('card:common.descriptionPlaceholder')}
                                 disabled={loading}
                                 maxLength={50000}
                             />
@@ -377,14 +379,14 @@ export const CreateCardModal: React.FC<CreateCardModalProps> = ({
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
                             {/* 우선순위 선택 */}
                             <div>
-                                <label className={modalLabelClass}>우선순위</label>
+                                <label className={modalLabelClass}>{t('card:common.priorityLabel')}</label>
                                 <select
                                     value={priority}
                                     onChange={(e) => setPriority(e.target.value)}
                                     className={modalSelectClass}
                                     disabled={loading}
                                 >
-                                    <option value="">우선순위 선택 (선택사항)</option>
+                                    <option value="">{t('card:createModal.priorityPlaceholder', { defaultValue: t('card:common.priorityLabel') })}</option>
                                     {cardPriorities.map((p) => (
                                         <option key={p} value={p}>
                                             {p}
@@ -395,20 +397,21 @@ export const CreateCardModal: React.FC<CreateCardModalProps> = ({
 
                             {/* 마감 날짜 입력 */}
                             <div>
-                                <label className={modalLabelClass}>마감일</label>
+                                <label className={modalLabelClass}>{t('card:common.dueDateLabel')}</label>
                                 <input
                                     type="date"
                                     value={dueDate}
                                     onChange={(e) => setDueDate(e.target.value)}
                                     className={modalInputClass}
                                     disabled={loading}
+                                    lang={i18n.language}
                                 />
                             </div>
                         </div>
 
                         {/* 담당자 입력 */}
                         <div className="mb-4">
-                            <label className={modalLabelClass}>담당자</label>
+                            <label className={modalLabelClass}>{t('card:common.assigneeLabel')}</label>
                             <div className="relative">
                                 <div
                                     ref={assigneeInputContainerRef}
@@ -422,7 +425,7 @@ export const CreateCardModal: React.FC<CreateCardModalProps> = ({
                                                 onClick={handleRemoveAssignee}
                                                 disabled={loading}
                                                 className="text-white hover:text-pastel-pink-200 disabled:opacity-50 transition-colors"
-                                                aria-label="담당자 제거"
+                                                aria-label={t('card:createModal.removeAssignee')}
                                             >
                                                 ✕
                                             </button>
@@ -435,7 +438,7 @@ export const CreateCardModal: React.FC<CreateCardModalProps> = ({
                                         value={assigneeSearchInput}
                                         onChange={handleAssigneeInputChange}
                                         onFocus={() => assigneeResults.length > 0 && setAssigneeDropdownOpen(true)}
-                                        placeholder={selectedAssignee ? '' : '이름 또는 이메일로 검색 (선택사항)'}
+                                        placeholder={selectedAssignee ? '' : t('card:createModal.searchAssigneePlaceholder')}
                                         className="borderless-input flex-1 min-w-0 bg-transparent text-pastel-blue-900 placeholder-pastel-blue-500 focus:outline-none"
                                         disabled={loading}
                                     />
@@ -468,14 +471,14 @@ export const CreateCardModal: React.FC<CreateCardModalProps> = ({
                                 )}
                             </div>
                             {assigneeSearchInput && assigneeResults.length === 0 && !assigneeSearching && (
-                                <p className="text-xs text-pastel-blue-500 mt-1">검색 결과가 없습니다</p>
+                                <p className="text-xs text-pastel-blue-500 mt-1">{t('common:action.noData')}</p>
                             )}
                         </div>
 
                         {/* 부모 카드 선택 (parentCardId prop이 없을 때만 표시) */}
                         {!parentCardId && (
                             <div className="mb-4">
-                                <label className={modalLabelClass}>부모 카드 (선택사항)</label>
+                                <label className={modalLabelClass}>{t('card:common.parentLabel')}</label>
                                 <div className="relative">
                                     <div
                                         ref={parentCardInputContainerRef}
@@ -502,7 +505,7 @@ export const CreateCardModal: React.FC<CreateCardModalProps> = ({
                                             value={parentCardSearchInput}
                                             onChange={handleParentCardInputChange}
                                             onFocus={() => parentCardResults.length > 0 && setParentCardDropdownOpen(true)}
-                                            placeholder={selectedParentCard ? '' : '부모 카드 검색 (선택사항)'}
+                                            placeholder={selectedParentCard ? '' : t('card:common.searchParentPlaceholder')}
                                             className="borderless-input flex-1 min-w-0 bg-transparent text-pastel-blue-900 placeholder-pastel-blue-500 focus:outline-none"
                                             disabled={loading}
                                         />
@@ -543,7 +546,7 @@ export const CreateCardModal: React.FC<CreateCardModalProps> = ({
                                     )}
                                 </div>
                                 {parentCardSearchInput && parentCardResults.length === 0 && !parentCardSearching && (
-                                    <p className="text-xs text-pastel-blue-500 mt-1">검색 결과가 없습니다</p>
+                                <p className="text-xs text-pastel-blue-500 mt-1">{t('common:action.noData')}</p>
                                 )}
                             </div>
                         )}
@@ -551,25 +554,25 @@ export const CreateCardModal: React.FC<CreateCardModalProps> = ({
                         {/* 상세 정보 (라벨 + 색상) */}
                         <CollapsibleSection
                             className="mb-6"
-                            title="상세 정보"
+                            title={t('card:createModal.detailTitle', { defaultValue: '상세 정보' })}
                             summary={
                                 <div className="flex items-center gap-2 text-xs text-pastel-blue-500">
                                     <span>
                                         {selectedLabelIds.length > 0
-                                            ? `라벨 ${selectedLabelIds.length}개`
-                                            : '라벨 미선택'}
+                                            ? t('card:createModal.labelsSelected', { count: selectedLabelIds.length })
+                                            : t('card:createModal.labelsNone')}
                                     </span>
                                     <span className="text-pastel-blue-200">•</span>
                                     <span
                                         className="inline-flex h-4 w-4 rounded-full border border-white/70 shadow-inner"
                                         style={{ backgroundColor: selectedColor }}
                                     />
-                                    <span>{selectedColorInfo?.label ?? '사용자 정의 색상'}</span>
+                                    <span>{selectedColorInfo?.label ?? t('card:createModal.customColor', { defaultValue: 'Custom color' })}</span>
                                 </div>
                             }
                         >
                             <div className="mb-4">
-                                <label className={`${modalLabelClass} !mb-2`}>라벨</label>
+                                <label className={`${modalLabelClass} !mb-2`}>{t('card:common.labelLabel')}</label>
                                 <div className="max-h-32 overflow-y-auto rounded-2xl border border-white/30 bg-white/30 p-2">
                                     <LabelSelector
                                         boardId={boardId}
@@ -580,7 +583,7 @@ export const CreateCardModal: React.FC<CreateCardModalProps> = ({
                             </div>
 
                             <div>
-                                <label className={`${modalLabelClass} !mb-2`}>색상 선택</label>
+                                <label className={`${modalLabelClass} !mb-2`}>{t('card:createModal.colorLabel', { defaultValue: '색상 선택' })}</label>
                                 <div className="grid grid-cols-5 gap-2">
                                     {cardColors.map((color) => (
                                         <button
@@ -610,10 +613,10 @@ export const CreateCardModal: React.FC<CreateCardModalProps> = ({
                                 disabled={loading}
                                 className={`flex-1 ${modalSecondaryButtonClass}`}
                             >
-                                취소
+                                {t('common:button.cancel')}
                             </button>
                             <button type="submit" disabled={loading} className={`flex-1 ${modalPrimaryButtonClass}`}>
-                                {loading ? '생성 중...' : '생성'}
+                                {loading ? t('card:createModal.creating') : t('card:createModal.create')}
                             </button>
                         </div>
                     </form>

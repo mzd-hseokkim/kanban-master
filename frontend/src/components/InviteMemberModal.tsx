@@ -16,6 +16,7 @@ import type { BoardMemberRole } from '@/types/member';
 import type { UserSearchResult } from '@/types/user';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { useTranslation } from 'react-i18next';
 
 interface InviteMemberModalProps {
   boardId: number;
@@ -30,6 +31,7 @@ export const InviteMemberModal = ({
   onClose,
   onSuccess,
 }: InviteMemberModalProps) => {
+  const { t } = useTranslation(['board', 'common']);
   const [searchInput, setSearchInput] = useState('');
   const [searchResults, setSearchResults] = useState<UserSearchResult[]>([]);
   const [selectedUser, setSelectedUser] = useState<UserSearchResult | null>(null);
@@ -113,7 +115,7 @@ export const InviteMemberModal = ({
     e.preventDefault();
 
     if (!selectedUser) {
-      setError('초대할 사용자를 선택해주세요');
+      setError(t('board:members.inviteModal.selectRequired'));
       return;
     }
 
@@ -130,7 +132,7 @@ export const InviteMemberModal = ({
       onSuccess();
       close();
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to invite member';
+      const errorMessage = err instanceof Error ? err.message : t('board:members.inviteModal.inviteFailed');
       setError(errorMessage);
       console.error('Failed to invite member:', err);
     } finally {
@@ -178,9 +180,9 @@ export const InviteMemberModal = ({
         <div className="flex items-start justify-between mb-6">
           <div>
             <p className="text-xs uppercase tracking-[0.3em] text-pastel-blue-500 font-semibold">
-              Collaboration
+              {t('board:members.inviteModal.sectionLabel')}
             </p>
-            <h2 className="text-2xl font-bold text-pastel-blue-900 mt-1">멤버 초대</h2>
+            <h2 className="text-2xl font-bold text-pastel-blue-900 mt-1">{t('board:members.inviteModal.title')}</h2>
           </div>
           <button
             onClick={close}
@@ -198,7 +200,7 @@ export const InviteMemberModal = ({
           {/* User Search with Badge */}
           <div className="relative">
             <label htmlFor="userSearch" className={modalLabelClass}>
-              사용자 검색
+              {t('board:members.inviteModal.searchLabel')}
             </label>
             <div className="relative">
               {/* Input Container with Badge */}
@@ -227,7 +229,7 @@ export const InviteMemberModal = ({
                   onChange={handleSearchInputChange}
                   onFocus={() => searchResults.length > 0 && setShowDropdown(true)}
                   disabled={loading}
-                  placeholder={selectedUser ? '' : '이름 또는 이메일로 검색...'}
+                  placeholder={selectedUser ? '' : t('board:members.inviteModal.searchPlaceholder')}
                   className="borderless-input flex-1 min-w-0 outline-none bg-transparent text-pastel-blue-900 placeholder-pastel-blue-500 disabled:bg-transparent disabled:opacity-50"
                 />
 
@@ -266,14 +268,14 @@ export const InviteMemberModal = ({
             </div>
 
             {searchInput && searchResults.length === 0 && !searching && (
-              <p className="text-xs text-pastel-blue-500 mt-1">검색 결과가 없습니다</p>
+              <p className="text-xs text-pastel-blue-500 mt-1">{t('board:members.inviteModal.noResults')}</p>
             )}
           </div>
 
           {/* Role Select */}
           <div>
             <label htmlFor="role" className={modalLabelClass}>
-              권한
+              {t('board:members.inviteModal.roleLabel')}
             </label>
             <select
               id="role"
@@ -282,28 +284,28 @@ export const InviteMemberModal = ({
               disabled={loading}
               className={modalSelectClass}
             >
-              <option value="VIEWER">보기 (Viewer)</option>
-              <option value="EDITOR">편집 (Editor)</option>
-              <option value="MANAGER">관리 (Manager)</option>
+              <option value="VIEWER">{t('board:members.inviteModal.roles.viewer')}</option>
+              <option value="EDITOR">{t('board:members.inviteModal.roles.editor')}</option>
+              <option value="MANAGER">{t('board:members.inviteModal.roles.manager')}</option>
             </select>
             <p className="text-xs text-pastel-blue-500 mt-2 leading-5">
-              • Viewer: 보드 및 카드 조회만 가능<br />
-              • Editor: 카드 생성, 편집, 이동 가능<br />
-              • Manager: 멤버 관리, 보드 설정 변경 가능
+              • {t('board:members.inviteModal.roles.viewer')}: {t('board:members.inviteModal.roleDescriptions.viewer')}<br />
+              • {t('board:members.inviteModal.roles.editor')}: {t('board:members.inviteModal.roleDescriptions.editor')}<br />
+              • {t('board:members.inviteModal.roles.manager')}: {t('board:members.inviteModal.roleDescriptions.manager')}
             </p>
           </div>
 
           {/* Message Input */}
           <div>
             <label htmlFor="message" className={modalLabelClass}>
-              초대 메시지 (선택사항)
+              {t('board:members.inviteModal.messageLabel')}
             </label>
             <textarea
               id="message"
               value={message}
               onChange={(e) => setMessage(e.target.value)}
               disabled={loading}
-              placeholder="초대 메시지를 입력하세요"
+              placeholder={t('board:members.inviteModal.messagePlaceholder')}
               rows={3}
               className={modalTextareaClass}
             />
@@ -317,14 +319,14 @@ export const InviteMemberModal = ({
               disabled={loading}
               className={`flex-1 ${modalSecondaryButtonClass}`}
             >
-              취소
+              {t('common:button.cancel')}
             </button>
             <button
               type="submit"
               disabled={loading || !selectedUser}
               className={`flex-1 ${modalPrimaryButtonClass}`}
             >
-              {loading ? '초대 중…' : '초대하기'}
+              {loading ? t('board:members.inviteModal.submitting') : t('board:members.inviteModal.submit')}
             </button>
           </div>
         </form>

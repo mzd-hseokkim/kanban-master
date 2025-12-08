@@ -9,6 +9,7 @@ import {
   modalPanelClass,
   modalSecondaryButtonClass,
 } from '@/styles/modalStyles';
+import { useTranslation } from 'react-i18next';
 
 interface BoardCardProps {
   board: Board;
@@ -22,6 +23,7 @@ interface DeleteBoardConfirmModalProps {
 }
 
 const DeleteBoardConfirmModal = ({ onCancel, onConfirm }: DeleteBoardConfirmModalProps) => {
+  const { t } = useTranslation(['board', 'common']);
   const { stage, close } = useModalAnimation(onCancel);
   const [loading, setLoading] = useState(false);
 
@@ -50,22 +52,22 @@ const DeleteBoardConfirmModal = ({ onCancel, onConfirm }: DeleteBoardConfirmModa
         className={modalPanelClass({ stage, maxWidth: 'max-w-sm' })}
         onClick={(e) => e.stopPropagation()}
       >
-        <h2 className="text-xl font-bold text-pastel-blue-900 mb-2">보드를 삭제하시겠어요?</h2>
-        <p className="text-pastel-blue-600 mb-6 text-sm">30일 이내에 복구할 수 있습니다.</p>
+        <h2 className="text-xl font-bold text-pastel-blue-900 mb-2">{t('board:deleteConfirm.title')}</h2>
+        <p className="text-pastel-blue-600 mb-6 text-sm">{t('board:deleteConfirm.subtitle')}</p>
         <div className="flex gap-3">
           <button
             onClick={close}
             disabled={loading}
             className={`flex-1 ${modalSecondaryButtonClass}`}
           >
-            취소
+            {t('common:button.cancel')}
           </button>
           <button
             onClick={handleConfirmClick}
             disabled={loading}
             className="flex-1 px-4 py-3 rounded-xl bg-gradient-to-r from-pastel-pink-400 to-pastel-pink-600 text-white font-semibold hover:shadow-lg transition disabled:opacity-50 shadow-glass-sm"
           >
-            {loading ? '삭제 중...' : '삭제'}
+            {loading ? t('board:deleteConfirm.deleting') : t('board:deleteConfirm.delete')}
           </button>
         </div>
       </div>

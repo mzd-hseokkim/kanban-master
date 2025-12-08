@@ -1,5 +1,6 @@
 import type { ImportJobStatus } from '@/types/excel';
 import { HiCheckCircle, HiExclamationCircle, HiRefresh } from 'react-icons/hi';
+import { useTranslation } from 'react-i18next';
 
 interface ImportProgressPanelProps {
   status: ImportJobStatus;
@@ -14,6 +15,7 @@ export const ImportProgressPanel = ({
   onRefresh,
   onClose,
 }: ImportProgressPanelProps) => {
+  const { t } = useTranslation(['board', 'common']);
   const isDone = status.state === 'COMPLETED';
   const isFailed = status.state === 'FAILED';
 
@@ -29,7 +31,7 @@ export const ImportProgressPanel = ({
             <button
               onClick={onRefresh}
               className="p-2 text-slate-400 hover:text-slate-700 rounded-full hover:bg-slate-100"
-              aria-label="새로고침"
+              aria-label={t('common:action.refresh', { defaultValue: '새로고침' })}
             >
               <HiRefresh />
             </button>
@@ -38,7 +40,7 @@ export const ImportProgressPanel = ({
             <button
               onClick={onClose}
               className="p-2 text-slate-400 hover:text-slate-700 rounded-full hover:bg-slate-100"
-              aria-label="닫기"
+              aria-label={t('common:button.close')}
             >
               ✕
             </button>
@@ -49,10 +51,10 @@ export const ImportProgressPanel = ({
       <div className="px-4 py-4 space-y-3">
         <div className="flex items-center justify-between text-sm">
           <span className="font-semibold text-slate-700">
-            {isDone ? '가져오기 완료' : isFailed ? '실패' : '처리 중'}
+            {isDone ? t('board:excelImport.done') : isFailed ? t('board:excelImport.failed') : t('board:excelImport.processing')}
           </span>
           <span className="text-slate-500">
-            {status.processedRows}/{status.totalRows || '--'} 행
+            {status.processedRows}/{status.totalRows || '--'} {t('board:excelImport.rows')}
           </span>
         </div>
         <div className="h-2 rounded-full bg-slate-100 overflow-hidden">
@@ -62,15 +64,15 @@ export const ImportProgressPanel = ({
           />
         </div>
         <div className="flex items-center justify-between text-sm text-slate-600">
-          <span>성공 {status.successCount}</span>
-          <span>실패 {status.failureCount}</span>
+          <span>{t('board:excelImport.success', { count: status.successCount })}</span>
+          <span>{t('board:excelImport.failure', { count: status.failureCount })}</span>
         </div>
 
         {status.errors && status.errors.length > 0 && (
           <div className="rounded-lg bg-rose-50 border border-rose-100 p-3 space-y-2">
             <div className="flex items-center gap-2 text-rose-600 font-semibold text-sm">
               <HiExclamationCircle />
-              <span>실패한 행</span>
+              <span>{t('board:excelImport.failedRows')}</span>
             </div>
             <ul className="text-xs text-rose-700 space-y-1 max-h-32 overflow-auto">
               {status.errors.slice(0, 5).map((error) => (
@@ -79,7 +81,7 @@ export const ImportProgressPanel = ({
                 </li>
               ))}
               {status.errors.length > 5 && (
-                <li className="text-rose-500">...외 {status.errors.length - 5}건</li>
+                <li className="text-rose-500">{t('board:excelImport.moreErrors', { count: status.errors.length - 5 })}</li>
               )}
             </ul>
           </div>
@@ -95,7 +97,7 @@ export const ImportProgressPanel = ({
       {isDone && (
         <div className="px-4 py-3 bg-slate-50 border-t border-slate-100 text-sm text-slate-600 flex items-center gap-2">
           <HiCheckCircle className="text-emerald-500" />
-          <span>가져오기가 완료되었습니다.</span>
+          <span>{t('board:excelImport.completedMessage')}</span>
         </div>
       )}
     </div>

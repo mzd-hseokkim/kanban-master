@@ -3,6 +3,7 @@ import { CardSearchResult } from '@/types/search';
 import { useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { HiCalendar, HiCheck, HiChevronLeft, HiChevronRight, HiClock, HiLightningBolt, HiPlus, HiX } from 'react-icons/hi';
+import { useTranslation } from 'react-i18next';
 
 interface CalendarModalProps {
   isOpen: boolean;
@@ -23,13 +24,14 @@ interface CalendarEvent {
   textColor: string;
 }
 
-const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-const MONTHS = [
+const DAYS_EN = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const MONTHS_EN = [
   'January', 'February', 'March', 'April', 'May', 'June',
   'July', 'August', 'September', 'October', 'November', 'December'
 ];
 
 export const CalendarModal = ({ isOpen, onClose, boardId, onCardSelect }: CalendarModalProps) => {
+  const { t } = useTranslation(['board']);
   const [currentDate, setCurrentDate] = useState(new Date());
   const [filterStarted, setFilterStarted] = useState(false);
   const [filterCompleted, setFilterCompleted] = useState(false);
@@ -175,14 +177,17 @@ export const CalendarModal = ({ isOpen, onClose, boardId, onCardSelect }: Calend
 
   const getEventLabel = (type: EventType) => {
     switch (type) {
-      case 'created': return '등록';
-      case 'started': return '시작';
-      case 'completed': return '완료';
-      case 'due': return '마감';
+      case 'created': return t('board:calendar.created');
+      case 'started': return t('board:calendar.started');
+      case 'completed': return t('board:calendar.completed');
+      case 'due': return t('board:calendar.due');
     }
   };
 
   if (!isOpen) return null;
+
+  const weekdays = t('board:calendar.weekdays', { returnObjects: true, defaultValue: DAYS_EN }) as string[];
+  const months = t('board:calendar.months', { returnObjects: true, defaultValue: MONTHS_EN }) as string[];
 
   return createPortal(
     <div className="fixed inset-0 z-[1050] flex items-center justify-center overflow-hidden">
@@ -194,7 +199,7 @@ export const CalendarModal = ({ isOpen, onClose, boardId, onCardSelect }: Calend
           <div className="flex items-center gap-6">
             <h2 className="text-2xl font-bold text-slate-800 flex items-center gap-2">
               <HiCalendar className="text-indigo-600" />
-              일정 캘린더
+              {t('board:calendar.title')}
             </h2>
 
             {/* Filter Toggles */}
@@ -207,7 +212,7 @@ export const CalendarModal = ({ isOpen, onClose, boardId, onCardSelect }: Calend
                         : 'text-slate-500 hover:text-slate-700'
                     }`}
                 >
-                    시작
+                    {t('board:calendar.started')}
                 </button>
                 <button
                     onClick={() => setFilterCompleted(!filterCompleted)}
@@ -217,7 +222,7 @@ export const CalendarModal = ({ isOpen, onClose, boardId, onCardSelect }: Calend
                         : 'text-slate-500 hover:text-slate-700'
                     }`}
                 >
-                    종료
+                    {t('board:calendar.completed')}
                 </button>
             </div>
 
@@ -228,7 +233,7 @@ export const CalendarModal = ({ isOpen, onClose, boardId, onCardSelect }: Calend
                 <HiChevronLeft className="text-xl" />
               </button>
               <span className="text-lg font-semibold min-w-[140px] text-center text-slate-800">
-                {year}년 {MONTHS[month]}
+                {year} {months[month]}
               </span>
               <button onClick={nextMonth} className="p-2 hover:bg-slate-100 rounded-full text-slate-600 transition-colors">
                 <HiChevronRight className="text-xl" />
@@ -237,7 +242,7 @@ export const CalendarModal = ({ isOpen, onClose, boardId, onCardSelect }: Calend
                 onClick={goToToday}
                 className="ml-2 px-3 py-1.5 text-sm font-medium text-indigo-600 bg-indigo-50 hover:bg-indigo-100 rounded-md transition-colors"
               >
-                오늘
+                {t('board:calendar.today')}
               </button>
             </div>
           </div>
@@ -250,7 +255,7 @@ export const CalendarModal = ({ isOpen, onClose, boardId, onCardSelect }: Calend
         <div className="flex-1 flex flex-col min-h-0 bg-slate-50">
           {/* Days Header */}
           <div className="grid grid-cols-7 border-b border-slate-200 bg-white">
-            {DAYS.map((day, i) => (
+            {weekdays.map((day, i) => (
               <div key={day} className={`py-3 text-center text-sm font-semibold ${i === 0 ? 'text-rose-500' : i === 6 ? 'text-blue-500' : 'text-slate-500'}`}>
                 {day}
               </div>

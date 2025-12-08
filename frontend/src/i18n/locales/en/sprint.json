@@ -1,0 +1,53 @@
+{
+  "complete": {
+    "title": "Confirm",
+    "confirmMessage": "Do you want to complete this sprint?\nIncomplete cards will move to the backlog.",
+    "confirm": "Complete",
+    "cancel": "Cancel",
+    "failed": "Failed to complete sprint."
+  },
+  "header": {
+    "complete": "Complete Sprint",
+    "completing": "Completing...",
+    "cards": "Cards",
+    "points": "Points",
+    "capacity": "Capacity",
+    "capacityTooltip": "Sprint Capacity: the target story points the team aims to finish this sprint.",
+    "progress": "{{percent}}% Complete",
+    "daysLeft": {
+      "left": "D-{{count}}",
+      "today": "Today",
+      "overdue": "D+{{count}}"
+    }
+  },
+  "enable": {
+    "title": "Enable sprint mode",
+    "irreversible": "This action cannot be undone",
+    "description": "Enabling sprint mode switches this board to a sprint-based workflow. You cannot revert to Kanban mode afterwards.",
+    "featuresTitle": "Sprint mode highlights:",
+    "feature1": "Manage work in fixed-length sprints",
+    "feature2": "Assign cards from backlog to sprint",
+    "feature3": "Capacity planning and burndown charts",
+    "feature4": "Auto rollover when sprint completes",
+    "boardLabel": "Board",
+    "cancel": "Cancel",
+    "confirm": "Enable sprint",
+    "confirming": "Enabling..."
+  },
+  "create": {
+    "title": "Create new sprint",
+    "nameLabel": "Sprint name",
+    "namePlaceholder": "e.g. Sprint 1",
+    "startLabel": "Start date",
+    "endLabel": "End date",
+    "capacityLabel": "Capacity (Story Points)",
+    "capacityPlaceholder": "e.g. 100",
+    "goalLabel": "Sprint goal",
+    "goalPlaceholder": "Describe the goal for this sprint",
+    "cancel": "Cancel",
+    "submit": "Create sprint",
+    "submitting": "Creating...",
+    "nameRequired": "Please enter a sprint name.",
+    "failed": "Failed to create sprint."
+  }
+}

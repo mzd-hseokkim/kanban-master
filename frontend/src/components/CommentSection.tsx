@@ -17,6 +17,7 @@ import { CommentInput } from './CommentInput';
 import { CommentItem } from './CommentItem';
 import { CommentSkeleton } from './CommentSkeleton';
 import { EmptyComments } from './EmptyComments';
+import { useTranslation } from 'react-i18next';
 
 interface CommentSectionProps {
   workspaceId: number;
@@ -33,6 +34,7 @@ export const CommentSection = ({
   currentUserId,
   isOwner,
 }: CommentSectionProps) => {
+  const { t } = useTranslation(['board', 'common']);
   const [comments, setComments] = useState<Comment[]>([]);
   const [page, setPage] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
@@ -71,7 +73,7 @@ export const CommentSection = ({
       setTotalPages(response.totalPages);
     } catch (err) {
       console.error('Failed to load comments:', err);
-      setError(err instanceof Error ? err.message : '댓글을 불러오는데 실패했습니다');
+      setError(err instanceof Error ? err.message : t('board:comments.loadFailed'));
     } finally {
       setIsLoading(false);
       setIsLoadingMore(false);
@@ -116,7 +118,7 @@ export const CommentSection = ({
   if (isLoading) {
     return (
       <div className="h-full flex flex-col">
-        <h3 className="text-base font-semibold mb-2">댓글</h3>
+        <h3 className="text-base font-semibold mb-2">{t('board:comments.title')}</h3>
         <CommentSkeleton />
       </div>
     );
@@ -125,14 +127,14 @@ export const CommentSection = ({
   if (error) {
     return (
       <div className="h-full flex flex-col">
-        <h3 className="text-base font-semibold mb-2">댓글</h3>
+        <h3 className="text-base font-semibold mb-2">{t('board:comments.title')}</h3>
         <div className="text-center py-8 text-red-500">
           <p>{error}</p>
           <button
             onClick={() => loadComments(0, true)}
             className="mt-2 text-sm text-blue-600 hover:underline"
           >
-            다시 시도
+            {t('common:action.retry', { defaultValue: '다시 시도' })}
           </button>
         </div>
       </div>
@@ -141,10 +143,10 @@ export const CommentSection = ({
 
   return (
     <div className="h-full flex flex-col">
-      <h3 className="text-base font-semibold mb-2">댓글</h3>
+      <h3 className="text-base font-semibold mb-2">{t('board:comments.title')}</h3>
 
       {/* 댓글 입력 */}
-      <CommentInput boardId={boardId} onSubmit={handleCreateComment} />
+      <CommentInput boardId={boardId} onSubmit={handleCreateComment} placeholder={t('board:comments.placeholder')} />
 
       {/* 댓글 목록 */}
       <div className="flex-1 overflow-y-auto">
@@ -171,7 +173,7 @@ export const CommentSection = ({
                   disabled={isLoadingMore}
                   className="px-4 py-2 text-sm text-blue-600 hover:bg-blue-50 rounded disabled:opacity-50"
                 >
-                  {isLoadingMore ? '로딩 중...' : '더보기'}
+                  {isLoadingMore ? t('common:action.loading') : t('common:action.more', { defaultValue: '더보기' })}
                 </button>
               </div>
             )}

@@ -1,6 +1,7 @@
 import checklistService, { ChecklistItem, ChecklistProgress } from '@/services/checklistService';
 import { useEffect, useRef, useState } from 'react';
 import { HiCheck, HiPlus, HiTrash } from 'react-icons/hi';
+import { useTranslation } from 'react-i18next';
 
 interface ChecklistSectionProps {
   cardId: number;
@@ -17,6 +18,7 @@ export const ChecklistSection: React.FC<ChecklistSectionProps> = ({
   columnId,
   canEdit,
 }) => {
+  const { t } = useTranslation(['card', 'common']);
   const [items, setItems] = useState<ChecklistItem[]>([]);
   const [progress, setProgress] = useState<ChecklistProgress | null>(null);
   const [newItemContent, setNewItemContent] = useState('');
@@ -91,13 +93,13 @@ export const ChecklistSection: React.FC<ChecklistSectionProps> = ({
       {/* 헤더 및 진행률 */}
       <div>
         <div className="flex items-center justify-between mb-2">
-          <h3 className="text-sm font-semibold text-pastel-blue-900">체크리스트</h3>
+          <h3 className="text-sm font-semibold text-pastel-blue-900">{t('card:checklist.title')}</h3>
           {items.length > 0 && (
             <button
               onClick={() => setHideCompleted(!hideCompleted)}
               className="text-xs text-pastel-blue-600 hover:text-pastel-blue-800 transition"
             >
-              {hideCompleted ? '완료 항목 보기' : '완료 항목 숨기기'}
+              {hideCompleted ? t('card:checklist.showCompleted') : t('card:checklist.hideCompleted')}
             </button>
           )}
         </div>
@@ -105,7 +107,7 @@ export const ChecklistSection: React.FC<ChecklistSectionProps> = ({
         {progress && progress.totalCount > 0 && (
           <div className="space-y-1">
             <div className="flex items-center justify-between text-xs text-gray-600">
-              <span>{progress.checkedCount}/{progress.totalCount} 완료</span>
+              <span>{t('card:checklist.progress', { checked: progress.checkedCount, total: progress.totalCount })}</span>
               <span>{progress.progressPercentage}%</span>
             </div>
             <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
@@ -170,7 +172,7 @@ export const ChecklistSection: React.FC<ChecklistSectionProps> = ({
                 handleAddItem();
               }
             }}
-            placeholder="새 항목 추가..."
+            placeholder={t('card:checklist.placeholder')}
             className="flex-1 px-3 py-2 text-sm rounded-lg border border-white/40 bg-white/40 backdrop-blur-sm text-pastel-blue-900 placeholder-pastel-blue-400 focus:outline-none focus:border-pastel-blue-400 focus:ring-2 focus:ring-pastel-blue-300/50 transition"
             disabled={loading}
           />

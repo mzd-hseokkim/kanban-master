@@ -1,6 +1,7 @@
 import axios, { AxiosError, AxiosHeaders, AxiosInstance, AxiosRequestConfig } from 'axios';
 import { authStorage } from '@/utils/authStorage';
 import type { TokenRefreshResponse } from '@/types/auth';
+import i18n from '@/i18n';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api/v1';
 
@@ -52,26 +53,45 @@ const refreshAccessToken = async (): Promise<string> => {
   }
 };
 
+const normalizeHeaders = (headers: RetriableRequestConfig['headers']): AxiosHeaders =>
+  headers instanceof AxiosHeaders
+    ? headers
+    : AxiosHeaders.from((headers ?? {}) as Record<string, string>);
+
+const applyLocaleHeader = (headers: RetriableRequestConfig['headers']): AxiosHeaders => {
+  const normalizedHeaders = normalizeHeaders(headers);
+  normalizedHeaders.set('Accept-Language', i18n.language || 'en');
+  return normalizedHeaders;
+};
+
 const applyAuthHeader = (
   headers: RetriableRequestConfig['headers'],
   token: string
 ): AxiosHeaders => {
-  const normalizedHeaders = headers instanceof AxiosHeaders
-    ? headers
-    : AxiosHeaders.from((headers ?? {}) as Record<string, string>);
+  const normalizedHeaders = applyLocaleHeader(headers);
   normalizedHeaders.set('Authorization', `Bearer ${token}`);
   return normalizedHeaders;
 };
 
 axiosInstance.interceptors.request.use(
   (config) => {
+    const headersWithLocale = applyLocaleHeader(config.headers);
     const token = authStorage.getToken();
     if (token) {
-      config.headers = applyAuthHeader(config.headers, token);
+      config.headers = applyAuthHeader(headersWithLocale, token);
       console.debug(`[Axios Request] ${config.method?.toUpperCase()} ${config.url} - Token attached`);
     } else {
+      config.headers = headersWithLocale;
       console.debug(`[Axios Request] ${config.method?.toUpperCase()} ${config.url} - No token`);
     }
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
+
+refreshClient.interceptors.request.use(
+  (config) => {
+    config.headers = applyLocaleHeader(config.headers);
     return config;
   },
   (error) => Promise.reject(error)

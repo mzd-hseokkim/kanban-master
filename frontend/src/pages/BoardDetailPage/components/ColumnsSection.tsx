@@ -23,6 +23,7 @@ import {
     sortableKeyboardCoordinates,
 } from '@dnd-kit/sortable';
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 type ColumnsSectionProps = {
   columns: Column[];
@@ -53,6 +54,7 @@ export const ColumnsSection = ({
   searchState,
   currentUserId,
 }: ColumnsSectionProps) => {
+  const { t } = useTranslation(['card', 'common']);
   const { updateColumnPosition, setColumnsOptimistic } = useColumn();
   const [localColumns, setLocalColumns] = useState<Column[]>(columns);
   const [previousColumns, setPreviousColumns] = useState<Column[]>(columns);
@@ -140,7 +142,7 @@ export const ColumnsSection = ({
               onClick={onCreateColumn}
               className="px-6 py-2 rounded-lg bg-pastel-blue-500 text-white font-semibold hover:bg-pastel-blue-600 transition"
             >
-              + 칼럼 생성
+              + {t('card:column.addColumn')}
             </button>
           )}
         </div>
@@ -185,7 +187,7 @@ export const ColumnsSection = ({
                 onClick={onCreateColumn}
                 className="flex-shrink-0 w-80 min-h-28 rounded-2xl border-4 border-dashed border-white/70 bg-white/10 flex items-center justify-center text-pastel-blue-800 font-semibold text-base hover:bg-white/20 hover:border-4 hover:border-dashed hover:border-black transition"
               >
-                + 칼럼 추가
+                + {t('card:column.addColumn')}
               </button>
             )}
           </div>

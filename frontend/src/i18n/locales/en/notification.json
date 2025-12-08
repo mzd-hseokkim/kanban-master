@@ -1,0 +1,16 @@
+{
+  "inbox": "Inbox",
+  "watchList": "Watch list",
+  "noNotifications": "No notifications",
+  "markAsRead": "Mark as read",
+  "viewAll": "View all",
+  "title": {
+    "inbox": "Inbox",
+    "watchList": "Watch list",
+    "notification": "Notification"
+  },
+  "empty": {
+    "inbox": "No notifications",
+    "watchList": "No watched cards"
+  }
+}
