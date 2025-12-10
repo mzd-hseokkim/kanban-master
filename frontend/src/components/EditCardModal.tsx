@@ -168,6 +168,19 @@ export const EditCardModal: React.FC<EditCardModalProps> = ({
         setAssigneeDropdownOpen(false);
     };
 
+    const handleAssignToMe = () => {
+        if (!canEdit || !user || loading) return;
+        setSelectedAssignee({
+            id: user.id,
+            name: user.name,
+            email: user.email,
+            avatarUrl: user.avatarUrl || undefined,
+        });
+        setAssigneeSearchInput('');
+        setAssigneeResults([]);
+        setAssigneeDropdownOpen(false);
+    };
+
     const handleRemoveAssignee = () => {
         setSelectedAssignee(null);
         setAssigneeSearchInput('');
@@ -363,14 +376,7 @@ export const EditCardModal: React.FC<EditCardModalProps> = ({
 
     // Cmd/Ctrl + I: Assign to me
     useKeyboardShortcut('mod+i', () => {
-        if (canEdit && user && !selectedAssignee) {
-            setSelectedAssignee({
-                id: user.id,
-                name: user.name,
-                email: user.email,
-                avatarUrl: user.avatarUrl || undefined
-            });
-        }
+        handleAssignToMe();
     }, { preventDefault: true });
 
     // Watch 토글 핸들러
@@ -634,7 +640,17 @@ export const EditCardModal: React.FC<EditCardModalProps> = ({
 
                                 {/* 담당자 입력 */}
                                 <div>
-                                    <label className={modalLabelClass}>{t('card:common.assigneeLabel')}</label>
+                                    <div className="flex items-center justify-between gap-2 mb-2">
+                                        <label className={`${modalLabelClass} mb-0`}>{t('card:common.assigneeLabel')}</label>
+                                        <button
+                                            type="button"
+                                            onClick={handleAssignToMe}
+                                            disabled={!user || loading || !canEdit}
+                                            className="text-xs font-semibold text-pastel-blue-700 hover:text-pastel-blue-900 disabled:opacity-50 underline decoration-dotted"
+                                        >
+                                            {t('card:common.assignToMe')}
+                                        </button>
+                                    </div>
                                     <div className="relative">
                                         <div
                                             ref={assigneeInputContainerRef}

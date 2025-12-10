@@ -130,6 +130,19 @@ export const CreateCardModal: React.FC<CreateCardModalProps> = ({
         setAssigneeDropdownOpen(false);
     };
 
+    const handleAssignToMe = () => {
+        if (!user || loading) return;
+        setSelectedAssignee({
+            id: user.id,
+            name: user.name,
+            email: user.email,
+            avatarUrl: user.avatarUrl || undefined,
+        });
+        setAssigneeSearchInput('');
+        setAssigneeResults([]);
+        setAssigneeDropdownOpen(false);
+    };
+
     const handleRemoveAssignee = () => {
         setSelectedAssignee(null);
         setAssigneeSearchInput('');
@@ -266,14 +279,7 @@ export const CreateCardModal: React.FC<CreateCardModalProps> = ({
 
     // Cmd/Ctrl + I: Assign to me
     useKeyboardShortcut('mod+i', () => {
-        if (user && !selectedAssignee) {
-            setSelectedAssignee({
-                id: user.id,
-                name: user.name,
-                email: user.email,
-                avatarUrl: user.avatarUrl || undefined
-            });
-        }
+        handleAssignToMe();
     }, { preventDefault: true });
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -411,7 +417,17 @@ export const CreateCardModal: React.FC<CreateCardModalProps> = ({
 
                         {/* 담당자 입력 */}
                         <div className="mb-4">
-                            <label className={modalLabelClass}>{t('card:common.assigneeLabel')}</label>
+                            <div className="flex items-center justify-between gap-2 mb-2">
+                                <label className={`${modalLabelClass} mb-0`}>{t('card:common.assigneeLabel')}</label>
+                                <button
+                                    type="button"
+                                    onClick={handleAssignToMe}
+                                    disabled={!user || loading}
+                                    className="text-xs font-semibold text-pastel-blue-700 hover:text-pastel-blue-900 disabled:opacity-50 underline decoration-dotted"
+                                >
+                                    {t('card:common.assignToMe')}
+                                </button>
+                            </div>
                             <div className="relative">
                                 <div
                                     ref={assigneeInputContainerRef}

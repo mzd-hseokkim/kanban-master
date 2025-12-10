@@ -17,6 +17,7 @@
     "priorityLabel": "우선순위",
     "dueDateLabel": "마감일",
     "assigneeLabel": "담당자",
+    "assignToMe": "나에게 할당",
     "labelLabel": "라벨",
     "parentLabel": "부모 카드 (선택사항)",
     "searchParentPlaceholder": "부모 카드 검색 (선택사항)",

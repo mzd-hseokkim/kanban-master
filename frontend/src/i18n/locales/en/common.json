@@ -14,6 +14,9 @@
     "filter": "Filter",
     "settings": "Settings"
   },
+  "language": {
+    "label": "Language"
+  },
   "nav": {
     "dashboard": "Dashboard",
     "boards": "Boards",

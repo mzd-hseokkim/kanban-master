@@ -17,6 +17,7 @@
     "priorityLabel": "Priority",
     "dueDateLabel": "Due date",
     "assigneeLabel": "Assignee",
+    "assignToMe": "Assign to me",
     "labelLabel": "Labels",
     "parentLabel": "Parent card (optional)",
     "searchParentPlaceholder": "Search parent card (optional)",
