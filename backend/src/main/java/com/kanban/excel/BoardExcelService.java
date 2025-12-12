@@ -133,9 +133,12 @@ public class BoardExcelService {
 
     @Transactional(readOnly = true)
     public byte[] exportBoard(Long workspaceId, Long boardId) throws IOException {
-        Board board = boardRepository.findByIdAndWorkspaceId(boardId, workspaceId).orElseThrow(
-                () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "보드를 찾을 수 없습니다"));
+        // 권한 검증 먼저 수행 (Board Owner이거나 멤버여야 함)
         roleValidator.validateRole(boardId, BoardMemberRole.VIEWER);
+
+        // 권한이 확인되면 Board 조회
+        Board board = boardRepository.findById(boardId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "보드를 찾을 수 없습니다"));
 
         List<BoardColumn> columns = columnRepository.findByBoardIdOrderByPosition(boardId);
         try (var outputStream = new java.io.ByteArrayOutputStream();
@@ -177,9 +180,13 @@ public class BoardExcelService {
         if (file.getSize() > 25L * 1024 * 1024) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "파일 크기는 25MB 이하여야 합니다");
         }
-        Board board = boardRepository.findByIdAndWorkspaceId(boardId, workspaceId).orElseThrow(
-                () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "보드를 찾을 수 없습니다"));
+
+        // 권한 검증 먼저 수행 (Board Owner이거나 EDITOR 이상 멤버여야 함)
         roleValidator.validateRole(boardId, BoardMemberRole.EDITOR);
+
+        // 권한이 확인되면 Board 조회
+        Board board = boardRepository.findById(boardId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "보드를 찾을 수 없습니다"));
 
         ExcelImportMode mode = ExcelImportMode.from(modeValue);
         Path tempFile = saveTempFile(file);

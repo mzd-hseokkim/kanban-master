@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Board } from '@/types/board';
 import { useBoard } from '@/context/BoardContext';
+import { HiPencil, HiArchive, HiDocumentDuplicate, HiTrash } from 'react-icons/hi';
 
 interface BoardActionsMenuProps {
   board: Board;
@@ -33,22 +34,24 @@ export const BoardActionsMenu = ({
   };
 
   return (
-    <div className="absolute right-0 top-full mt-2 w-48 glass-light rounded-xl shadow-glass-lg z-50 border border-white/30 py-1">
+    <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-xl shadow-glass-lg z-50 border border-pastel-blue-200 py-1">
       <button
         onClick={() => {
           onClose();
         }}
         disabled={loading}
-        className="w-full text-left px-4 py-2 text-sm text-pastel-blue-700 hover:bg-white/30 transition disabled:opacity-50"
+        className="w-full text-left px-4 py-2 text-sm text-pastel-blue-700 hover:bg-pastel-blue-100 transition disabled:opacity-50 flex items-center gap-2"
       >
-        ✏️ Edit
+        <HiPencil className="text-base" />
+        <span>Edit</span>
       </button>
       <button
         onClick={handleArchive}
         disabled={loading}
-        className="w-full text-left px-4 py-2 text-sm text-pastel-blue-700 hover:bg-white/30 transition disabled:opacity-50"
+        className="w-full text-left px-4 py-2 text-sm text-pastel-blue-700 hover:bg-pastel-blue-100 transition disabled:opacity-50 flex items-center gap-2"
       >
-        📦 {board.status === 'ARCHIVED' ? 'Unarchive' : 'Archive'}
+        <HiArchive className="text-base" />
+        <span>{board.status === 'ARCHIVED' ? 'Unarchive' : 'Archive'}</span>
       </button>
       <button
         onClick={() => {
@@ -56,9 +59,10 @@ export const BoardActionsMenu = ({
           onSaveAsTemplateClick();
         }}
         disabled={loading}
-        className="w-full text-left px-4 py-2 text-sm text-pastel-blue-700 hover:bg-white/30 transition disabled:opacity-50"
+        className="w-full text-left px-4 py-2 text-sm text-pastel-blue-700 hover:bg-pastel-blue-100 transition disabled:opacity-50 flex items-center gap-2"
       >
-        📋 템플릿으로 저장
+        <HiDocumentDuplicate className="text-base" />
+        <span>템플릿으로 저장</span>
       </button>
       <button
         onClick={() => {
@@ -66,9 +70,10 @@ export const BoardActionsMenu = ({
           onDeleteClick();
         }}
         disabled={loading}
-        className="w-full text-left px-4 py-2 text-sm text-pastel-pink-600 hover:bg-white/30 transition disabled:opacity-50 border-t border-white/20"
+        className="w-full text-left px-4 py-2 text-sm text-pastel-pink-600 hover:bg-pastel-pink-100 transition disabled:opacity-50 border-t border-pastel-blue-200 flex items-center gap-2"
       >
-        🗑️ Delete
+        <HiTrash className="text-base" />
+        <span>Delete</span>
       </button>
     </div>
   );
