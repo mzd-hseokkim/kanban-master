@@ -29,6 +29,7 @@ import {
 import { Card } from '@/types/card';
 import type { UserSearchResult } from '@/types/user';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { HiCheck, HiEye, HiOutlineEye, HiPlay } from 'react-icons/hi';
 import { MdArchive } from 'react-icons/md';
 import { AttachmentSection } from './attachment/AttachmentSection';
@@ -461,25 +462,24 @@ export const EditCardModal: React.FC<EditCardModalProps> = ({
         }
     };
 
-    return (
-        <>
+    return createPortal(
+        <div
+            className={modalOverlayClass(stage)}
+            onClick={(e) => {
+                if (e.target === e.currentTarget) {
+                    close();
+                }
+            }}
+        >
             <div
-                className={modalOverlayClass(stage)}
-                onClick={(e) => {
-                    if (e.target === e.currentTarget) {
-                        close();
-                    }
-                }}
+                className={modalPanelClass({
+                    stage,
+                    maxWidth: 'max-w-6xl',
+                    scrollable: false,
+                    padding: '',
+                })}
+                style={{ maxHeight: '90vh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}
             >
-                <div
-                    className={modalPanelClass({
-                        stage,
-                        maxWidth: 'max-w-6xl',
-                        scrollable: false,
-                        padding: '',
-                    })}
-                    style={{ maxHeight: '90vh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}
-                >
                     {/* 상단 고정 헤더 영역 */}
                     <div className="flex-shrink-0 px-5 pt-4 pb-2 border-b border-white/30">
                         {/* 타이틀과 설명 */}
@@ -873,60 +873,60 @@ export const EditCardModal: React.FC<EditCardModalProps> = ({
                             )}
                         </div>
                     </div>
-                </div>
+
+                {/* 자식 카드 생성 모달 */}
+                {showCreateChildModal && (
+                    <CreateCardModal
+                        workspaceId={workspaceId}
+                        boardId={boardId}
+                        columnId={columnId}
+                        parentCardId={currentCard.id}
+                        onClose={() => setShowCreateChildModal(false)}
+                        onSuccess={async (_newCard) => {
+                            setShowCreateChildModal(false);
+                            try {
+                                // 현재 카드를 다시 불러와서 새로 생성된 자식 카드를 포함시킴
+                                const refreshedCard = await cardService.getCard(
+                                    workspaceId,
+                                    boardId,
+                                    columnId,
+                                    currentCard.id,
+                                    true
+                                );
+                                setCurrentCard(refreshedCard);
+                                // 카드 목록도 새로고침하여 childCount 업데이트
+                                await loadCards(workspaceId, boardId, columnId);
+                            } catch (err) {
+                                console.error('Failed to refresh card after child creation:', err);
+                                setError(err instanceof Error ? err.message : '카드 정보를 새로고침하는데 실패했습니다');
+                            }
+                        }}
+                    />
+                )}
+
+                {/* 아카이브 확인 모달 */}
+                {showArchiveConfirm && (
+                    <ConfirmModal
+                        isOpen={showArchiveConfirm}
+                        message={t('card:editModal.archiveConfirm', {
+                            defaultValue:
+                                "이 카드를 아카이브하시겠습니까?&#10;아카이브된 카드는 '아카이브된 카드 보기'에서 복구할 수 있습니다.",
+                        })}
+                        onConfirm={() => {
+                            setShowArchiveConfirm(false);
+                            handleArchiveCard();
+                        }}
+                        onCancel={() => setShowArchiveConfirm(false)}
+                        confirmText={t('card:editModal.archive', { defaultValue: '아카이브' })}
+                        cancelText={t('common:button.cancel')}
+                        isDestructive={true}
+                    />
+                )}
+
+                {/* 에러 알림 (모달 내부 표시) */}
+                {error && <ErrorNotification message={error} onClose={() => setError(null)} duration={5000} />}
             </div>
-
-            {/* 자식 카드 생성 모달 */}
-            {showCreateChildModal && (
-                <CreateCardModal
-                    workspaceId={workspaceId}
-                    boardId={boardId}
-                    columnId={columnId}
-                    parentCardId={currentCard.id}
-                    onClose={() => setShowCreateChildModal(false)}
-                    onSuccess={async (_newCard) => {
-                        setShowCreateChildModal(false);
-                        try {
-                            // 현재 카드를 다시 불러와서 새로 생성된 자식 카드를 포함시킴
-                            const refreshedCard = await cardService.getCard(
-                                workspaceId,
-                                boardId,
-                                columnId,
-                                currentCard.id,
-                                true
-                            );
-                            setCurrentCard(refreshedCard);
-                            // 카드 목록도 새로고침하여 childCount 업데이트
-                            await loadCards(workspaceId, boardId, columnId);
-                        } catch (err) {
-                            console.error('Failed to refresh card after child creation:', err);
-                            setError(err instanceof Error ? err.message : '카드 정보를 새로고침하는데 실패했습니다');
-                        }
-                    }}
-                />
-            )}
-
-            {/* 아카이브 확인 모달 */}
-            {showArchiveConfirm && (
-                <ConfirmModal
-                    isOpen={showArchiveConfirm}
-                    message={t('card:editModal.archiveConfirm', {
-                        defaultValue:
-                            "이 카드를 아카이브하시겠습니까?&#10;아카이브된 카드는 '아카이브된 카드 보기'에서 복구할 수 있습니다.",
-                    })}
-                    onConfirm={() => {
-                        setShowArchiveConfirm(false);
-                        handleArchiveCard();
-                    }}
-                    onCancel={() => setShowArchiveConfirm(false)}
-                    confirmText={t('card:editModal.archive', { defaultValue: '아카이브' })}
-                    cancelText={t('common:button.cancel')}
-                    isDestructive={true}
-                />
-            )}
-
-            {/* 에러 알림 (모달 외부 표시) */}
-            {error && <ErrorNotification message={error} onClose={() => setError(null)} duration={5000} />}
-        </>
+        </div>,
+        document.body
     );
 };

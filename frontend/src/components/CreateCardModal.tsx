@@ -24,6 +24,7 @@ import {
 import type { Card } from '@/types/card';
 import type { UserSearchResult } from '@/types/user';
 import React, { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 
 interface CreateCardModalProps {
@@ -323,7 +324,7 @@ export const CreateCardModal: React.FC<CreateCardModalProps> = ({
         }
     };
 
-    return (
+    return createPortal(
         <>
             <div
                 className={modalOverlayClass(stage)}
@@ -641,6 +642,7 @@ export const CreateCardModal: React.FC<CreateCardModalProps> = ({
 
             {/* 에러 알림 (모달 외부 표시) */}
             {error && <ErrorNotification message={error} onClose={() => setError(null)} duration={5000} />}
-        </>
+        </>,
+        document.body
     );
 };
