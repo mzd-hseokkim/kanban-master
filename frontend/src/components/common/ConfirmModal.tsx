@@ -1,6 +1,7 @@
 import { useModalAnimation } from '@/hooks/useModalAnimation';
 import { modalOverlayClass, modalPanelClass } from '@/styles/modalStyles';
 import React from 'react';
+import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 
 interface ConfirmModalProps {
@@ -38,8 +39,8 @@ export const ConfirmModal: React.FC<ConfirmModalProps> = ({
     onConfirm();
   };
 
-  return (
-    <div className={modalOverlayClass(stage)} onClick={close}>
+  const modalContent = (
+    <div className={modalOverlayClass(stage, 'z-[1100]')} onClick={close}>
       <div
         className={`${modalPanelClass({ stage })} max-w-sm w-full p-6 text-center`}
         onClick={(e) => e.stopPropagation()}
@@ -67,4 +68,6 @@ export const ConfirmModal: React.FC<ConfirmModalProps> = ({
       </div>
     </div>
   );
+
+  return createPortal(modalContent, document.body);
 };

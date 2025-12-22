@@ -15,6 +15,7 @@ interface UIState {
   showGlobalCreateCardModal: boolean;
   showEnableSprintModal: boolean;
   showCreateSprintModal: boolean;
+  showApiTokenModal: boolean;
   archiveError: string | null;
   searchState: CardSearchState;
 }
@@ -33,6 +34,7 @@ interface UIActions {
   setShowGlobalCreateCardModal: (show: boolean) => void;
   setShowEnableSprintModal: (show: boolean) => void;
   setShowCreateSprintModal: (show: boolean) => void;
+  setShowApiTokenModal: (show: boolean) => void;
   setArchiveError: (error: string | null) => void;
   setSearchState: Dispatch<SetStateAction<CardSearchState>>;
   handleCardSelect: (result: CardSearchResult) => void;
@@ -58,6 +60,7 @@ export const useBoardUI = (
   const [showGlobalCreateCardModal, setShowGlobalCreateCardModal] = useState(false);
   const [showEnableSprintModal, setShowEnableSprintModal] = useState(false);
   const [showCreateSprintModal, setShowCreateSprintModal] = useState(false);
+  const [showApiTokenModal, setShowApiTokenModal] = useState(false);
   const [archiveError, setArchiveError] = useState<string | null>(null);
 
   const [searchState, setSearchState] = useState<CardSearchState>({
@@ -102,6 +105,7 @@ export const useBoardUI = (
     showGlobalCreateCardModal,
     showEnableSprintModal,
     showCreateSprintModal,
+    showApiTokenModal,
     archiveError,
     searchState,
   };
@@ -120,6 +124,7 @@ export const useBoardUI = (
     setShowGlobalCreateCardModal,
     setShowEnableSprintModal,
     setShowCreateSprintModal,
+    setShowApiTokenModal,
     setArchiveError,
     setSearchState,
     handleCardSelect,

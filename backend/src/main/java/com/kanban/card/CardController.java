@@ -34,7 +34,7 @@ public class CardController {
             @RequestParam(defaultValue = "createdAt") String sortBy,
             @RequestParam(defaultValue = "asc") String direction) {
         Sort.Direction sortDirection = Sort.Direction.fromString(direction);
-        CardPageResponse cards = cardService.getCardsByColumn(columnId, page, size,
+        CardPageResponse cards = cardService.getCardsByColumn(boardId, columnId, page, size,
                 CardSortBy.from(sortBy), sortDirection);
         return ResponseEntity.ok(cards);
     }
@@ -49,9 +49,9 @@ public class CardController {
             @RequestParam(required = false, defaultValue = "false") boolean includeRelations) {
         CardResponse card;
         if (includeRelations) {
-            card = cardService.getCardWithHierarchy(columnId, cardId);
+            card = cardService.getCardWithHierarchy(boardId, columnId, cardId);
         } else {
-            card = cardService.getCard(columnId, cardId);
+            card = cardService.getCard(boardId, columnId, cardId);
         }
         return ResponseEntity.ok(card);
     }

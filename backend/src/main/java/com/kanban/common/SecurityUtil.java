@@ -1,5 +1,7 @@
 package com.kanban.common;
 
+import com.kanban.auth.apitoken.ApiTokenPrincipal;
+import java.util.Optional;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 
@@ -36,7 +38,26 @@ public class SecurityUtil {
         return authentication != null && authentication.isAuthenticated();
     }
 
+    public static boolean isApiTokenAuthentication() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        return authentication != null && authentication.getPrincipal() instanceof ApiTokenPrincipal;
+    }
+
+    public static Optional<ApiTokenPrincipal> getApiTokenPrincipal() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return Optional.empty();
+        }
+        if (authentication.getPrincipal() instanceof ApiTokenPrincipal principal) {
+            return Optional.of(principal);
+        }
+        return Optional.empty();
+    }
+
     private static Long extractUserId(Object principal) {
+        if (principal instanceof ApiTokenPrincipal apiTokenPrincipal) {
+            return apiTokenPrincipal.userId();
+        }
         if (principal instanceof com.kanban.user.User user) {
             return user.getId();
         }

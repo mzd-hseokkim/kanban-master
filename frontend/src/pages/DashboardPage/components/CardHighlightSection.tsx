@@ -48,6 +48,7 @@ interface CardHighlightSectionProps {
   variant: HighlightVariant;
   cards: DashboardCard[];
   onCardClick: (card: DashboardCard) => void;
+  isLoading?: boolean;
 }
 
 const priorityColorMap: Record<string, string> = {
@@ -147,14 +148,51 @@ const HighlightCard = ({
   );
 };
 
-export const CardHighlightSection = ({ variant, cards, onCardClick }: CardHighlightSectionProps) => {
-  if (!cards.length) {
-    return null;
-  }
-
+export const CardHighlightSection = ({
+  variant,
+  cards,
+  onCardClick,
+  isLoading = false,
+}: CardHighlightSectionProps) => {
   const { t, i18n } = useTranslation(['dashboard']);
   const config = VARIANT_CONFIG[variant];
   const locale = i18n.language || 'en';
+
+  if (isLoading) {
+    return (
+      <section className="flex-shrink-0">
+        <div className="mb-3 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <h2 className={`text-xl font-bold ${config.titleColor} flex items-center gap-2`}>
+              {t(config.titleKey)}
+              <config.Icon className={`text-2xl ${config.iconColor}`} />
+            </h2>
+            <span
+              className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white/80"
+              aria-label="Loading"
+            />
+          </div>
+          <div className="h-3 w-20 rounded-full bg-white/40 animate-pulse" />
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+          {Array.from({ length: 4 }).map((_, index) => (
+            <div
+              key={`${variant}-placeholder-${index}`}
+              className={`glass rounded-lg p-4 h-24 animate-pulse ${config.containerClass}`}
+            >
+              <div className="h-3 w-3/4 rounded-full bg-white/50" />
+              <div className="mt-3 h-3 w-5/6 rounded-full bg-white/40" />
+              <div className="mt-4 h-3 w-1/3 rounded-full bg-white/40" />
+            </div>
+          ))}
+        </div>
+      </section>
+    );
+  }
+
+  if (!cards.length) {
+    return null;
+  }
 
   return (
     <section className="flex-shrink-0">

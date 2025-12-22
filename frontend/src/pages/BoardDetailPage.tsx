@@ -52,7 +52,7 @@ const BoardDetailPage = () => {
     boardId,
     loadColumns,
   );
-  const { canEdit, canManage } = usePermissions(board);
+  const { canEdit, canManage, currentRole } = usePermissions(board);
   const {
     effectiveAutoOpenCardId,
     effectiveAutoOpenColumnId,
@@ -205,6 +205,7 @@ const BoardDetailPage = () => {
         onToggleArchive={() => uiActions.setShowArchivePanel(true)}
         onCreateColumn={() => uiActions.setShowCreateColumnModal(true)}
         onArchiveDrop={handleArchiveDrop}
+        onOpenApiTokens={() => uiActions.setShowApiTokenModal(true)}
         onTemplateDownload={excelHook.handleTemplateDownload}
         onExportBoard={excelHook.handleExportBoard}
         onImport={() => uiActions.setShowImportModal(true)}
@@ -267,6 +268,8 @@ const BoardDetailPage = () => {
         boardName={board.name}
         boardOwnerId={board.ownerId}
         canManage={canManage}
+        canEdit={canEdit}
+        currentRole={currentRole}
         columns={columns}
         showCreateColumnModal={uiState.showCreateColumnModal}
         showInviteModal={uiState.showInviteModal}
@@ -280,6 +283,7 @@ const BoardDetailPage = () => {
         showGlobalCreateCardModal={uiState.showGlobalCreateCardModal}
         showEnableSprintModal={uiState.showEnableSprintModal}
         showCreateSprintModal={uiState.showCreateSprintModal}
+        showApiTokenModal={uiState.showApiTokenModal}
         onCloseCreateColumn={() => uiActions.setShowCreateColumnModal(false)}
         onCloseInviteModal={() => uiActions.setShowInviteModal(false)}
         onCloseMembersPanel={() => uiActions.setShowMembersPanel(false)}
@@ -292,6 +296,7 @@ const BoardDetailPage = () => {
         onCloseGlobalCreateCard={() => uiActions.setShowGlobalCreateCardModal(false)}
         onCloseEnableSprintModal={() => uiActions.setShowEnableSprintModal(false)}
         onCloseCreateSprintModal={() => uiActions.setShowCreateSprintModal(false)}
+        onCloseApiTokenModal={() => uiActions.setShowApiTokenModal(false)}
         onOpenInviteModal={() => uiActions.setShowInviteModal(true)}
         refreshColumns={refreshColumns}
         onCardSelect={uiActions.handleCardSelect}

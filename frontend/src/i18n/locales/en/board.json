@@ -68,7 +68,76 @@
     "label": "Labels",
     "activity": "Activity",
     "members": "Members",
+    "apiTokens": "API tokens",
     "archive": "Archive"
+  },
+  "apiTokens": {
+    "label": "API tokens",
+    "title": "{{boardName}} token access",
+    "subtitle": "Tokens are board-scoped and shown only once. Store them safely.",
+    "createTitle": "Create token",
+    "nameLabel": "Token name",
+    "namePlaceholder": "e.g., automation",
+    "roleLabel": "Role",
+    "expiresLabel": "Expires at (optional)",
+    "scopesLabel": "Scopes",
+    "createAction": "Create token",
+    "creating": "Creating...",
+    "resetAction": "Reset",
+    "tokenHint": "This token is shown only once.",
+    "listTitle": "Issued tokens",
+    "empty": "No tokens yet.",
+    "loadFailed": "Unable to load token list.",
+    "nameRequired": "Please enter a token name.",
+    "scopeRequired": "Please select at least one scope.",
+    "createFailed": "Failed to create token.",
+    "copySuccess": "Token copied to clipboard.",
+    "copyFailed": "Copy failed. Please copy manually.",
+    "revokeConfirm": "Revoke this token?",
+    "revokeAction": "Revoke",
+    "revokeFailed": "Failed to revoke token.",
+    "status": {
+      "active": "Active",
+      "revoked": "Revoked"
+    },
+    "fields": {
+      "expires": "Expires",
+      "lastUsed": "Last used",
+      "created": "Created",
+      "revoked": "Revoked"
+    },
+    "scopeLabels": {
+      "BOARD_READ": "Board read",
+      "BOARD_WRITE": "Board write",
+      "CARD_READ": "Card read",
+      "CARD_WRITE": "Card write",
+      "CARD_ARCHIVE": "Card archive",
+      "CARD_MANAGE": "Card manage"
+    },
+    "docs": {
+      "link": "API documentation",
+      "title": "API documentation",
+      "subtitle": "Use these board and card APIs with your token.",
+      "auth": {
+        "title": "Authentication",
+        "baseUrl": "Base URL",
+        "header": "Header",
+        "scope": "Tokens are bound to a single boardId and must match the request path."
+      },
+      "scopesTitle": "Scopes",
+      "endpointsTitle": "Endpoints",
+      "scopeLabel": "Required scope",
+      "request": "Request shape",
+      "response": "Response shape",
+      "noSchema": "No schema available.",
+      "sections": {
+        "boards": "Boards",
+        "columns": "Columns",
+        "cards": "Cards",
+        "comments": "Comments",
+        "excel": "Excel"
+      }
+    }
   },
   "calendar": {
     "title": "Calendar",

@@ -27,6 +27,7 @@ import org.springframework.lang.Nullable;
 @Slf4j
 public class SecurityConfig {
 
+        private final ApiTokenAuthenticationFilter apiTokenAuthenticationFilter;
         private final JwtAuthenticationFilter jwtAuthenticationFilter;
         private final RestAuthenticationEntryPoint authenticationEntryPoint;
 
@@ -71,6 +72,8 @@ public class SecurityConfig {
                         log.info("OAuth2 login disabled - missing required beans");
                 }
 
+                http.addFilterBefore(apiTokenAuthenticationFilter,
+                                UsernamePasswordAuthenticationFilter.class);
                 http.addFilterBefore(jwtAuthenticationFilter,
                                 UsernamePasswordAuthenticationFilter.class);
                 return http.build();

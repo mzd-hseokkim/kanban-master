@@ -20,6 +20,7 @@ import org.springframework.web.server.ResponseStatusException;
 import com.kanban.activity.ActivityEventType;
 import com.kanban.activity.ActivityScopeType;
 import com.kanban.activity.ActivityService;
+import com.kanban.auth.apitoken.ApiTokenScope;
 import com.kanban.board.member.BoardMemberRole;
 import com.kanban.board.member.BoardMemberRoleValidator;
 import com.kanban.card.dto.*;
@@ -85,8 +86,15 @@ public class CardService {
     /**
      * 특정 칼럼의 모든 카드 조회 Spec § 5. 기능 요구사항 - FR-06g: 자식 개수 표시
      */
-    public CardPageResponse getCardsByColumn(Long columnId, int page, int size, CardSortBy sortBy,
-            Sort.Direction direction) {
+    public CardPageResponse getCardsByColumn(Long boardId, Long columnId, int page, int size,
+            CardSortBy sortBy, Sort.Direction direction) {
+        roleValidator.validateRole(boardId, BoardMemberRole.VIEWER, ApiTokenScope.CARD_READ);
+        BoardColumn column = columnRepository.findById(columnId)
+                .orElseThrow(() -> new ResourceNotFoundException("Column not found"));
+        if (!column.getBoard().getId().equals(boardId)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "Column does not belong to board");
+        }
         int cappedSize = Math.min(size, 500);
         Pageable pageable = PageRequest.of(Math.max(page, 0), cappedSize);
         Page<Card> cardPage =
@@ -124,9 +132,14 @@ public class CardService {
     /**
      * 특정 카드 조회
      */
-    public CardResponse getCard(Long columnId, Long cardId) {
+    public CardResponse getCard(Long boardId, Long columnId, Long cardId) {
+        roleValidator.validateRole(boardId, BoardMemberRole.VIEWER, ApiTokenScope.CARD_READ);
         Card card = cardRepository.findByIdAndColumnId(cardId, columnId)
                 .orElseThrow(() -> new ResourceNotFoundException("Card not found"));
+        if (!card.getColumn().getBoard().getId().equals(boardId)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "Card does not belong to board");
+        }
         List<LabelResponse> labels = cardLabelRepository.findByCardId(cardId).stream()
                 .map(cardLabel -> LabelResponse.from(cardLabel.getLabel())).toList();
 
@@ -137,13 +150,15 @@ public class CardService {
      * 특정 카드 조회 (계층 정보 포함) Spec § 6. 백엔드 규격 - FR-06b, FR-06d: 부모/자식 카드 정보 조회 결정 사항 1: 자식 카드는 생성일
      * 오름차순 정렬 결정 사항 4: 초기 20개 자식 카드만 로드, 더보기 버튼으로 추가 로드
      */
-    public CardResponse getCardWithHierarchy(Long columnId, Long cardId) {
+    public CardResponse getCardWithHierarchy(Long boardId, Long columnId, Long cardId) {
+        roleValidator.validateRole(boardId, BoardMemberRole.VIEWER, ApiTokenScope.CARD_READ);
         // 카드 조회 (부모 정보 포함)
         Card card = cardRepository.findByIdWithParent(cardId)
                 .orElseThrow(() -> new ResourceNotFoundException("Card not found"));
 
-        // 칼럼 검증
-        if (!card.getColumn().getId().equals(columnId)) {
+        // 칼럼/보드 검증
+        if (!card.getColumn().getId().equals(columnId)
+                || !card.getColumn().getBoard().getId().equals(boardId)) {
             throw new ResourceNotFoundException("Card not found");
         }
 
@@ -173,7 +188,7 @@ public class CardService {
     public CardResponse createCardWithValidation(Long boardId, Long columnId,
             CreateCardRequest request, Long userId) {
         // EDITOR 이상 권한 필요
-        roleValidator.validateRole(boardId, BoardMemberRole.EDITOR);
+        roleValidator.validateRole(boardId, BoardMemberRole.EDITOR, ApiTokenScope.CARD_WRITE);
 
         return createCard(columnId, request, userId);
     }
@@ -277,7 +292,7 @@ public class CardService {
         log.info("########## updateCardWithValidation CALLED - cardId={}, request={}", cardId,
                 request);
         // EDITOR 이상 권한 필요
-        roleValidator.validateRole(boardId, BoardMemberRole.EDITOR);
+        roleValidator.validateRole(boardId, BoardMemberRole.EDITOR, ApiTokenScope.CARD_WRITE);
 
         return updateCard(columnId, cardId, request, userId);
     }
@@ -555,7 +570,7 @@ public class CardService {
             targetType = com.kanban.audit.AuditTargetType.CARD, targetId = "#cardId")
     public void deleteCardWithValidation(Long boardId, Long columnId, Long cardId, Long userId) {
         // EDITOR 이상 권한 필요
-        roleValidator.validateRole(boardId, BoardMemberRole.EDITOR);
+        roleValidator.validateRole(boardId, BoardMemberRole.EDITOR, ApiTokenScope.CARD_WRITE);
 
         deleteCard(columnId, cardId, userId);
     }
@@ -610,7 +625,7 @@ public class CardService {
             targetType = com.kanban.audit.AuditTargetType.CARD, targetId = "#cardId")
     public CardResponse startCardWithValidation(Long boardId, Long columnId, Long cardId,
             Long userId) {
-        roleValidator.validateRole(boardId, BoardMemberRole.EDITOR);
+        roleValidator.validateRole(boardId, BoardMemberRole.EDITOR, ApiTokenScope.CARD_WRITE);
         return startCard(columnId, cardId, userId);
     }
 
@@ -767,7 +782,7 @@ public class CardService {
     @com.kanban.audit.Auditable(action = com.kanban.audit.AuditAction.UPDATE,
             targetType = com.kanban.audit.AuditTargetType.CARD, targetId = "#cardId")
     public CardResponse archiveCard(Long boardId, Long columnId, Long cardId, Long userId) {
-        roleValidator.validateRole(boardId, BoardMemberRole.EDITOR);
+        roleValidator.validateRole(boardId, BoardMemberRole.EDITOR, ApiTokenScope.CARD_ARCHIVE);
         return archiveCardInternal(columnId, cardId, userId);
     }
 
@@ -776,7 +791,7 @@ public class CardService {
      */
     @org.springframework.cache.annotation.CacheEvict(value = "dashboardSummary", allEntries = true)
     public List<CardResponse> archiveAllCardsInColumn(Long boardId, Long columnId, Long userId) {
-        roleValidator.validateRole(boardId, BoardMemberRole.EDITOR);
+        roleValidator.validateRole(boardId, BoardMemberRole.EDITOR, ApiTokenScope.CARD_ARCHIVE);
 
         BoardColumn column = columnRepository.findById(columnId)
                 .orElseThrow(() -> new ResourceNotFoundException("Column not found"));
@@ -842,7 +857,7 @@ public class CardService {
     @com.kanban.audit.Auditable(action = com.kanban.audit.AuditAction.UPDATE,
             targetType = com.kanban.audit.AuditTargetType.CARD, targetId = "#cardId")
     public CardResponse unarchiveCard(Long boardId, Long cardId, Long userId) {
-        roleValidator.validateRole(boardId, BoardMemberRole.EDITOR);
+        roleValidator.validateRole(boardId, BoardMemberRole.EDITOR, ApiTokenScope.CARD_ARCHIVE);
         return unarchiveCardInternal(cardId, userId);
     }
 
@@ -888,7 +903,7 @@ public class CardService {
      */
     public List<CardResponse> getArchivedCards(Long boardId) {
         // VIEWER 이상 권한 필요
-        roleValidator.validateRole(boardId, BoardMemberRole.VIEWER);
+        roleValidator.validateRole(boardId, BoardMemberRole.VIEWER, ApiTokenScope.CARD_READ);
 
         List<Card> archivedCards =
                 cardRepository.findByBoardIdAndIsArchivedTrueOrderByArchivedAt(boardId);
@@ -911,7 +926,7 @@ public class CardService {
      */
     @org.springframework.cache.annotation.CacheEvict(value = "dashboardSummary", allEntries = true)
     public List<CardResponse> unarchiveCardsInBulk(Long boardId, List<Long> cardIds, Long userId) {
-        roleValidator.validateRole(boardId, BoardMemberRole.EDITOR);
+        roleValidator.validateRole(boardId, BoardMemberRole.EDITOR, ApiTokenScope.CARD_ARCHIVE);
 
         if (cardIds == null || cardIds.isEmpty()) {
             return List.of();
@@ -964,7 +979,7 @@ public class CardService {
      */
     @org.springframework.cache.annotation.CacheEvict(value = "dashboardSummary", allEntries = true)
     public void permanentlyDeleteCardsInBulk(Long boardId, List<Long> cardIds, Long userId) {
-        roleValidator.validateRole(boardId, BoardMemberRole.MANAGER);
+        roleValidator.validateRole(boardId, BoardMemberRole.MANAGER, ApiTokenScope.CARD_MANAGE);
 
         if (cardIds == null || cardIds.isEmpty()) {
             return;
@@ -1011,7 +1026,7 @@ public class CardService {
      * 카드 영구 삭제 (아카이브된 카드만 가능)
      */
     public void permanentlyDeleteCard(Long boardId, Long cardId, Long userId) {
-        roleValidator.validateRole(boardId, BoardMemberRole.MANAGER);
+        roleValidator.validateRole(boardId, BoardMemberRole.MANAGER, ApiTokenScope.CARD_MANAGE);
 
         Card card = cardRepository.findById(cardId)
                 .orElseThrow(() -> new ResourceNotFoundException("Card not found"));

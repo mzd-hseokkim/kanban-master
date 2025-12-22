@@ -156,6 +156,9 @@ security:
         access-token-validity-seconds: 900
         refresh-token-validity-seconds: 1209600
         refresh-token-cookie-name: KANBAN_REFRESH_TOKEN
+    api-token:
+        secret-key: ${API_TOKEN_SECRET:dev_api_token_secret_change_me}
+        prefix: ${API_TOKEN_PREFIX:kbp_}
 
     # Cookie 기본 설정 (프로파일별로 덮어씀)
     cookie:

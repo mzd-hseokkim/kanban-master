@@ -10,9 +10,11 @@ import { usePresenceTransition } from '@/hooks/usePresenceTransition';
 import type { Column } from '@/types/column';
 import type { ImportJobStartResponse } from '@/types/excel';
 import type { CardSearchResult, CardSearchState } from '@/types/search';
+import type { BoardMemberRole } from '@/types/board';
 import type { Dispatch, SetStateAction } from 'react';
 import { useRef } from 'react';
 import { ActivityPanel } from './ActivityPanel';
+import { ApiTokenModal } from './ApiTokenModal';
 import { CalendarModal } from './CalendarModal';
 import { ExcelImportModal } from './ExcelImportModal';
 import { ImportProgressPanel } from './ImportProgressPanel';
@@ -24,6 +26,8 @@ interface BoardModalsProps {
   boardName: string;
   boardOwnerId: number;
   canManage: boolean;
+  canEdit: boolean;
+  currentRole?: BoardMemberRole;
   columns: Column[];
 
   // UI State
@@ -39,6 +43,7 @@ interface BoardModalsProps {
   showGlobalCreateCardModal: boolean;
   showEnableSprintModal: boolean;
   showCreateSprintModal: boolean;
+  showApiTokenModal: boolean;
 
   // UI Actions
   onCloseCreateColumn: () => void;
@@ -53,6 +58,7 @@ interface BoardModalsProps {
   onCloseGlobalCreateCard: () => void;
   onCloseEnableSprintModal: () => void;
   onCloseCreateSprintModal: () => void;
+  onCloseApiTokenModal: () => void;
   onOpenInviteModal: () => void;
 
   // Callbacks
@@ -83,6 +89,8 @@ export const BoardModals = ({
   boardName,
   boardOwnerId,
   canManage,
+  canEdit,
+  currentRole,
   columns,
   showCreateColumnModal,
   showInviteModal,
@@ -96,6 +104,7 @@ export const BoardModals = ({
   showGlobalCreateCardModal,
   showEnableSprintModal,
   showCreateSprintModal,
+  showApiTokenModal,
   onCloseCreateColumn,
   onCloseInviteModal,
   onCloseMembersPanel,
@@ -108,6 +117,7 @@ export const BoardModals = ({
   onCloseGlobalCreateCard,
   onCloseEnableSprintModal,
   onCloseCreateSprintModal,
+  onCloseApiTokenModal,
   onOpenInviteModal,
   refreshColumns,
   onCardSelect,
@@ -185,6 +195,17 @@ export const BoardModals = ({
           canManage={canManage}
           onInvite={onOpenInviteModal}
           onClose={onCloseMembersPanel}
+        />
+      )}
+
+      {showApiTokenModal && (
+        <ApiTokenModal
+          isOpen={showApiTokenModal}
+          onClose={onCloseApiTokenModal}
+          boardId={boardId}
+          boardName={boardName}
+          currentRole={currentRole}
+          canEdit={canEdit}
         />
       )}
 

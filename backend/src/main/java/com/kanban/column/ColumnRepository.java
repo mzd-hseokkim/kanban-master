@@ -36,10 +36,20 @@ public interface ColumnRepository extends JpaRepository<BoardColumn, Long> {
         /**
          * 특정 위치 이상의 칼럼들의 position을 업데이트 (드래그 앤 드롭으로 칼럼 순서 변경 시 사용)
          */
-        @Modifying
+        @Modifying(clearAutomatically = true)
         @Query("UPDATE BoardColumn c SET c.position = c.position + :offset WHERE c.board.id = :boardId AND c.position >= :fromPosition")
         void updatePositionsFrom(@Param("boardId") Long boardId,
                         @Param("fromPosition") Integer fromPosition,
+                        @Param("offset") Integer offset);
+
+        /**
+         * 특정 범위 내의 칼럼들의 position을 업데이트 (드래그 앤 드롭으로 칼럼 순서 변경 시 사용)
+         */
+        @Modifying(clearAutomatically = true)
+        @Query("UPDATE BoardColumn c SET c.position = c.position + :offset WHERE c.board.id = :boardId AND c.position >= :fromPosition AND c.position <= :toPosition")
+        void updatePositionsInRange(@Param("boardId") Long boardId,
+                        @Param("fromPosition") Integer fromPosition,
+                        @Param("toPosition") Integer toPosition,
                         @Param("offset") Integer offset);
 
         /**

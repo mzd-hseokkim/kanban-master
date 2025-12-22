@@ -68,7 +68,76 @@
     "label": "라벨",
     "activity": "활동",
     "members": "멤버",
+    "apiTokens": "API 토큰",
     "archive": "아카이브"
+  },
+  "apiTokens": {
+    "label": "API 토큰",
+    "title": "{{boardName}} 토큰 관리",
+    "subtitle": "토큰은 보드 단위로 발급되며 한 번만 노출됩니다. 안전한 곳에 보관해주세요.",
+    "createTitle": "새 토큰 생성",
+    "nameLabel": "토큰 이름",
+    "namePlaceholder": "예: 외부 자동화",
+    "roleLabel": "역할",
+    "expiresLabel": "만료 시각 (선택)",
+    "scopesLabel": "허용 스코프",
+    "createAction": "토큰 생성",
+    "creating": "생성 중...",
+    "resetAction": "초기화",
+    "tokenHint": "이 토큰은 한 번만 표시됩니다.",
+    "listTitle": "발급된 토큰",
+    "empty": "아직 발급된 토큰이 없습니다.",
+    "loadFailed": "토큰 목록을 불러오지 못했습니다.",
+    "nameRequired": "토큰 이름을 입력해주세요.",
+    "scopeRequired": "최소 1개 이상의 권한을 선택해주세요.",
+    "createFailed": "토큰 생성에 실패했습니다.",
+    "copySuccess": "토큰이 클립보드에 복사되었습니다.",
+    "copyFailed": "복사에 실패했습니다. 수동으로 복사해주세요.",
+    "revokeConfirm": "이 토큰을 폐기하시겠습니까?",
+    "revokeAction": "폐기",
+    "revokeFailed": "토큰 폐기에 실패했습니다.",
+    "status": {
+      "active": "활성",
+      "revoked": "폐기됨"
+    },
+    "fields": {
+      "expires": "만료",
+      "lastUsed": "최근 사용",
+      "created": "생성일",
+      "revoked": "폐기일"
+    },
+    "scopeLabels": {
+      "BOARD_READ": "보드 조회",
+      "BOARD_WRITE": "보드 변경",
+      "CARD_READ": "카드 조회",
+      "CARD_WRITE": "카드 변경",
+      "CARD_ARCHIVE": "카드 보관",
+      "CARD_MANAGE": "카드 관리"
+    },
+    "docs": {
+      "link": "API 문서",
+      "title": "API 문서",
+      "subtitle": "보드/카드 관련 API를 토큰으로 호출할 수 있습니다.",
+      "auth": {
+        "title": "인증",
+        "baseUrl": "Base URL",
+        "header": "Header",
+        "scope": "토큰은 단일 보드에 묶여 있으며 요청 경로의 boardId와 일치해야 합니다."
+      },
+      "scopesTitle": "권한 스코프",
+      "endpointsTitle": "엔드포인트",
+      "scopeLabel": "필요 스코프",
+      "request": "요청 형식",
+      "response": "응답 형식",
+      "noSchema": "요청/응답 형식 정보가 없습니다.",
+      "sections": {
+        "boards": "보드",
+        "columns": "칼럼",
+        "cards": "카드",
+        "comments": "댓글",
+        "excel": "엑셀"
+      }
+    }
   },
   "listView": {
     "header": {

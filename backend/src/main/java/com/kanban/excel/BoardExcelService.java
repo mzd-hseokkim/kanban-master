@@ -44,6 +44,7 @@ import com.kanban.board.Board;
 import com.kanban.board.BoardRepository;
 import com.kanban.board.member.BoardMemberRole;
 import com.kanban.board.member.BoardMemberRoleValidator;
+import com.kanban.auth.apitoken.ApiTokenScope;
 import com.kanban.card.Card;
 import com.kanban.card.CardRepository;
 import com.kanban.checklist.ChecklistItem;
@@ -134,7 +135,7 @@ public class BoardExcelService {
     @Transactional(readOnly = true)
     public byte[] exportBoard(Long workspaceId, Long boardId) throws IOException {
         // 권한 검증 먼저 수행 (Board Owner이거나 멤버여야 함)
-        roleValidator.validateRole(boardId, BoardMemberRole.VIEWER);
+        roleValidator.validateRole(boardId, BoardMemberRole.VIEWER, ApiTokenScope.BOARD_READ);
 
         // 권한이 확인되면 Board 조회
         Board board = boardRepository.findById(boardId)
@@ -182,7 +183,7 @@ public class BoardExcelService {
         }
 
         // 권한 검증 먼저 수행 (Board Owner이거나 EDITOR 이상 멤버여야 함)
-        roleValidator.validateRole(boardId, BoardMemberRole.EDITOR);
+        roleValidator.validateRole(boardId, BoardMemberRole.EDITOR, ApiTokenScope.BOARD_WRITE);
 
         // 권한이 확인되면 Board 조회
         Board board = boardRepository.findById(boardId)

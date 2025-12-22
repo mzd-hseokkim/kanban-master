@@ -3,11 +3,12 @@ package com.kanban;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import com.kanban.auth.config.ApiTokenProperties;
 import com.kanban.auth.config.JwtProperties;
 import io.github.cdimascio.dotenv.Dotenv;
 
 @SpringBootApplication
-@EnableConfigurationProperties(JwtProperties.class)
+@EnableConfigurationProperties({JwtProperties.class, ApiTokenProperties.class})
 @org.springframework.cache.annotation.EnableCaching
 @org.springframework.context.annotation.EnableAspectJAutoProxy
 public class KanbanApplication {

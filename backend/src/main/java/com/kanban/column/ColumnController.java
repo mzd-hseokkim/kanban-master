@@ -46,7 +46,7 @@ public class ColumnController {
         @PathVariable Long boardId,
         @PathVariable Long columnId
     ) {
-        ColumnResponse column = columnService.getColumn(columnId);
+        ColumnResponse column = columnService.getColumn(boardId, columnId);
         return ResponseEntity.ok(column);
     }
 

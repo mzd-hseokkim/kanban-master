@@ -1,6 +1,7 @@
 import { useModalAnimation } from '@/hooks/useModalAnimation';
 import { modalOverlayClass, modalPanelClass } from '@/styles/modalStyles';
 import React from 'react';
+import { createPortal } from 'react-dom';
 
 interface AlertModalProps {
   isOpen: boolean;
@@ -13,8 +14,8 @@ export const AlertModal: React.FC<AlertModalProps> = ({ isOpen, message, onClose
 
   if (!isOpen && stage !== 'exit') return null;
 
-  return (
-    <div className={modalOverlayClass(stage)} onClick={close}>
+  const modalContent = (
+    <div className={modalOverlayClass(stage, 'z-[1100]')} onClick={close}>
       <div
         className={`${modalPanelClass({ stage })} max-w-sm w-full p-6 text-center`}
         onClick={(e) => e.stopPropagation()}
@@ -32,4 +33,6 @@ export const AlertModal: React.FC<AlertModalProps> = ({ isOpen, message, onClose
       </div>
     </div>
   );
+
+  return createPortal(modalContent, document.body);
 };

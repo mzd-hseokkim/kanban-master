@@ -4,9 +4,11 @@ import java.time.LocalDateTime;
 import java.util.List;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 import com.kanban.activity.ActivityEventType;
 import com.kanban.activity.ActivityScopeType;
 import com.kanban.activity.ActivityService;
+import com.kanban.auth.apitoken.ApiTokenScope;
 import com.kanban.board.dto.BoardResponse;
 import com.kanban.board.dto.CreateBoardRequest;
 import com.kanban.board.dto.UpdateBoardRequest;
@@ -30,7 +32,27 @@ public class BoardService {
         private final UserRepository userRepository;
         private final ActivityService activityService;
         private final BoardMemberRepository boardMemberRepository;
-        private final com.kanban.notification.service.RedisPublisher redisPublisher;
+    private final com.kanban.notification.service.RedisPublisher redisPublisher;
+
+    private void rejectApiTokenAccess() {
+        if (SecurityUtil.isApiTokenAuthentication()) {
+            throw new ResponseStatusException(org.springframework.http.HttpStatus.FORBIDDEN,
+                    "API 토큰으로 접근할 수 없는 기능입니다");
+        }
+    }
+
+    private void validateApiTokenBoardAccess(Long boardId, ApiTokenScope scope) {
+        SecurityUtil.getApiTokenPrincipal().ifPresent(principal -> {
+            if (!principal.boardId().equals(boardId)) {
+                throw new ResponseStatusException(org.springframework.http.HttpStatus.FORBIDDEN,
+                        "이 보드에 접근할 권한이 없습니다");
+            }
+            if (!principal.hasScope(scope)) {
+                throw new ResponseStatusException(org.springframework.http.HttpStatus.FORBIDDEN,
+                        "이 작업을 수행할 권한이 없습니다");
+            }
+        });
+    }
 
         /**
          * 새로운 보드를 생성한다. - 워크스페이스와 사용자가 유효한지 확인 - 보드를 생성하고 소유자로 등록 - 생성자를 보드 멤버로 추가 (추후 구현)
@@ -41,6 +63,7 @@ public class BoardService {
                         targetType = com.kanban.audit.AuditTargetType.BOARD)
         public BoardResponse createBoard(Long workspaceId, Long userId,
                         CreateBoardRequest request) {
+                rejectApiTokenAccess();
                 log.debug("Creating board in workspace {} by user {}", workspaceId, userId);
 
                 // 워크스페이스와 사용자 조회
@@ -75,6 +98,7 @@ public class BoardService {
          */
         @Transactional(readOnly = true)
         public BoardResponse getBoard(Long workspaceId, Long boardId) {
+                validateApiTokenBoardAccess(boardId, ApiTokenScope.BOARD_READ);
                 Board board = boardRepository.findById(boardId)
                                 .orElseThrow(() -> new IllegalArgumentException("보드를 찾을 수 없습니다"));
 
@@ -122,6 +146,7 @@ public class BoardService {
         @Transactional(readOnly = true)
         public List<BoardResponse> getBoardsInWorkspace(Long workspaceId) {
                 log.debug("Fetching boards for workspace {}", workspaceId);
+                rejectApiTokenAccess();
 
                 Long currentUserId = SecurityUtil.getCurrentUserId();
 
@@ -192,6 +217,7 @@ public class BoardService {
          */
         @Transactional(readOnly = true)
         public List<BoardResponse> getRecentBoardsInWorkspace(Long workspaceId, int limit) {
+                rejectApiTokenAccess();
                 Long currentUserId = SecurityUtil.getCurrentUserId();
 
                 return boardRepository.findRecentActiveBoardsAllWorkspaces(limit).stream()
@@ -225,6 +251,7 @@ public class BoardService {
                         UpdateBoardRequest request) {
                 log.debug("Updating board {} in workspace {} by user {}", boardId, workspaceId,
                                 userId);
+                validateApiTokenBoardAccess(boardId, ApiTokenScope.BOARD_WRITE);
 
                 Board board = boardRepository.findByIdAndWorkspaceId(boardId, workspaceId)
                                 .orElseThrow(() -> new IllegalArgumentException("보드를 찾을 수 없습니다"));
@@ -277,6 +304,7 @@ public class BoardService {
         public BoardResponse archiveBoard(Long workspaceId, Long boardId, Long userId) {
                 log.debug("Archiving board {} in workspace {} by user {}", boardId, workspaceId,
                                 userId);
+                validateApiTokenBoardAccess(boardId, ApiTokenScope.BOARD_WRITE);
 
                 Board board = boardRepository.findByIdAndWorkspaceId(boardId, workspaceId)
                                 .orElseThrow(() -> new IllegalArgumentException("보드를 찾을 수 없습니다"));
@@ -303,6 +331,7 @@ public class BoardService {
         public BoardResponse unarchiveBoard(Long workspaceId, Long boardId, Long userId) {
                 log.debug("Unarchiving board {} in workspace {} by user {}", boardId, workspaceId,
                                 userId);
+                validateApiTokenBoardAccess(boardId, ApiTokenScope.BOARD_WRITE);
 
                 Board board = boardRepository.findByIdAndWorkspaceId(boardId, workspaceId)
                                 .orElseThrow(() -> new IllegalArgumentException("보드를 찾을 수 없습니다"));
@@ -329,6 +358,7 @@ public class BoardService {
         public void deleteBoard(Long workspaceId, Long boardId, Long userId) {
                 log.debug("Deleting board {} in workspace {} by user {}", boardId, workspaceId,
                                 userId);
+                validateApiTokenBoardAccess(boardId, ApiTokenScope.BOARD_WRITE);
 
                 Board board = boardRepository.findByIdAndWorkspaceId(boardId, workspaceId)
                                 .orElseThrow(() -> new IllegalArgumentException("보드를 찾을 수 없습니다"));
@@ -363,6 +393,7 @@ public class BoardService {
         public BoardResponse restoreBoard(Long workspaceId, Long boardId, Long userId) {
                 log.debug("Restoring board {} in workspace {} by user {}", boardId, workspaceId,
                                 userId);
+                validateApiTokenBoardAccess(boardId, ApiTokenScope.BOARD_WRITE);
 
                 Board board = boardRepository.findByIdAndWorkspaceId(boardId, workspaceId)
                                 .orElseThrow(() -> new IllegalArgumentException("보드를 찾을 수 없습니다"));

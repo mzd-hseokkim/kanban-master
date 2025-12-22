@@ -8,6 +8,7 @@ import { useTranslation } from 'react-i18next';
 import { HiDotsVertical } from 'react-icons/hi';
 import { useNavigate } from 'react-router-dom';
 import { BoardActionsMenu } from './BoardActionsMenu';
+import { EditBoardModal } from './EditBoardModal';
 
 interface BoardCardProps {
     board: Board;
@@ -73,6 +74,7 @@ export const BoardCard = ({ board, workspaceId, onSaveAsTemplate }: BoardCardPro
     const { deleteBoard } = useBoard();
     const [showMenu, setShowMenu] = useState(false);
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+    const [showEditModal, setShowEditModal] = useState(false);
     const menuRef = useRef<HTMLDivElement>(null);
 
     // 현재 사용자가 보드의 소유자인지 확인
@@ -109,6 +111,9 @@ export const BoardCard = ({ board, workspaceId, onSaveAsTemplate }: BoardCardPro
         if ((e.target as HTMLElement).closest('.menu-button, .delete-button')) {
             return;
         }
+        if (showEditModal || showDeleteConfirm) {
+            return;
+        }
         navigate(`/boards/${workspaceId}/${board.id}`);
     };
 
@@ -134,6 +139,10 @@ export const BoardCard = ({ board, workspaceId, onSaveAsTemplate }: BoardCardPro
                             board={board}
                             workspaceId={workspaceId}
                             onClose={() => setShowMenu(false)}
+                            onEditClick={() => {
+                                setShowMenu(false);
+                                setShowEditModal(true);
+                            }}
                             onDeleteClick={() => {
                                 setShowMenu(false);
                                 setShowDeleteConfirm(true);
@@ -162,6 +171,14 @@ export const BoardCard = ({ board, workspaceId, onSaveAsTemplate }: BoardCardPro
 
             {showDeleteConfirm && (
                 <DeleteBoardConfirmModal onCancel={() => setShowDeleteConfirm(false)} onConfirm={handleDelete} />
+            )}
+
+            {showEditModal && (
+                <EditBoardModal
+                    workspaceId={workspaceId}
+                    board={board}
+                    onClose={() => setShowEditModal(false)}
+                />
             )}
         </div>
     );

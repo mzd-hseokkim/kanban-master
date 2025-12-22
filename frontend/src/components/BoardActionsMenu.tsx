@@ -7,6 +7,7 @@ interface BoardActionsMenuProps {
   board: Board;
   workspaceId: number;
   onClose: () => void;
+  onEditClick: () => void;
   onDeleteClick: () => void;
   onSaveAsTemplateClick: () => void;
 }
@@ -15,6 +16,7 @@ export const BoardActionsMenu = ({
   board,
   workspaceId,
   onClose,
+  onEditClick,
   onDeleteClick,
   onSaveAsTemplateClick,
 }: BoardActionsMenuProps) => {
@@ -37,6 +39,7 @@ export const BoardActionsMenu = ({
     <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-xl shadow-glass-lg z-50 border border-pastel-blue-200 py-1">
       <button
         onClick={() => {
+          onEditClick();
           onClose();
         }}
         disabled={loading}

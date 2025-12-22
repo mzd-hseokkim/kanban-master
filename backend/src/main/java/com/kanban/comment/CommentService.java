@@ -14,6 +14,7 @@ import org.springframework.web.server.ResponseStatusException;
 import com.kanban.activity.ActivityEventType;
 import com.kanban.activity.ActivityScopeType;
 import com.kanban.activity.ActivityService;
+import com.kanban.auth.apitoken.ApiTokenScope;
 import com.kanban.board.Board;
 import com.kanban.board.BoardRepository;
 import com.kanban.board.member.BoardMemberRole;
@@ -66,7 +67,7 @@ public class CommentService {
          */
         public Page<CommentResponse> getComments(Long boardId, Long cardId, Pageable pageable) {
                 // 권한 검증: 보드 멤버 (VIEWER 이상)
-                roleValidator.validateRole(boardId, BoardMemberRole.VIEWER);
+                roleValidator.validateRole(boardId, BoardMemberRole.VIEWER, ApiTokenScope.CARD_READ);
 
                 if (!cardRepository.existsById(cardId)) {
                         throw new ResourceNotFoundException("Card not found: " + cardId);
@@ -97,7 +98,7 @@ public class CommentService {
         public CommentResponse createComment(Long boardId, Long cardId,
                         CreateCommentRequest request) {
                 // 권한 검증: 보드 멤버 (VIEWER 이상)
-                roleValidator.validateRole(boardId, BoardMemberRole.VIEWER);
+                roleValidator.validateRole(boardId, BoardMemberRole.VIEWER, ApiTokenScope.CARD_WRITE);
 
                 Long currentUserId = SecurityUtil.getCurrentUserId();
 
@@ -153,7 +154,7 @@ public class CommentService {
         public CommentResponse updateComment(Long boardId, Long cardId, Long commentId,
                         UpdateCommentRequest request) {
                 // 권한 검증: 보드 멤버 (VIEWER 이상)
-                roleValidator.validateRole(boardId, BoardMemberRole.VIEWER);
+                roleValidator.validateRole(boardId, BoardMemberRole.VIEWER, ApiTokenScope.CARD_WRITE);
 
                 Long currentUserId = SecurityUtil.getCurrentUserId();
 
@@ -203,7 +204,7 @@ public class CommentService {
         @Transactional
         public void deleteComment(Long boardId, Long cardId, Long commentId) {
                 // 권한 검증: 보드 멤버 (VIEWER 이상)
-                roleValidator.validateRole(boardId, BoardMemberRole.VIEWER);
+                roleValidator.validateRole(boardId, BoardMemberRole.VIEWER, ApiTokenScope.CARD_WRITE);
 
                 Long currentUserId = SecurityUtil.getCurrentUserId();
 

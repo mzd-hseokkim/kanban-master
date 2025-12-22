@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type DragEvent, type ReactNode } from 'react';
-import { HiArrowLeft, HiCalendar, HiChartBar, HiChevronDown, HiClipboardList, HiDotsHorizontal, HiDownload, HiLightningBolt, HiPlus, HiSearch, HiTag, HiUpload, HiUsers, HiViewBoards, HiViewList } from 'react-icons/hi';
+import { HiArrowLeft, HiCalendar, HiChartBar, HiChevronDown, HiClipboardList, HiDotsHorizontal, HiDownload, HiKey, HiLightningBolt, HiPlus, HiSearch, HiTag, HiUpload, HiUsers, HiViewBoards, HiViewList } from 'react-icons/hi';
 import { MdArchive } from 'react-icons/md';
 import { useTranslation } from 'react-i18next';
 
@@ -18,6 +18,7 @@ interface BoardHeaderProps {
   onToggleArchive: () => void;
   onCreateColumn: () => void;
   onArchiveDrop: (cardId: number, columnId: number) => void;
+  onOpenApiTokens: () => void;
   onTemplateDownload: () => void;
   onExportBoard: () => void;
   onImport: () => void;
@@ -43,6 +44,7 @@ export const BoardHeader = ({
   onToggleArchive,
   onCreateColumn,
   onArchiveDrop,
+  onOpenApiTokens,
   onTemplateDownload,
   onExportBoard,
   onImport,
@@ -309,6 +311,13 @@ export const BoardHeader = ({
               label={t('board:header.members')}
               onClick={onToggleMembers}
             />
+            {canEdit && (
+              <HeaderButton
+                icon={<HiKey />}
+                label={t('board:header.apiTokens')}
+                onClick={onOpenApiTokens}
+              />
+            )}
             <HeaderButton
               icon={<MdArchive />}
               label={t('board:header.archive')}
@@ -385,6 +394,18 @@ export const BoardHeader = ({
                   <HiUsers className="text-lg text-slate-400" />
                   멤버
                 </button>
+                {canEdit && (
+                  <button
+                    onClick={() => {
+                      onOpenApiTokens();
+                      setIsMobileMenuOpen(false);
+                    }}
+                    className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 transition-colors"
+                  >
+                    <HiKey className="text-lg text-slate-400" />
+                    {t('board:header.apiTokens')}
+                  </button>
+                )}
                 <button
                   onClick={() => {
                     onToggleArchive();

@@ -7,6 +7,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.kanban.activity.ActivityEventType;
 import com.kanban.activity.ActivityScopeType;
 import com.kanban.activity.ActivityService;
+import com.kanban.auth.apitoken.ApiTokenScope;
 import com.kanban.board.Board;
 import com.kanban.board.BoardRepository;
 import com.kanban.board.member.BoardMemberRole;
@@ -37,6 +38,7 @@ public class ColumnService {
          */
         @Transactional(readOnly = true)
         public List<ColumnResponse> getColumnsByBoard(Long boardId) {
+                roleValidator.validateRole(boardId, BoardMemberRole.VIEWER, ApiTokenScope.BOARD_READ);
                 return columnRepository.findByBoardIdOrderByPosition(boardId).stream()
                                 .map(ColumnResponse::from).toList();
         }
@@ -45,10 +47,15 @@ public class ColumnService {
          * 칼럼 ID로 칼럼 조회
          */
         @Transactional(readOnly = true)
-        public ColumnResponse getColumn(Long columnId) {
+        public ColumnResponse getColumn(Long boardId, Long columnId) {
+                roleValidator.validateRole(boardId, BoardMemberRole.VIEWER, ApiTokenScope.BOARD_READ);
                 BoardColumn column = columnRepository.findById(columnId)
                                 .orElseThrow(() -> new NoSuchElementException(
                                                 messageSourceService.getMessage("error.column.not-found", columnId)));
+                if (!column.getBoard().getId().equals(boardId)) {
+                        throw new NoSuchElementException(
+                                        messageSourceService.getMessage("error.column.not-found", columnId));
+                }
                 return ColumnResponse.from(column);
         }
 
@@ -58,7 +65,7 @@ public class ColumnService {
         public ColumnResponse createColumnWithValidation(Long boardId, String name,
                         String description, String bgColor, Long userId) {
                 // EDITOR 이상 권한 필요
-                roleValidator.validateRole(boardId, BoardMemberRole.EDITOR);
+                roleValidator.validateRole(boardId, BoardMemberRole.EDITOR, ApiTokenScope.BOARD_WRITE);
 
                 return createColumn(boardId, name, description, bgColor, userId);
         }
@@ -108,7 +115,7 @@ public class ColumnService {
         public ColumnResponse updateColumnWithValidation(Long boardId, Long columnId, String name,
                         String description, String bgColor) {
                 // EDITOR 이상 권한 필요
-                roleValidator.validateRole(boardId, BoardMemberRole.EDITOR);
+                roleValidator.validateRole(boardId, BoardMemberRole.EDITOR, ApiTokenScope.BOARD_WRITE);
 
                 return updateColumn(columnId, name, description, bgColor);
         }
@@ -160,7 +167,7 @@ public class ColumnService {
         public ColumnResponse updateColumnPositionWithValidation(Long boardId, Long columnId,
                         Integer newPosition, Long userId) {
                 // EDITOR 이상 권한 필요
-                roleValidator.validateRole(boardId, BoardMemberRole.EDITOR);
+                roleValidator.validateRole(boardId, BoardMemberRole.EDITOR, ApiTokenScope.BOARD_WRITE);
 
                 return updateColumnPosition(boardId, columnId, newPosition, userId);
         }
@@ -172,39 +179,52 @@ public class ColumnService {
                         allEntries = true)
         public ColumnResponse updateColumnPosition(Long boardId, Long columnId, Integer newPosition,
                         Long userId) {
-                BoardColumn column = columnRepository.findByIdAndBoardId(columnId, boardId)
+                // 1. 모든 칼럼 조회
+                List<BoardColumn> allColumns = columnRepository.findByBoardIdOrderByPosition(boardId);
+
+                // 2. 이동할 칼럼 찾기
+                BoardColumn targetColumn = allColumns.stream()
+                                .filter(col -> col.getId().equals(columnId))
+                                .findFirst()
                                 .orElseThrow(() -> new NoSuchElementException(
                                                 COLUMN_NOT_FOUND_MESSAGE + columnId));
 
-                int currentPosition = column.getPosition();
+                int currentPosition = targetColumn.getPosition();
 
-                if (currentPosition < newPosition) {
-                        // 뒤로 이동: 현재 위치보다 뒤의 칼럼들을 앞으로 한 칸씩
-                        columnRepository.updatePositionsFrom(boardId, currentPosition + 1, -1);
-                } else if (currentPosition > newPosition) {
-                        // 앞으로 이동: 새 위치 이상의 칼럼들을 뒤로 한 칸씩
-                        columnRepository.updatePositionsFrom(boardId, newPosition, 1);
+                // 위치가 변경되지 않은 경우 바로 반환
+                if (currentPosition == newPosition) {
+                        return ColumnResponse.from(targetColumn);
                 }
 
-                column.setPosition(newPosition);
-                BoardColumn updatedColumn = columnRepository.save(column);
+                // 3. 리스트에서 해당 칼럼 제거
+                allColumns.remove(targetColumn);
 
-                // 활동 기록
-                // 활동 기록
-                if (currentPosition != newPosition) {
-                        activityService.recordActivity(ActivityScopeType.BOARD, boardId,
-                                        ActivityEventType.COLUMN_REORDERED, userId,
-                                        "\"" + column.getName() + "\" 칼럼이 이동되었습니다");
+                // 4. 새 위치에 삽입
+                allColumns.add(newPosition, targetColumn);
+
+                // 5. 모든 칼럼의 position을 순차적으로 재계산
+                for (int i = 0; i < allColumns.size(); i++) {
+                        allColumns.get(i).setPosition(i);
                 }
 
-                // Redis 이벤트 발행 - 전체 칼럼 목록을 전송
-                // 순서 변경 시 여러 칼럼의 position이 변경되므로 전체 목록을 조회하여 전송
-                List<ColumnResponse> allColumns = getColumnsByBoard(boardId);
+                // 6. 모든 칼럼 저장
+                columnRepository.saveAll(allColumns);
+
+                // 7. 활동 기록
+                activityService.recordActivity(ActivityScopeType.BOARD, boardId,
+                                ActivityEventType.COLUMN_REORDERED, userId,
+                                "\"" + targetColumn.getName() + "\" 칼럼이 이동되었습니다");
+
+                // 8. Redis 이벤트 발행 - 전체 칼럼 목록을 전송
+                List<ColumnResponse> columnResponses = allColumns.stream()
+                                .map(ColumnResponse::from)
+                                .toList();
                 redisPublisher.publish(new com.kanban.notification.event.BoardEvent(
                                 com.kanban.notification.event.BoardEvent.EventType.COLUMN_REORDERED
                                                 .name(),
-                                boardId, allColumns, userId, System.currentTimeMillis()));
-                return ColumnResponse.from(updatedColumn);
+                                boardId, columnResponses, userId, System.currentTimeMillis()));
+
+                return ColumnResponse.from(targetColumn);
         }
 
         /**
@@ -215,7 +235,7 @@ public class ColumnService {
                         targetId = "#columnId")
         public void deleteColumnWithValidation(Long boardId, Long columnId, Long userId) {
                 // EDITOR 이상 권한 필요
-                roleValidator.validateRole(boardId, BoardMemberRole.EDITOR);
+                roleValidator.validateRole(boardId, BoardMemberRole.EDITOR, ApiTokenScope.BOARD_WRITE);
 
                 deleteColumn(boardId, columnId, userId);
         }

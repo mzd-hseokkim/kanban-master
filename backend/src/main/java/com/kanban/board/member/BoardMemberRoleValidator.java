@@ -1,8 +1,11 @@
 package com.kanban.board.member;
 
+import com.kanban.auth.apitoken.ApiTokenPrincipal;
+import com.kanban.auth.apitoken.ApiTokenScope;
 import com.kanban.board.BoardRepository;
 import com.kanban.common.SecurityUtil;
 import org.springframework.http.HttpStatus;
+import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -27,6 +30,18 @@ public class BoardMemberRoleValidator {
      * @throws ResponseStatusException 권한이 없으면 403 에러 발생
      */
     public void validateRole(Long boardId, BoardMemberRole requiredRole) {
+        validateRole(boardId, requiredRole, null);
+    }
+
+    public void validateRole(Long boardId, BoardMemberRole requiredRole,
+            @Nullable ApiTokenScope requiredScope) {
+        ApiTokenPrincipal apiTokenPrincipal =
+                SecurityUtil.getApiTokenPrincipal().orElse(null);
+        if (apiTokenPrincipal != null) {
+            validateApiTokenAccess(apiTokenPrincipal, boardId, requiredRole, requiredScope);
+            return;
+        }
+
         Long currentUserId = SecurityUtil.getCurrentUserId();
         if (currentUserId == null) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "인증 정보가 없습니다");
@@ -66,6 +81,12 @@ public class BoardMemberRoleValidator {
      * @return 멤버인지 여부
      */
     public boolean isBoardMember(Long boardId) {
+        ApiTokenPrincipal apiTokenPrincipal =
+                SecurityUtil.getApiTokenPrincipal().orElse(null);
+        if (apiTokenPrincipal != null) {
+            return apiTokenPrincipal.boardId().equals(boardId)
+                    && hasRequiredRole(apiTokenPrincipal.role(), BoardMemberRole.VIEWER);
+        }
         Long currentUserId = SecurityUtil.getCurrentUserId();
         if (currentUserId == null) {
             return false;
@@ -92,5 +113,18 @@ public class BoardMemberRoleValidator {
         }
         // VIEWER
         return requiredRole == BoardMemberRole.VIEWER;
+    }
+
+    private void validateApiTokenAccess(ApiTokenPrincipal principal, Long boardId,
+            BoardMemberRole requiredRole, @Nullable ApiTokenScope requiredScope) {
+        if (!principal.boardId().equals(boardId)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "이 보드에 접근할 권한이 없습니다");
+        }
+        if (!hasRequiredRole(principal.role(), requiredRole)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "이 작업을 수행할 권한이 없습니다");
+        }
+        if (requiredScope != null && !principal.hasScope(requiredScope)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "이 작업을 수행할 권한이 없습니다");
+        }
     }
 }

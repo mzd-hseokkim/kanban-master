@@ -82,6 +82,36 @@ const DashboardPage = () => {
             </div>
           )}
 
+          {boardsLoading && (
+            <section className="pb-8">
+              <div className="flex items-center justify-between gap-3 mb-6">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-white shadow-sm border border-slate-100">
+                    <HiClipboardList className="text-xl text-blue-600" />
+                  </div>
+                  <h2 className="text-xl font-bold text-slate-900">{t('dashboard:boards.title')}</h2>
+                  <span
+                    className="h-4 w-10 rounded-full bg-slate-200/70 animate-pulse"
+                    aria-label="Loading"
+                  />
+                </div>
+                <div className="h-4 w-4 animate-spin rounded-full border-2 border-slate-200 border-t-blue-600" />
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                {Array.from({ length: 4 }).map((_, index) => (
+                  <div
+                    key={`board-placeholder-${index}`}
+                    className="glass rounded-xl p-4 border border-slate-100/60 bg-white/70 animate-pulse"
+                  >
+                    <div className="h-4 w-3/4 rounded-full bg-slate-200/70" />
+                    <div className="mt-3 h-3 w-1/2 rounded-full bg-slate-200/60" />
+                    <div className="mt-6 h-10 w-full rounded-lg bg-slate-200/50" />
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
+
           {shouldShowEmptyState && (
             <DashboardEmptyState onCreateBoard={() => setShowCreateBoardModal(true)} />
           )}
@@ -98,8 +128,18 @@ const DashboardPage = () => {
                 </>
               )}
 
-              <CardHighlightSection variant="overdue" cards={overdueCards} onCardClick={handleCardNavigate} />
-              <CardHighlightSection variant="inProgress" cards={inProgressCards} onCardClick={handleCardNavigate} />
+              <CardHighlightSection
+                variant="overdue"
+                cards={overdueCards}
+                onCardClick={handleCardNavigate}
+                isLoading={cardsLoading}
+              />
+              <CardHighlightSection
+                variant="inProgress"
+                cards={inProgressCards}
+                onCardClick={handleCardNavigate}
+                isLoading={cardsLoading}
+              />
               <CardHighlightSection variant="upcoming" cards={upcomingCards} onCardClick={handleCardNavigate} />
 
               {boards.length > 0 && (
